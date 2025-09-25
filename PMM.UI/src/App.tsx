@@ -1,9 +1,10 @@
 import "./App.css";
+import AppRoutes from "./routes.tsx";
 
 function App() {
   return (
     <>
-      <h1 className="text-3xl font-bold">hello</h1>
+      <AppRoutes />
     </>
   );
 }
