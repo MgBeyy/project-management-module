@@ -1,5 +1,4 @@
-﻿using AutoWrapper.Wrappers;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using PMM.Core.DTOs;
 using PMM.Core.Forms;
 using PMM.Core.Services;
@@ -26,7 +25,7 @@ namespace PMM.API.Controllers
         public async Task<ApiResponse> Create(CreateClientForm form)
         {
             await _clientService.AddClientAsync(form);
-            return new ApiResponse("Cleint created successfully", StatusCodes.Status200OK);
+            return new ApiResponse("Client created successfully", StatusCodes.Status200OK);
         }
         [ProducesResponseType(typeof(List<ClientDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -64,7 +63,7 @@ namespace PMM.API.Controllers
         public async Task<ApiResponse> DeleteClientAsync(int clientId)
         {
             await _clientService.DeleteClientAsync(clientId);
-            return new ApiResponse("Cleint deleted successfully", StatusCodes.Status200OK);
+            return new ApiResponse("Client deleted successfully", StatusCodes.Status200OK);
         }
     }
 }

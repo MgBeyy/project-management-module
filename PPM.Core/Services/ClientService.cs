@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using PMM.Core.DTOs;
+﻿using PMM.Core.DTOs;
 using PMM.Core.Exceptions;
 using PMM.Core.Forms;
 using PMM.Core.Mappers;
@@ -38,8 +37,6 @@ namespace PMM.Core.Services
 
         public async Task DeleteClientAsync(int clientId)
         {
-            if (clientId == null)
-                throw new ArgumentNullException("ClientId Boş Olamaz!");
             var client = await _clientRepository.GetByIdAsync(clientId);
             if (client == null)
                 throw new NotFoundException("Client Bulunamadı!");
@@ -70,8 +67,6 @@ namespace PMM.Core.Services
 
         public async Task<ClientDto> GetClientAsync(int clientId)
         {
-            if (clientId == null)
-                throw new ArgumentNullException("ClientId Boş Olamaz!");
             var client = await _clientRepository.GetByIdAsync(clientId);
             if (client == null)
                 throw new NotFoundException("Client Bulunamadı!");

@@ -17,11 +17,11 @@ namespace PMM.Core.Validators
                 foreach (var item in results)
                 {
                     var message = item.ErrorMessage;
-                    foreach (var memeber in item.MemberNames)
+                    foreach (var member in item.MemberNames)
                     {
-                        if (!Errors.ContainsKey(memeber))
-                            Errors.Add(memeber, new List<string>());
-                        Errors[memeber].Add(message ?? string.Empty);
+                        if (!Errors.ContainsKey(member))
+                            Errors.Add(member, new List<string>());
+                        Errors[member].Add(message ?? string.Empty);
                     }
                 }
             }

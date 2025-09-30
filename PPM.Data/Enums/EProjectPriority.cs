@@ -4,6 +4,6 @@
     {
         High = 1,
         Regular = 2,
-        Low = 3,
+        Low = 3
     }
 }

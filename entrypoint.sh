@@ -5,4 +5,4 @@ echo "EF Core migration is being applied..."
 dotnet ef database update --project ../Data/Data.csproj --startup-project API.csproj
 
 echo "Backend is starting..."
-exec dotnet API.dll
+exec dotnet PMM.API.dll
