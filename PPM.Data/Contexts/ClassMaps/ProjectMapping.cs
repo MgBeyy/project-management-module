@@ -34,10 +34,6 @@ namespace PMM.Data.Contexts.ClassMaps
             builder.Property(p => p.UpdatedAt).IsRequired(false);
             builder.Property(p => p.UpdatedById).IsRequired(false);
             builder.HasOne(p => p.UpdatedByUser).WithMany().HasForeignKey(p => p.UpdatedById);
-
-
-
-
         }
     }
 }

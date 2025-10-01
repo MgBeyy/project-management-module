@@ -1,9 +1,9 @@
-﻿using PMM.Data.Enums;
+﻿using PMM.Data.Entities;
+using PMM.Data.Enums;
 
-namespace PMM.Data.Entities
+namespace PMM.Core.DTOs
 {
-
-    public class Project
+    public class ProjectDto
     {
         public int Id { get; set; }
         public string Code { get; set; }
@@ -17,21 +17,21 @@ namespace PMM.Data.Entities
         public EProjectPriority Priority { get; set; }
 
         public int? ParentProjectId { get; set; }
-        public virtual Project? ParentProject { get; set; }
-        public virtual ICollection<Project>? ChildProjects { get; set; }
+        public Project? ParentProject { get; set; }
+        public ICollection<Project>? ChildProjects { get; set; }
 
 
         public int? ClientId { get; set; }
-        public virtual Client? Client { get; set; }
+        public Client? Client { get; set; }
 
-        public virtual ICollection<ProjectAssignment> Assignments { get; set; }
+        public ICollection<ProjectAssignment> Assignments { get; set; }
 
         public int CreatedById { get; set; }
-        public virtual User CreatedByUser { get; set; }
+        public User CreatedByUser { get; set; }
         public DateTime CreatedAt { get; set; }
 
         public int? UpdatedById { get; set; }
-        public virtual User? UpdatedByUser { get; set; }
+        public User? UpdatedByUser { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
 }
