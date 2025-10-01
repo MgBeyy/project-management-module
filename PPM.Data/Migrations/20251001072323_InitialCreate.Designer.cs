@@ -12,7 +12,7 @@ using PMM.Data.Contexts;
 namespace PMM.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250929075901_InitialCreate")]
+    [Migration("20251001072323_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -70,13 +70,16 @@ namespace PMM.Data.Migrations
                     b.Property<int?>("ParentProjectId")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime>("PlannedDeadline")
+                    b.Property<DateTime?>("PlannedDeadline")
+                        .IsRequired()
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("PlannedHours")
+                    b.Property<int?>("PlannedHours")
+                        .IsRequired()
                         .HasColumnType("integer");
 
-                    b.Property<DateTime>("PlannedStartDate")
+                    b.Property<DateTime?>("PlannedStartDate")
+                        .IsRequired()
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Priority")
