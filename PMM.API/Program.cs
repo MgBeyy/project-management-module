@@ -1,4 +1,7 @@
+using Microsoft.OpenApi.Models;
 using PMM.API.Extensions;
+using PMM.API.Filters;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +11,20 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+
+    // Enum’larýn hem sayý hem isimlerini göstermesi için:
+    c.SchemaFilter<EnumSchemaFilter>();
+    c.UseInlineDefinitionsForEnums();
+});
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Enum'larý string olarak serialize et
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 
 // Custom application setup using chained extension methods
