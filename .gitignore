@@ -483,3 +483,4 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 PMM.API/appsettings.Development.json
+PMM.API/appsettings.Development.json
