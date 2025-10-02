@@ -44,6 +44,16 @@ namespace PMM.API.Controllers
             var project = await _projectService.GetProjectAsync(projectId);
             return new ApiResponse(project, StatusCodes.Status200OK);
         }
+        [ProducesResponseType(typeof(DetailedProjectDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [HttpGet("detailed/{projectId:int}")]
+        public async Task<ApiResponse> GetDetailedProjectById(int projectId)
+        {
+            var project = await _projectService.GetDetailedProjectAsync(projectId);
+            return new ApiResponse(project, StatusCodes.Status200OK);
+        }
         [ProducesResponseType(typeof(ProjectDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -53,16 +63,6 @@ namespace PMM.API.Controllers
         {
             var project = await _projectService.EditProjectAsync(projectId, form);
             return new ApiResponse(project, StatusCodes.Status200OK);
-        }
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [HttpDelete("{projectId:int}")]
-        public async Task<ApiResponse> DeleteProjectAsync(int projectId)
-        {
-            await _projectService.DeleteProjectAsync(projectId);
-            return new ApiResponse("Project deleted successfully", StatusCodes.Status200OK);
         }
     }
 }

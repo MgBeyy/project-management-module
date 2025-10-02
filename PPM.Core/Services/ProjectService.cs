@@ -1,8 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using PMM.Core.DTOs;
 using PMM.Core.Exceptions;
 using PMM.Core.Forms;
-using PMM.Core.Helpers;
 using PMM.Core.Mappers;
 using PMM.Core.Validators;
 using PMM.Data.Enums;
@@ -16,23 +16,26 @@ namespace PMM.Core.Services
         Task<ProjectDto> AddProjectAsync(CreateProjectForm form);
         Task<ProjectDto> GetProjectAsync(int projectId);
         Task<ProjectDto> EditProjectAsync(int projectId, CreateProjectForm form);
-        Task DeleteProjectAsync(int projectId);
         Task<List<ProjectDto>> GetAllProjects();
+        Task<DetailedProjectDto> GetDetailedProjectAsync(int projectId);
     }
     public class ProjectService : _BaseService, IProjectService
     {
         private readonly ILogger<ProjectService> _logger;
         private readonly IProjectRepository _projectRepository;
         private readonly IClientRepository _clientRepository;
+        private readonly IUserRepository _userRepository;
         public ProjectService(IProjectRepository projectRepository,
             IClientRepository clientRepository,
             ILogger<ProjectService> logger,
+            IUserRepository userRepository,
             IPrincipal principal)
             : base(principal, logger)
         {
             _logger = logger;
             _projectRepository = projectRepository;
             _clientRepository = clientRepository;
+            _userRepository = userRepository;
         }
 
         public async Task<ProjectDto> AddProjectAsync(CreateProjectForm form)
@@ -48,9 +51,12 @@ namespace PMM.Core.Services
             {
                 if (form.PlannedDeadline < form.PlannedStartDate)
                     throw new BusinessException("Planlanan bitirme tarihi başlama tarihinden önce olamaz.");
-                var hours = WorkHoursCalculator.CalculateWorkingHours((DateTime)form.PlannedStartDate, (DateTime)form.PlannedDeadline);
             }
-
+            if (form.StartedAt is not null && form.EndAt is not null)
+            {
+                if (form.EndAt < form.StartedAt)
+                    throw new BusinessException("Proje bitirme tarihi başlama tarihinden önce olamaz.");
+            }
             if (form.Status is null)
             {
                 if (form.PlannedStartDate < DateTime.UtcNow.Date)
@@ -64,15 +70,9 @@ namespace PMM.Core.Services
             }
 
             if (form.ParentProjectId is not null)
-            {
-                var parentProject = _projectRepository.GetByIdAsync(form.ParentProjectId);
-                if (parentProject is null)
-                    throw new NotFoundException("Parent Proje Bulunamadı!");
-            }
+                _ = await _projectRepository.GetByIdAsync(form.ParentProjectId) ?? throw new NotFoundException("Ebeveyn Proje Bulunamadı!");
             if (form.ClientId is not null)
-            {
-                var client = _clientRepository.GetByIdAsync(form.ClientId) ?? throw new NotFoundException("Müşteri Bulunamadı!");
-            }
+                _ = await _clientRepository.GetByIdAsync(form.ClientId) ?? throw new NotFoundException("Müşteri Bulunamadı!");
 
             var project = ProjectMapper.Map(form);
             project.CreatedAt = DateTime.UtcNow;
@@ -82,16 +82,7 @@ namespace PMM.Core.Services
             return ProjectMapper.Map(project);
         }
 
-        public async Task DeleteProjectAsync(int projectId)
-        {
-            var project = await _projectRepository.GetByIdAsync(projectId);
-            if (project == null)
-                throw new NotFoundException("Proje Bulunamadı!");
-            _projectRepository.Delete(project);
-            await _projectRepository.SaveChangesAsync();
-        }
-
-        public async Task<ProjectDto> EditProjectAsync(int projectId, CreateProjectForm form)
+        public async Task<ProjectDto> EditProjectAsync(int projectId, UpdateProjectForm form)
         {
             if (form == null)
                 throw new ArgumentNullException($"{typeof(CreateProjectForm)} is empty");
@@ -100,12 +91,27 @@ namespace PMM.Core.Services
             if (!validation.IsValid)
                 throw new BusinessException(validation.Errors);
 
-            var project = await _projectRepository.GetByIdAsync(projectId);
-            if (project == null)
-                throw new NotFoundException("Proje Bulunamadı!");
+            var project = await _projectRepository.GetByIdAsync(projectId) ?? throw new NotFoundException("Proje Bulunamadı!");
 
-            var new_project = ProjectMapper.Map(form);
-            _projectRepository.Update(new_project);
+
+            if (form.PlannedDeadline is not null)
+            {
+                if (form.PlannedDeadline < form.PlannedStartDate)
+                    throw new BusinessException("Planlanan bitirme tarihi başlama tarihinden önce olamaz.");
+            }
+            if (form.StartedAt is not null && form.EndAt is not null)
+            {
+                if (form.EndAt < form.StartedAt)
+                    throw new BusinessException("Proje bitirme tarihi başlama tarihinden önce olamaz.");
+            }
+
+            if (form.ParentProjectId is not null)
+                _ = await _projectRepository.GetByIdAsync(form.ParentProjectId) ?? throw new NotFoundException("Üst Proje Bulunamadı!");
+
+            project = ProjectMapper.Map(form, project);
+            project.UpdatedAt = DateTime.UtcNow;
+            project.UpdatedById = LoggedInUser.Id;
+            _projectRepository.Update(project);
             await _projectRepository.SaveChangesAsync();
             return ProjectMapper.Map(project);
         }
@@ -113,7 +119,7 @@ namespace PMM.Core.Services
         public async Task<List<ProjectDto>> GetAllProjects()
         {
             var projects = _projectRepository.QueryAll();
-            return ProjectMapper.Map(projects.ToList());
+            return ProjectMapper.Map(await projects.ToListAsync());
         }
 
         public async Task<ProjectDto> GetProjectAsync(int projectId)
@@ -122,6 +128,32 @@ namespace PMM.Core.Services
             if (project == null)
                 throw new NotFoundException("Proje Bulunamadı!");
             return ProjectMapper.Map(project);
+        }
+        public async Task<DetailedProjectDto> GetDetailedProjectAsync(int projectId)
+        {
+            var project = await _projectRepository.GetByIdAsync(projectId);
+            if (project == null)
+                throw new NotFoundException("Proje Bulunamadı!");
+
+            var detailedProjectDto = ProjectMapper.DetailedMap(project);
+
+            detailedProjectDto.ParentProject = project.ParentProjectId.HasValue
+                ? ProjectMapper.Map(await _projectRepository.GetByIdAsync(project.ParentProjectId.Value))
+                : null;
+
+            detailedProjectDto.Client = project.ClientId.HasValue
+                ? ClientMapper.Map(await _clientRepository.GetByIdAsync(project.ClientId.Value))
+                : null;
+
+            var createdBy = await _userRepository.GetByIdAsync(project.CreatedById);
+            detailedProjectDto.CreatedByUser = IdNameMapper.Map(createdBy.Id, createdBy.Name);
+
+            if (project.UpdatedById.HasValue)
+            {
+                var updatedBy = await _userRepository.GetByIdAsync(project.UpdatedById);
+                detailedProjectDto.UpdatedByUser = IdNameMapper.Map(updatedBy.Id, updatedBy.Name);
+            }
+            return detailedProjectDto;
         }
     }
 }
