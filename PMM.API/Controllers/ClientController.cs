@@ -9,8 +9,6 @@ namespace PMM.API.Controllers
     public class ClientController : _BaseController
     {
         private readonly IClientService _clientService;
-
-
         public ClientController(
              ILogger<ClientController> logger,
             IClientService clientService)
