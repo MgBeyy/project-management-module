@@ -1,0 +1,206 @@
+using Microsoft.Extensions.Logging;
+using PMM.Data.Entities;
+using PMM.Data.Enums;
+using PMM.Data.Repositories;
+
+namespace PMM.Core.Services
+{
+    public interface IDummyDataService
+    {
+        Task SeedAllAsync();
+    }
+
+    public class DummyDataService : IDummyDataService
+    {
+        private readonly IClientRepository _clientRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly IProjectRepository _projectRepository;
+        private readonly IProjectAssignmentRepository _projectAssignmentRepository;
+        private readonly ILogger<DummyDataService> _logger;
+        private readonly Random _rand = new Random();
+
+        public DummyDataService(
+            IClientRepository clientRepository,
+            IUserRepository userRepository,
+            IProjectRepository projectRepository,
+            IProjectAssignmentRepository projectAssignmentRepository,
+            ILogger<DummyDataService> logger)
+        {
+            _clientRepository = clientRepository;
+            _userRepository = userRepository;
+            _projectRepository = projectRepository;
+            _projectAssignmentRepository = projectAssignmentRepository;
+            _logger = logger;
+        }
+
+        public async Task SeedAllAsync()
+        {
+            await SeedClientsAsync();
+            await SeedUsersAsync();
+            await SeedProjectsAsync();
+            await SeedProjectAssignmentsAsync();
+        }
+
+        private async Task SeedClientsAsync()
+        {
+            // Mevcut veritabanýnda client var mý diye kontrol edelim, varsa ekleme yapmayalým.
+            if (_clientRepository.QueryAll().Any()) return;
+
+            var clients = new List<Client>
+            {
+                new Client { Name = "Acme Corp" },
+                new Client { Name = "Beta Ltd" },
+                new Client { Name = "Gamma Inc" },
+                new Client { Name = "Delta Solutions" },
+                new Client { Name = "Epsilon Tech" },
+                new Client { Name = "Zeta Group" },
+                new Client { Name = "Omega Innovations" },
+                new Client { Name = "Alpha Systems" },
+                new Client { Name = "Theta Digital" },
+                new Client { Name = "Iota Services" }
+            };
+            await _clientRepository.CreateRangeAsync(clients);
+            await _clientRepository.SaveChangesAsync();
+        }
+
+        private async Task SeedUsersAsync()
+        {
+            // Mevcut veritabanýnda user var mý diye kontrol edelim, varsa ekleme yapmayalým.
+            if (_userRepository.QueryAll().Any()) return;
+
+            var users = new List<User>
+            {
+                new User { Name = "Alice", Email = "alice@example.com" },
+                new User { Name = "Bob", Email = "bob@example.com" },
+                new User { Name = "Charlie", Email = "charlie@example.com" },
+                new User { Name = "David", Email = "david@example.com" },
+                new User { Name = "Eve", Email = "eve@example.com" },
+                new User { Name = "Frank", Email = "frank@example.com" },
+                new User { Name = "Grace", Email = "grace@example.com" },
+                new User { Name = "Heidi", Email = "heidi@example.com" },
+                new User { Name = "Ivan", Email = "ivan@example.com" },
+                new User { Name = "Judy", Email = "judy@example.com" }
+            };
+            await _userRepository.CreateRangeAsync(users);
+            await _userRepository.SaveChangesAsync();
+        }
+
+        private async Task SeedProjectsAsync()
+        {
+            // Mevcut veritabanýnda proje var mý diye kontrol edelim, varsa ekleme yapmayalým.
+            if (_projectRepository.QueryAll().Any()) return;
+
+            var clients = _clientRepository.QueryAll().ToList();
+            var users = _userRepository.QueryAll().ToList();
+
+            if (!clients.Any() || !users.Any())
+                return;
+
+            var projects = new List<Project>();
+
+            // ### 1. Adým: Ana Projeleri (Parent) Oluþturma ###
+            // Toplam 15 projenin bir kýsmýný ana proje olarak oluþturalým (örneðin 5 tane).
+            for (int i = 1; i <= 5; i++)
+            {
+                var randomUser = users[_rand.Next(users.Count)];
+                var randomClient = clients[_rand.Next(clients.Count)];
+                var startDate = DateTime.UtcNow.AddDays(_rand.Next(-10, 10));
+
+                projects.Add(new Project
+                {
+                    Code = $"PRJ-P{i:000}",
+                    Title = $"Ana Proje {i}",
+                    PlannedStartDate = startDate,
+                    PlannedDeadline = startDate.AddDays(_rand.Next(30, 90)),
+                    PlannedHours = _rand.Next(100, 500),
+                    Status = (EProjectStatus)_rand.Next(0, Enum.GetNames(typeof(EProjectStatus)).Length),
+                    Priority = (EProjectPriority)_rand.Next(0, Enum.GetNames(typeof(EProjectPriority)).Length),
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedById = randomUser.Id,
+                    ClientId = randomClient.Id,
+                    ParentProjectId = null // Ana projelerin ParentId'si olmaz.
+                });
+            }
+
+            await _projectRepository.CreateRangeAsync(projects);
+            await _projectRepository.SaveChangesAsync();
+
+            // ### 2. Adým: Alt Projeleri (Child) Oluþturma ###
+            // Veritabanýna kaydedilmiþ ana projeleri ID'leriyle birlikte çekelim.
+            var parentProjects = _projectRepository.QueryAll().Where(p => p.ParentProjectId == null).ToList();
+            if (!parentProjects.Any()) return;
+
+            var childProjects = new List<Project>();
+            // Kalan 10 projeyi, mevcut ana projelerden birine baðlý olarak oluþturalým.
+            for (int i = 1; i <= 10; i++)
+            {
+                var randomUser = users[_rand.Next(users.Count)];
+                var parentProject = parentProjects[_rand.Next(parentProjects.Count)]; // Rastgele bir ana proje seç.
+                var startDate = DateTime.UtcNow.AddDays(_rand.Next(5, 20));
+
+                childProjects.Add(new Project
+                {
+                    Code = $"PRJ-C{i:000}",
+                    Title = $"Alt Proje {i} (Ana: {parentProject.Code})",
+                    PlannedStartDate = startDate,
+                    PlannedDeadline = startDate.AddDays(_rand.Next(15, 60)),
+                    PlannedHours = _rand.Next(50, 250),
+                    Status = (EProjectStatus)_rand.Next(0, Enum.GetNames(typeof(EProjectStatus)).Length),
+                    Priority = (EProjectPriority)_rand.Next(0, Enum.GetNames(typeof(EProjectPriority)).Length),
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedById = randomUser.Id,
+                    ClientId = parentProject.ClientId, // Genellikle alt proje ana projenin müþterisine aittir.
+                    ParentProjectId = parentProject.Id // Ana projenin ID'sini ata.
+                });
+            }
+
+            await _projectRepository.CreateRangeAsync(childProjects);
+            await _projectRepository.SaveChangesAsync();
+        }
+
+        private async Task SeedProjectAssignmentsAsync()
+        {
+            // Mevcut veritabanýnda atama var mý diye kontrol edelim, varsa ekleme yapmayalým.
+            if (_projectAssignmentRepository.QueryAll().Any()) return;
+
+            var projects = _projectRepository.QueryAll().ToList();
+            var users = _userRepository.QueryAll().ToList();
+            if (projects.Count == 0 || users.Count == 0)
+                return;
+
+            var assignments = new List<ProjectAssignment>();
+            var roles = (EProjectAssignmentRole[])Enum.GetValues(typeof(EProjectAssignmentRole));
+
+            // Ayný kullanýcýyý ayný projeye tekrar atamamak için bir kontrol mekanizmasý
+            var createdAssignments = new HashSet<(int, int)>();
+
+            // 30 adet rastgele atama oluþtur.
+            for (int i = 0; i < 30; i++)
+            {
+                var project = projects[_rand.Next(projects.Count)];
+                var user = users[_rand.Next(users.Count)];
+
+                // Eðer bu kullanýcý bu projeye zaten atandýysa, döngünün bu adýmýný atla ve yeni bir deneme yap.
+                if (createdAssignments.Contains((project.Id, user.Id)))
+                {
+                    i--; // Sayaç artýþýný telafi et
+                    continue;
+                }
+
+                assignments.Add(new ProjectAssignment
+                {
+                    ProjectId = project.Id,
+                    UserId = user.Id,
+                    Role = roles[_rand.Next(roles.Length)], // Rolü rastgele seç
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedById = user.Id
+                });
+
+                createdAssignments.Add((project.Id, user.Id));
+            }
+
+            await _projectAssignmentRepository.CreateRangeAsync(assignments);
+            await _projectAssignmentRepository.SaveChangesAsync();
+        }
+    }
+}
