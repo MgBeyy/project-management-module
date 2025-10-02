@@ -51,5 +51,40 @@ namespace PMM.Core.Mappers
         {
             return projects.Select(p => Map(p)).ToList();
         }
+        public static DetailedProjectDto DetailedMap(Project project)
+        {
+            return new DetailedProjectDto
+            {
+                Id = project.Id,
+                Code = project.Code,
+                Title = project.Title,
+                PlannedStartDate = project.PlannedStartDate,
+                PlannedDeadline = project.PlannedDeadline,
+                PlannedHours = project.PlannedHours,
+                StartedAt = project.StartedAt,
+                EndAt = project.EndAt,
+                Status = project.Status,
+                Priority = project.Priority,
+                ParentProjectId = project.ParentProjectId,
+                ClientId = project.ClientId,
+                CreatedAt = project.CreatedAt,
+                CreatedById = project.CreatedById,
+                UpdatedAt = project.UpdatedAt,
+                UpdatedById = project.UpdatedById,
+            };
+        }
+        public static Project Map(UpdateProjectForm form, Project project)
+        {
+            project.Title = form.Title;
+            project.PlannedStartDate = form.PlannedStartDate;
+            project.PlannedDeadline = form.PlannedDeadline;
+            project.PlannedHours = form.PlannedHours;
+            project.StartedAt = form.StartedAt;
+            project.EndAt = form.EndAt;
+            project.Status = (EProjectStatus)form.Status;
+            project.Priority = form.Priority;
+            project.ParentProjectId = form.ParentProjectId;
+            return project;
+        }
     }
 }

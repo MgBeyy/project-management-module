@@ -4,10 +4,8 @@ using System.Text.Json.Serialization;
 
 namespace PMM.Core.Forms
 {
-    public class CreateProjectForm
+    public class UpdateProjectForm
     {
-        [Required]
-        public string Code { get; set; }
         [Required]
         public string Title { get; set; }
         [Required]
@@ -22,6 +20,5 @@ namespace PMM.Core.Forms
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public EProjectPriority Priority { get; set; } = EProjectPriority.Regular;
         public int? ParentProjectId { get; set; }
-        public int? ClientId { get; set; }
     }
 }
