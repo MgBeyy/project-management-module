@@ -15,7 +15,7 @@ namespace PMM.Core.Services
     {
         Task<ProjectDto> AddProjectAsync(CreateProjectForm form);
         Task<ProjectDto> GetProjectAsync(int projectId);
-        Task<ProjectDto> EditProjectAsync(int projectId, CreateProjectForm form);
+        Task<ProjectDto> EditProjectAsync(int projectId, UpdateProjectForm form);
         Task<List<ProjectDto>> GetAllProjects();
         Task<DetailedProjectDto> GetDetailedProjectAsync(int projectId);
     }
@@ -85,7 +85,7 @@ namespace PMM.Core.Services
         public async Task<ProjectDto> EditProjectAsync(int projectId, UpdateProjectForm form)
         {
             if (form == null)
-                throw new ArgumentNullException($"{typeof(CreateProjectForm)} is empty");
+                throw new ArgumentNullException($"{typeof(UpdateProjectForm)} is empty");
 
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
@@ -146,12 +146,12 @@ namespace PMM.Core.Services
                 : null;
 
             var createdBy = await _userRepository.GetByIdAsync(project.CreatedById);
-            detailedProjectDto.CreatedByUser = IdNameMapper.Map(createdBy.Id, createdBy.Name);
+            detailedProjectDto.CreatedByUser = createdBy != null ? IdNameMapper.Map(createdBy.Id, createdBy.Name) : null;
 
             if (project.UpdatedById.HasValue)
             {
                 var updatedBy = await _userRepository.GetByIdAsync(project.UpdatedById);
-                detailedProjectDto.UpdatedByUser = IdNameMapper.Map(updatedBy.Id, updatedBy.Name);
+                detailedProjectDto.UpdatedByUser = updatedBy != null ? IdNameMapper.Map(updatedBy.Id, updatedBy.Name) : null;
             }
             return detailedProjectDto;
         }

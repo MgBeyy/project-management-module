@@ -13,7 +13,7 @@ namespace PMM.Core.Services
     {
         Task<ProjectAssignmentDto> AddProjectAssignmentAsync(CreateProjectAssignmentForm form);
         Task<ProjectAssignmentDto> GetProjectAssignmentAsync(int projectAssignmentId);
-        Task<ProjectAssignmentDto> EditProjectAssignmentAsync(int projectAssignmentId, CreateProjectAssignmentForm form);
+        Task<ProjectAssignmentDto> EditProjectAssignmentAsync(int projectAssignmentId, UpdateProjectAssignmentForm form);
         Task<List<ProjectAssignmentDto>> GetAllProjectAssignments();
     }
     public class ProjectAssignmentService : _BaseService, IProjectAssignmentService
@@ -69,7 +69,7 @@ namespace PMM.Core.Services
             if (!validation.IsValid)
                 throw new BusinessException(validation.Errors);
 
-            var projectAssignment = await _projectAssignmentRepository.GetByIdAsync(projectAssignmentId) ?? throw new NotFoundException("Proje Bulunamadı!");
+            var projectAssignment = await _projectAssignmentRepository.GetByIdAsync(projectAssignmentId) ?? throw new NotFoundException("Proje Ataması Bulunamadı!!");
 
             if (form.EndAt is not null)
             {

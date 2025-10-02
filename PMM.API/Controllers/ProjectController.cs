@@ -59,7 +59,7 @@ namespace PMM.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [HttpPut("{projectId:int}")]
-        public async Task<ApiResponse> EditProject(CreateProjectForm form, int projectId)
+        public async Task<ApiResponse> EditProject(UpdateProjectForm form, int projectId)
         {
             var project = await _projectService.EditProjectAsync(projectId, form);
             return new ApiResponse(project, StatusCodes.Status200OK);
