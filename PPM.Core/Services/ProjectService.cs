@@ -59,7 +59,7 @@ namespace PMM.Core.Services
             }
             if (form.Status is null)
             {
-                if (form.PlannedStartDate < DateTime.UtcNow.Date)
+                if (form.PlannedStartDate != null && form.PlannedStartDate < DateTime.UtcNow.Date)
                 {
                     form.Status = EProjectStatus.Active;
                 }
@@ -94,7 +94,7 @@ namespace PMM.Core.Services
             var project = await _projectRepository.GetByIdAsync(projectId) ?? throw new NotFoundException("Proje Bulunamadı!");
 
 
-            if (form.PlannedDeadline is not null)
+            if (form.PlannedDeadline is not null && form.PlannedStartDate is not null)
             {
                 if (form.PlannedDeadline < form.PlannedStartDate)
                     throw new BusinessException("Planlanan bitirme tarihi başlama tarihinden önce olamaz.");

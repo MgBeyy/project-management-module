@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using PMM.Core.DTOs;
 using PMM.Core.Exceptions;
 using PMM.Core.Forms;
@@ -71,7 +72,7 @@ namespace PMM.Core.Services
 
             var projectAssignment = await _projectAssignmentRepository.GetByIdAsync(projectAssignmentId) ?? throw new NotFoundException("Proje Ataması Bulunamadı!!");
 
-            if (form.EndAt is not null)
+            if (form.EndAt is not null && form.StartedAt is not null)
             {
                 if (form.EndAt < form.StartedAt)
                     throw new BusinessException("Projeden ayrılma tarihi başlama tarihinden önce olamaz.");
@@ -88,7 +89,7 @@ namespace PMM.Core.Services
         public async Task<List<ProjectAssignmentDto>> GetAllProjectAssignments()
         {
             var projects = _projectAssignmentRepository.QueryAll();
-            return ProjectAssignmentMapper.Map(projects.ToList());
+            return ProjectAssignmentMapper.Map(await projects.ToListAsync());
         }
 
         public async Task<ProjectAssignmentDto> GetProjectAssignmentAsync(int projectAssignmentId)
