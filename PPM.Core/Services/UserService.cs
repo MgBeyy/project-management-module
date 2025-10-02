@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using PMM.Core.DTOs;
 using PMM.Core.Exceptions;
 using PMM.Core.Forms;
@@ -63,8 +64,6 @@ namespace PMM.Core.Services
             if (!validation.IsValid)
                 throw new BusinessException(validation.Errors);
 
-            if (userId == null)
-                throw new ArgumentNullException("userId Boş Olamaz!");
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
                 throw new NotFoundException("User Bulunamadı!");
@@ -80,7 +79,7 @@ namespace PMM.Core.Services
         public async Task<List<UserDto>> GetAllUsers()
         {
             var users = _userRepository.QueryAll();
-            return UserMapper.Map(users.ToList());
+            return UserMapper.Map(await users.ToListAsync());
         }
 
         public async Task<UserDto> GetUserAsync(int userId)
