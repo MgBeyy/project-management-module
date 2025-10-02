@@ -9,7 +9,7 @@ namespace PMM.Data.Repositories
     }
     public class UserRepository : _BaseRepository<User>, IUserRepository
     {
-        public UserRepository(ApplicationDbContext context, ILogger logger) : base(context, logger)
+        public UserRepository(ApplicationDbContext context, ILogger<UserRepository> logger) : base(context, logger)
         {
         }
     }

@@ -9,7 +9,7 @@ namespace PMM.Data.Repositories
     }
     public class ProjectRepository : _BaseRepository<Project>, IProjectRepository
     {
-        public ProjectRepository(ApplicationDbContext context, ILogger logger) : base(context, logger)
+        public ProjectRepository(ApplicationDbContext context, ILogger<ProjectRepository> logger) : base(context, logger)
         {
         }
     }
