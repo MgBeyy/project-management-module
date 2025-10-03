@@ -7,6 +7,7 @@
         public string Email { get; set; }
 
         public ICollection<ProjectAssignment> ProjectAssignments { get; set; }
+        public ICollection<TaskAssignment> TaskAssignments { get; set; }
 
     }
 }
