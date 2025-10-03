@@ -3,8 +3,8 @@ version: "3.9"
 services:
   backend:
     build:
-      context: ./PMM.API
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: PMM.API/Dockerfile
     ports:
       - "5000:5000"
     environment:
