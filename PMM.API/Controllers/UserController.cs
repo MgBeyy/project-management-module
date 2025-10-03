@@ -1,6 +1,7 @@
 ﻿
 using AutoWrapper.Wrappers;
 using Microsoft.AspNetCore.Mvc;
+using PMM.Core.Common;
 using PMM.Core.DTOs;
 using PMM.Core.Forms;
 using PMM.Core.Services;
@@ -23,12 +24,12 @@ namespace PMM.API.Controllers
             var user = await _userService.AddUserAsync(form);
             return StatusCode(StatusCodes.Status201Created, new ApiResponse(user, StatusCodes.Status201Created));
         }
-        [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PagedResult<UserDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [HttpGet()]
-        public async Task<ApiResponse> GetAll()
+        public async Task<ApiResponse> Query([FromQuery] QueryUserForm form)
         {
-            var users = await _userService.GetAllUsers();
+            var users = await _userService.Query(form);
             return new ApiResponse(users, StatusCodes.Status200OK);
         }
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]

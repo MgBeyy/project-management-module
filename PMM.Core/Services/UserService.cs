@@ -1,10 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using PMM.Core.Common;
 using PMM.Core.DTOs;
 using PMM.Core.Exceptions;
 using PMM.Core.Forms;
 using PMM.Core.Mappers;
 using PMM.Core.Validators;
+using PMM.Data.Entities;
 using PMM.Data.Repositories;
 using System.Security.Principal;
 
@@ -16,7 +18,7 @@ namespace PMM.Core.Services
         Task<UserDto> GetUserAsync(int userId);
         Task<UserDto> EditUserAsync(int userId, CreateUserForm form);
         Task DeleteUserAsync(int userId);
-        Task<List<UserDto>> GetAllUsers();
+        Task<PagedResult<UserDto>> Query(QueryUserForm form);
     }
     public class UserService : _BaseService, IUserService
     {
@@ -79,18 +81,45 @@ namespace PMM.Core.Services
             return UserMapper.Map(user);
         }
 
-        public async Task<List<UserDto>> GetAllUsers()
-        {
-            var users = _userRepository.QueryAll();
-            return UserMapper.Map(await users.ToListAsync());
-        }
-
         public async Task<UserDto> GetUserAsync(int userId)
         {
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
                 throw new NotFoundException("User Bulunamadı!");
             return UserMapper.Map(user);
+        }
+
+        public async Task<PagedResult<UserDto>> Query(QueryUserForm form)
+        {
+            IQueryable<User> query = Enumerable.Empty<User>().AsQueryable();
+            query = _userRepository.Query(x => true);
+
+            if (!string.IsNullOrEmpty(form.Search))
+            {
+                query = query.Where(e =>
+                    e.Name.Contains(form.Search) ||
+                    e.Email.Contains(form.Search));
+            }
+
+            query = OrderByHelper.OrderByDynamic(query, form.SortBy, form.SortDesc);
+
+            int page = form.Page ?? 1;
+            int pageSize = form.PageSize ?? 10;
+
+            int totalRecords = await query.CountAsync();
+
+            var users = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<UserDto>
+            {
+                Data = UserMapper.Map(users),
+                TotalRecords = totalRecords,
+                Page = page,
+                PageSize = pageSize
+            };
         }
     }
 }
