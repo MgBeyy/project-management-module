@@ -20,14 +20,12 @@ namespace PMM.Core.Services
     }
     public class UserService : _BaseService, IUserService
     {
-        private readonly IUserRepository _userRepository;
         private readonly ILogger<UserService> _logger;
         public UserService(IUserRepository userRepository,
             ILogger<UserService> logger,
             IPrincipal principal)
-            : base(principal, logger)
+            : base(principal, logger, userRepository)
         {
-            _userRepository = userRepository;
             _logger = logger;
         }
 
@@ -39,6 +37,10 @@ namespace PMM.Core.Services
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
                 throw new BusinessException(validation.Errors);
+
+            _ = await _userRepository.QueryAll()
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == form.Email.ToLower())
+                ?? throw new BusinessException("Bu email zaten kayıtlı!");
 
             var user = UserMapper.Map(form);
             _userRepository.Create(user);

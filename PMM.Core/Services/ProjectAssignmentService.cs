@@ -27,7 +27,7 @@ namespace PMM.Core.Services
             IProjectAssignmentRepository projectAssignmentRepository,
             IProjectRepository projectRepository,
             IUserRepository userRepository
-            ) : base(principal, logger)
+            ) : base(principal, logger, userRepository)
         {
             _logger = logger;
             _projectAssignmentRepository = projectAssignmentRepository;

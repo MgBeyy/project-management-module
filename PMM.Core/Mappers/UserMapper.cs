@@ -11,7 +11,7 @@ namespace PMM.Core.Mappers
             return new User
             {
                 Name = form.Name,
-                Email = form.Email,
+                Email = form.Email.ToLower(),
             };
         }
         public static UserDto Map(User user)
