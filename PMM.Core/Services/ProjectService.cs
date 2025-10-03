@@ -30,7 +30,7 @@ namespace PMM.Core.Services
             ILogger<ProjectService> logger,
             IUserRepository userRepository,
             IPrincipal principal)
-            : base(principal, logger)
+            : base(principal, logger, userRepository)
         {
             _logger = logger;
             _projectRepository = projectRepository;
@@ -76,8 +76,7 @@ namespace PMM.Core.Services
 
             var project = ProjectMapper.Map(form);
             project.CreatedAt = DateTime.UtcNow;
-            var user = await _userRepository.QueryAll().FirstOrDefaultAsync() ?? throw new NotFoundException("Oluşturan Kullanıcı Bulunamadı! Önce bir kullanıcı oluşturun");
-            project.CreatedById = user.Id;
+            project.CreatedById = LoggedInUser.Id;
             _projectRepository.Create(project);
             await _projectRepository.SaveChangesAsync();
             return ProjectMapper.Map(project);

@@ -15,8 +15,9 @@ namespace PMM.Core.Services
         private readonly ILogger<ClientService> _logger;
         public ClientService(IClientRepository clientRepository,
             ILogger<ClientService> logger,
+            IUserRepository userRepository,
             IPrincipal principal)
-            : base(principal, logger)
+            : base(principal, logger, userRepository)
         {
             _clientRepository = clientRepository;
             _logger = logger;

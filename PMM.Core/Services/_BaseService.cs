@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
-using System.Security.Claims;
+using PMM.Data.Repositories;
 using System.Security.Principal;
 namespace PMM.Core.Services
 {
@@ -14,10 +14,13 @@ namespace PMM.Core.Services
 
         protected readonly ILogger _logger;
 
-        public _BaseService(IPrincipal principal, ILogger logger)
+        protected readonly IUserRepository _userRepository;
+
+        public _BaseService(IPrincipal principal, ILogger logger, IUserRepository userRepository)
         {
             _logger = logger;
             _principal = principal;
+            _userRepository = userRepository;
         }
 
         private AppPrincipal _user;
@@ -28,12 +31,13 @@ namespace PMM.Core.Services
                 if (_user != null)
                     return _user;
 
-                var principal = _principal as ClaimsPrincipal;
-                if (principal == null)
-                    throw new UnauthorizedAccessException("Unable to find logged in person information");
-
-                _user = AppClaimsTransformation.Transform(principal);
-                return _user;
+                var user = _userRepository.QueryAll().FirstOrDefault();
+                if (user != null)
+                {
+                    _user = new AppPrincipal(user.Name) { Id = user.Id, Email = user.Email, Name = user.Name };
+                    return _user;
+                }
+                throw new UnauthorizedAccessException("Veritabanında hiç kullanıcı yok. Lütfen bir kullanıcı ekleyin.");
             }
         }
         public ISheet getExcelSheet(IFormFile file)
