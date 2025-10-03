@@ -11,7 +11,7 @@ services:
     depends_on:
       - db
     volumes:
-      - ./PMM.API:/src
+      - ./PMM.API:/src/PMM.API
       - ./PMM.Core:/src/PMM.Core
       - ./PMM.Data:/src/PMM.Data
 
