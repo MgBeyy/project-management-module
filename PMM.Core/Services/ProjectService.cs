@@ -76,7 +76,8 @@ namespace PMM.Core.Services
 
             var project = ProjectMapper.Map(form);
             project.CreatedAt = DateTime.UtcNow;
-            project.CreatedById = LoggedInUser.Id;
+            var user = await _userRepository.QueryAll().FirstOrDefaultAsync() ?? throw new NotFoundException("Oluşturan Kullanıcı Bulunamadı! Önce bir kullanıcı oluşturun");
+            project.CreatedById = user.Id;
             _projectRepository.Create(project);
             await _projectRepository.SaveChangesAsync();
             return ProjectMapper.Map(project);
