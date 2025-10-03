@@ -3,10 +3,10 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy solution & restore dependencies
-COPY ../ProjectManagementModule.sln ./
-COPY ../PMM.Core/PMM.Core.csproj PMM.Core/
-COPY ../PMM.Data/PMM.Data.csproj PMM.Data/
-COPY ./PMM.API.csproj PMM.API/
+COPY ProjectManagementModule.sln ./
+COPY PPM.Core/PPM.Core.csproj PPM.Core/
+COPY PPM.Data/PPM.Data.csproj PPM.Data/
+COPY PMM.API/PMM.API.csproj PMM.API/
 RUN dotnet restore ProjectManagementModule.sln
 
 # Copy all source code
