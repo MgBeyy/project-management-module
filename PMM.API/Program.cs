@@ -1,6 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using PMM.API.Extensions;
 using PMM.API.Filters;
+using PMM.Data.Contexts;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,6 +43,29 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+
+        // Veritabaný hazýr deðilse/migration varsa uygula
+        // Bu, senkron bir iþlemdir ve uygulamanýn baþlamasýný bekletir.
+        context.Database.Migrate();
+
+        // Ýsteðe baðlý: Seed Data (baþlangýç verisi) ekleme
+        // DbSeeder.SeedAsync(context).Wait();
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+        // Gerçek bir uygulamada hata fýrlatmak yerine loglamak daha iyi olabilir
+    }
+}
+
 
 //CORS
 app.UseCors(WebApplicationBuilderExtension.MyAllowSpecificOrigins);
