@@ -15,6 +15,7 @@ namespace PMM.Core.Services
         Task<TaskDto> AddTaskAsync(CreateTaskForm form);
         Task<TaskDto> GetTaskAsync(int taskId);
         Task<List<TaskDto>> GetAllTasks();
+        Task<TaskDto> EditTaskAsync(int taskId, UpdateTaskForm form);
     }
 
     public class TaskService : _BaseService, ITaskService
@@ -46,6 +47,8 @@ namespace PMM.Core.Services
                 throw new BusinessException(validation.Errors);
 
             _ = await _projectRepository.GetByIdAsync(form.ProjectId) ?? throw new NotFoundException("Ýlgili Proje Bulunamadý! Önce bir proje oluþturun");
+            if (form.ParentTaskId.HasValue)
+                _ = await _taskRepository.GetByIdAsync(form.ParentTaskId) ?? throw new NotFoundException("Ýlgili Proje Bulunamadý! Önce bir proje oluþturun");
 
             var task = TaskMapper.Map(form);
             task.CreatedAt = DateTime.UtcNow;
@@ -66,6 +69,27 @@ namespace PMM.Core.Services
             var task = await _taskRepository.GetByIdAsync(taskId);
             if (task == null)
                 throw new NotFoundException("Task Bulunamadý!");
+            return TaskMapper.Map(task);
+        }
+
+        public async Task<TaskDto> EditTaskAsync(int taskId, UpdateTaskForm form)
+        {
+            if (form == null)
+                throw new ArgumentNullException($"{typeof(UpdateTaskForm)} is empty");
+
+            var validation = FormValidator.Validate(form);
+            if (!validation.IsValid)
+                throw new BusinessException(validation.Errors);
+
+            var task = await _taskRepository.GetByIdAsync(taskId);
+            if (task == null)
+                throw new NotFoundException("Task Bulunamadý!");
+
+            task = TaskMapper.Map(form, task);
+            task.UpdatedAt = DateTime.UtcNow;
+            task.UpdatedById = LoggedInUser.Id;
+            _taskRepository.Update(task);
+            await _taskRepository.SaveChangesAsync();
             return TaskMapper.Map(task);
         }
     }

@@ -41,5 +41,14 @@ namespace PMM.Core.Mappers
         {
             return tasks.Select(Map).ToList();
         }
+
+        public static TaskEntity Map(UpdateTaskForm form, TaskEntity task)
+        {
+            task.Title = form.Title;
+            task.Description = form.Description;
+            task.Weight = form.Weight;
+            task.Status = form.Status;
+            return task;
+        }
     }
 }
