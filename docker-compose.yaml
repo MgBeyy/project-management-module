@@ -27,6 +27,7 @@ services:
       - backend
     volumes:
       - ./PMM.UI:/app
+      - /app/node_modules
 
   db:
     image: postgres:15
