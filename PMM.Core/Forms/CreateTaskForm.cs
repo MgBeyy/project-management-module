@@ -10,11 +10,10 @@ namespace PMM.Core.Forms
         public int? ParentTaskId { get; set; }
         [Required]
         public string Title { get; set; }
-        [Required]
         public string Description { get; set; }
         [Required]
+        [Range(1, 10)]
         public int? Weight { get; set; }
-        [Required]
-        public ETaskStatus Status { get; set; }
+        public ETaskStatus Status { get; set; } = ETaskStatus.Todo;
     }
 }
