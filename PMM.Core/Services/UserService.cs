@@ -38,9 +38,10 @@ namespace PMM.Core.Services
             if (!validation.IsValid)
                 throw new BusinessException(validation.Errors);
 
-            _ = await _userRepository.QueryAll()
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == form.Email.ToLower())
-                ?? throw new BusinessException("Bu email zaten kayıtlı!");
+            var userByEmail = await _userRepository.QueryAll()
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == form.Email.ToLower());
+            if (userByEmail is not null)
+                throw new BusinessException("Bu email zaten kayıtlı!");
 
             var user = UserMapper.Map(form);
             _userRepository.Create(user);
