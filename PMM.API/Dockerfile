@@ -18,4 +18,5 @@ WORKDIR /src/PMM.API
 RUN dotnet build -c Debug
 
 # Run API
+WORKDIR /src/PMM.API
 ENTRYPOINT ["dotnet", "run", "--urls", "http://0.0.0.0:5000", "--project", "PMM.API.csproj"]
