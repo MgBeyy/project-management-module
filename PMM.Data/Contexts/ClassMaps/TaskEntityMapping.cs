@@ -20,7 +20,7 @@ namespace PMM.Data.Contexts.ClassMaps
             builder.Property(t => t.ParentTaskId).IsRequired(false);
             builder.HasOne(t => t.ParentTask).WithMany(t => t.SubTasks).HasForeignKey(t => t.ParentTaskId);
 
-            builder.Property(t => t.Description).IsRequired();
+            builder.Property(t => t.Description).IsRequired(false);
             builder.Property(t => t.Title).IsRequired().HasMaxLength(256);
 
             builder.Property(t => t.Status).IsRequired().HasConversion<string>();

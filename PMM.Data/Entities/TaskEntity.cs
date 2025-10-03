@@ -13,7 +13,7 @@ namespace PMM.Data.Entities
         public virtual ICollection<TaskEntity>? SubTasks { get; set; }
 
         public string Title { get; set; }
-        public string Description { get; set; }
+        public string? Description { get; set; }
         public int Weight { get; set; }
         public ETaskStatus Status { get; set; }
 
