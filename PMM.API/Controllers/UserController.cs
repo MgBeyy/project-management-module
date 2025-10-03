@@ -14,14 +14,14 @@ namespace PMM.API.Controllers
         {
             _userService = userService;
         }
-        [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [HttpPost()]
-        public async Task<ApiResponse> Create(CreateUserForm form)
+        public async Task<IActionResult> Create(CreateUserForm form)
         {
-            await _userService.AddUserAsync(form);
-            return new ApiResponse("User created successfully", StatusCodes.Status201Created);
+            var user = await _userService.AddUserAsync(form);
+            return StatusCode(StatusCodes.Status201Created, new ApiResponse(user, StatusCodes.Status201Created));
         }
         [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
