@@ -23,8 +23,8 @@ namespace PMM.API.Controllers
         [HttpPost()]
         public async Task<ApiResponse> CreateProject(CreateProjectForm form)
         {
-            await _projectService.AddProjectAsync(form);
-            return new ApiResponse("Project created successfully", StatusCodes.Status201Created);
+            var project = await _projectService.AddProjectAsync(form);
+            return new ApiResponse(project, StatusCodes.Status201Created);
         }
         [ProducesResponseType(typeof(List<ProjectDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
