@@ -1,7 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
 using PMM.API.Extensions;
-using PMM.API.Filters;
 using PMM.Data.Contexts;
 using System.Text.Json.Serialization;
 
@@ -15,11 +13,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
-
-    // Enum’larýn hem sayý hem isimlerini göstermesi için:
-    c.SchemaFilter<EnumSchemaFilter>();
-    c.UseInlineDefinitionsForEnums();
+    c.CustomizeSwaggerGen();
 });
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -41,7 +35,12 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+        options.DocumentTitle = "Project Management Module API Docs";
+        options.DefaultModelsExpandDepth(1);
+    });
 }
 
 using (var scope = app.Services.CreateScope())
@@ -50,19 +49,12 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-
-        // Veritabaný hazýr deðilse/migration varsa uygula
-        // Bu, senkron bir iþlemdir ve uygulamanýn baþlamasýný bekletir.
         context.Database.Migrate();
-
-        // Ýsteðe baðlý: Seed Data (baþlangýç verisi) ekleme
-        // DbSeeder.SeedAsync(context).Wait();
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while migrating or seeding the database.");
-        // Gerçek bir uygulamada hata fýrlatmak yerine loglamak daha iyi olabilir
     }
 }
 
