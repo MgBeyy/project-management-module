@@ -18,7 +18,6 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        // Enum'larý string olarak serialize et
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 

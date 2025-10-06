@@ -17,6 +17,7 @@ namespace PMM.API.Extensions
                 {
                     Name = "MgBeyy",
                     Email = "zaidalmoughrabi@gmail.com",
+                    Url = new Uri("https://github.com/mgbeyy")
                 },
                 License = new OpenApiLicense
                 {
