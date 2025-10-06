@@ -18,6 +18,7 @@ namespace PMM.Core.Services
         Task<TaskDto> GetTaskAsync(int taskId);
         Task<TaskDto> EditTaskAsync(int taskId, UpdateTaskForm form);
         Task<PagedResult<TaskDto>> Query(QueryTaskForm form);
+        Task<List<TaskDto>> GetSubTasksByTaskId(int taskId);
     }
 
     public class TaskService : _BaseService, ITaskService
@@ -152,6 +153,12 @@ namespace PMM.Core.Services
                 Page = page,
                 PageSize = pageSize
             };
+        }
+
+        public async Task<List<TaskDto>> GetSubTasksByTaskId(int taskId)
+        {
+            var subTasks = await _taskRepository.Query(x => x.ParentTaskId == taskId).ToListAsync();
+            return TaskMapper.Map(subTasks);
         }
     }
 }
