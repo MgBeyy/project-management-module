@@ -1,10 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using PMM.Core.Common;
 using PMM.Core.DTOs;
 using PMM.Core.Exceptions;
 using PMM.Core.Forms;
 using PMM.Core.Mappers;
 using PMM.Core.Validators;
+using PMM.Data.Entities;
 using PMM.Data.Enums;
 using PMM.Data.Repositories;
 using System.Security.Principal;
@@ -16,7 +18,7 @@ namespace PMM.Core.Services
         Task<ProjectDto> AddProjectAsync(CreateProjectForm form);
         Task<ProjectDto> GetProjectAsync(int projectId);
         Task<ProjectDto> EditProjectAsync(int projectId, UpdateProjectForm form);
-        Task<List<ProjectDto>> GetAllProjects();
+        Task<PagedResult<ProjectDto>> Query(QueryProjectForm form);
         Task<DetailedProjectDto> GetDetailedProjectAsync(int projectId);
     }
     public class ProjectService : _BaseService, IProjectService
@@ -120,10 +122,85 @@ namespace PMM.Core.Services
             return ProjectMapper.Map(project);
         }
 
-        public async Task<List<ProjectDto>> GetAllProjects()
+        public async Task<PagedResult<ProjectDto>> Query(QueryProjectForm form)
         {
-            var projects = _projectRepository.QueryAll();
-            return ProjectMapper.Map(await projects.ToListAsync());
+            IQueryable<Project> query = Enumerable.Empty<Project>().AsQueryable();
+            query = _projectRepository.Query(x => true);
+
+            if (!string.IsNullOrEmpty(form.Search))
+            {
+                query = query.Where(p =>
+                    p.Title.ToLower().Contains(form.Search.Trim().ToLower()) ||
+                    p.Code.ToLower().Contains(form.Search.Trim().ToLower()));
+            }
+
+            if (form.Id.HasValue)
+                query = query.Where(e => e.Id == form.Id.Value);
+
+            if (!string.IsNullOrWhiteSpace(form.Code))
+                query = query.Where(e => e.Code.ToLower().Contains(form.Code.Trim().ToLower()));
+
+            if (!string.IsNullOrWhiteSpace(form.Title))
+                query = query.Where(e => e.Title.ToLower().Contains(form.Title.Trim().ToLower()));
+
+            if (form.PlannedStartDate.HasValue)
+                query = query.Where(e => e.PlannedStartDate == form.PlannedStartDate);
+            if (form.PlannedStartDateMin.HasValue)
+                query = query.Where(e => e.PlannedStartDate >= form.PlannedStartDateMin);
+            if (form.PlannedStartDateMax.HasValue)
+                query = query.Where(e => e.PlannedStartDate <= form.PlannedStartDateMax);
+
+            if (form.PlannedDeadline.HasValue)
+                query = query.Where(e => e.PlannedDeadline == form.PlannedDeadline);
+            if (form.PlannedDeadlineMin.HasValue)
+                query = query.Where(e => e.PlannedDeadline >= form.PlannedDeadlineMin);
+            if (form.PlannedDeadlineMax.HasValue)
+                query = query.Where(e => e.PlannedDeadline <= form.PlannedDeadlineMax);
+
+            if (form.PlannedHours.HasValue)
+                query = query.Where(e => e.PlannedHours == form.PlannedHours);
+            if (form.PlannedHoursMin.HasValue)
+                query = query.Where(e => e.PlannedHours >= form.PlannedHoursMin);
+            if (form.PlannedHoursMax.HasValue)
+                query = query.Where(e => e.PlannedHours <= form.PlannedHoursMax);
+
+            if (form.StartedAt.HasValue)
+                query = query.Where(e => e.StartedAt == form.StartedAt);
+
+            if (form.EndAt.HasValue)
+                query = query.Where(e => e.EndAt == form.EndAt);
+
+            if (form.Status.HasValue)
+                query = query.Where(e => e.Status == form.Status);
+
+            if (form.Priority.HasValue)
+                query = query.Where(e => e.Priority == form.Priority);
+
+            if (form.ParentProjectId.HasValue)
+                query = query.Where(e => e.ParentProjectId == form.ParentProjectId);
+
+            if (form.ClientId.HasValue)
+                query = query.Where(e => e.ClientId == form.ClientId);
+
+            query = OrderByHelper.OrderByDynamic(query, form.SortBy, form.SortDesc);
+
+            int page = form.Page ?? 1;
+            int pageSize = form.PageSize ?? 10;
+
+            int totalRecords = await query.CountAsync();
+
+            var projects = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<ProjectDto>
+            {
+                Data = ProjectMapper.Map(projects),
+                TotalRecords = totalRecords,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<ProjectDto> GetProjectAsync(int projectId)

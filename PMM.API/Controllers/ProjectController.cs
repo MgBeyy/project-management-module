@@ -1,5 +1,6 @@
 ﻿using AutoWrapper.Wrappers;
 using Microsoft.AspNetCore.Mvc;
+using PMM.Core.Common;
 using PMM.Core.DTOs;
 using PMM.Core.Forms;
 using PMM.Core.Services;
@@ -26,12 +27,13 @@ namespace PMM.API.Controllers
             var project = await _projectService.AddProjectAsync(form);
             return new ApiResponse(project, StatusCodes.Status201Created);
         }
-        [ProducesResponseType(typeof(List<ProjectDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PagedResult<ProjectDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [HttpGet()]
-        public async Task<ApiResponse> GetAll()
+        public async Task<ApiResponse> GetAll([FromQuery] QueryProjectForm? form)
         {
-            var projects = await _projectService.GetAllProjects();
+            form ??= new QueryProjectForm();
+            var projects = await _projectService.Query(form);
             return new ApiResponse(projects, StatusCodes.Status200OK);
         }
         [ProducesResponseType(typeof(ProjectDto), StatusCodes.Status200OK)]
