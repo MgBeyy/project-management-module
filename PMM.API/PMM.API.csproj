@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PPM.Core\PMM.Core.csproj" />
+    <ProjectReference Include="..\PMM.Core\PMM.Core.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,18 +1,44 @@
-version: "3.9"
-
 services:
+  backend:
+    build:
+      context: .
+      dockerfile: PMM.API/Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=pmm_db;Username=zeyd;Password=zeyd_zeyd
+    depends_on:
+      - db
+    volumes:
+      - ./PMM.API:/src/PMM.API
+      - ./PMM.Core:/src/PMM.Core
+      - ./PMM.Data:/src/PMM.Data
+
+  frontend:
+    build:
+      context: ./PMM.UI
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://backend:5000
+    depends_on:
+      - backend
+    volumes:
+      - ./PMM.UI:/app
+      - /app/node_modules
+
   db:
     image: postgres:15
-    container_name: baykar-erp-db
-    restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1234
-      POSTGRES_DB: pmm-db
+      - POSTGRES_USER=zeyd
+      - POSTGRES_PASSWORD=zeyd_zeyd
+      - POSTGRES_DB=pmm_db
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
 
 volumes:
-  postgres_data:
+  db_data:
