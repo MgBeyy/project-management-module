@@ -1,8 +1,9 @@
 import { Routes, Route } from "react-router-dom";
 import AppLayout from "./layouts/app-layout";
-import Projects from "./pages/projects";
+// import Projects from "./pages/projects";
 import Tasks from "./pages/tasks";
 import Activities from "./pages/activities";
+import Projects from "./pages/projects";
 export default function AppRoutes() {
   return (
     <Routes>

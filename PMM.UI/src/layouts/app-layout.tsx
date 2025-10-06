@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import Header from "../features/dashboard/components/header";
 import SideBar from "../features/dashboard/components/side-bar";
+// import Test from "../pages/projects";
 
 export default function AppLayout() {
   return (
