@@ -1,11 +1,30 @@
 import { Table } from "antd";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ColumnsType } from "antd/es/table";
+import { GetProjects } from "../services/get-projects";
+import Spinner from "../../../components/spinner";
 
 export default function CustomTable() {
   // const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
+
+  const [data, setData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function getProjectData() {
+      try {
+        const data = await GetProjects();
+        setData(data);
+        setIsLoading(false);
+        console.log(data);
+      } catch (error) {
+        console.error("Error fetching project data:", error);
+      }
+    }
+    getProjectData();
+  }, []);
 
   const dataSource = [
     {
@@ -1713,30 +1732,37 @@ export default function CustomTable() {
 
   return (
     <>
-      <Table
-        dataSource={dataSource}
-        columns={columns}
-        bordered
-        scroll={{ x: 1200, y: "35vh" }}
-        // rowSelection={rowSelection}
-        pagination={{
-          current: currentPage,
-          pageSize: pageSize,
-          total: dataSource.length,
-          showSizeChanger: true,
-          showTotal: (total, range) =>
-            `${range[0]}-${range[1]} of ${total} items`,
-          pageSizeOptions: ["50", "100", "150", "200"],
-          onChange: (page, size) => {
-            setCurrentPage(page);
-            setPageSize(size || 10);
-          },
-          onShowSizeChange: (_current, size) => {
-            setCurrentPage(1); // Reset to first page when changing page size
-            setPageSize(size);
-          },
-        }}
-      />
+      {isLoading === true ? (
+        <div className="h-[50vh] flex justify-center items-center ">
+          <Spinner />
+        </div>
+      ) : (
+        <Table
+          dataSource={dataSource}
+          columns={columns}
+          bordered
+          size="small"
+          scroll={{ x: 1200, y: "35vh" }}
+          // rowSelection={rowSelection}
+          pagination={{
+            current: currentPage,
+            pageSize: pageSize,
+            total: dataSource.length,
+            showSizeChanger: true,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} of ${total} items`,
+            pageSizeOptions: ["50", "100", "150", "200"],
+            onChange: (page, size) => {
+              setCurrentPage(page);
+              setPageSize(size || 10);
+            },
+            onShowSizeChange: (_current, size) => {
+              setCurrentPage(1); // Reset to first page when changing page size
+              setPageSize(size);
+            },
+          }}
+        />
+      )}
     </>
   );
 }
