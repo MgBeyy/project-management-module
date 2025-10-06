@@ -124,8 +124,7 @@ namespace PMM.Core.Services
 
         public async Task<PagedResult<ProjectDto>> Query(QueryProjectForm form)
         {
-            IQueryable<Project> query = Enumerable.Empty<Project>().AsQueryable();
-            query = _projectRepository.Query(x => true);
+            IQueryable<Project> query = _projectRepository.Query(x => true);
 
             if (!string.IsNullOrEmpty(form.Search))
             {

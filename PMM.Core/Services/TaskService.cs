@@ -6,6 +6,7 @@ using PMM.Core.Exceptions;
 using PMM.Core.Forms;
 using PMM.Core.Mappers;
 using PMM.Core.Validators;
+using PMM.Data.Entities;
 using PMM.Data.Repositories;
 using System.Security.Principal;
 
@@ -90,7 +91,7 @@ namespace PMM.Core.Services
 
         public async Task<PagedResult<TaskDto>> Query(QueryTaskForm form)
         {
-            IQueryable<PMM.Data.Entities.TaskEntity> query = _taskRepository.Query(x => true);
+            IQueryable<TaskEntity> query = _taskRepository.Query(x => true);
 
             if (!string.IsNullOrEmpty(form.Search))
             {

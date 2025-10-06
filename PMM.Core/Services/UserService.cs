@@ -41,7 +41,7 @@ namespace PMM.Core.Services
                 throw new BusinessException(validation.Errors);
 
             var userByEmail = await _userRepository.QueryAll()
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == form.Email.ToLower());
+                .FirstOrDefaultAsync(u => EF.Functions.ILike(u.Email, form.Email));
             if (userByEmail is not null)
                 throw new BusinessException("Bu email zaten kayıtlı!");
 
@@ -91,8 +91,7 @@ namespace PMM.Core.Services
 
         public async Task<PagedResult<UserDto>> Query(QueryUserForm form)
         {
-            IQueryable<User> query = Enumerable.Empty<User>().AsQueryable();
-            query = _userRepository.Query(x => true);
+            IQueryable<User> query = _userRepository.Query(x => true);
 
             if (!string.IsNullOrEmpty(form.Search))
             {

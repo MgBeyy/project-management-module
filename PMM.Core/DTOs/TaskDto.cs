@@ -8,7 +8,7 @@ namespace PMM.Core.DTOs
         public int ProjectId { get; set; }
         public int? ParentTaskId { get; set; }
         public string Title { get; set; }
-        public string Description { get; set; }
+        public string? Description { get; set; }
         public ETaskStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public int CreatedById { get; set; }
