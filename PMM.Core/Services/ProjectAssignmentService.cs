@@ -16,6 +16,7 @@ namespace PMM.Core.Services
         Task<ProjectAssignmentDto> GetProjectAssignmentAsync(int projectAssignmentId);
         Task<ProjectAssignmentDto> EditProjectAssignmentAsync(int projectAssignmentId, UpdateProjectAssignmentForm form);
         Task<List<ProjectAssignmentDto>> GetAllProjectAssignments();
+        Task<List<ProjectDto>> GetProjectsByUserIdAsync(int userId);
     }
     public class ProjectAssignmentService : _BaseService, IProjectAssignmentService
     {
@@ -98,6 +99,18 @@ namespace PMM.Core.Services
             if (pa == null)
                 throw new NotFoundException("Proje Ataması Bulunamadı!");
             return ProjectAssignmentMapper.Map(pa);
+        }
+
+        public async Task<List<ProjectDto>> GetProjectsByUserIdAsync(int userId)
+        {
+            // Sorguyu doğrudan filtreliyoruz, gereksiz veritabanı yükünü önlüyoruz.
+            var projects = await _projectAssignmentRepository
+                .QueryAll()
+                .Where(pa => pa.UserId == userId)
+                .Select(pa => pa.Project)
+                .Distinct()
+                .ToListAsync();
+            return ProjectMapper.Map(projects);
         }
     }
 }

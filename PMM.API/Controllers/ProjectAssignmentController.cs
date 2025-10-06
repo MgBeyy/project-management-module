@@ -56,5 +56,14 @@ namespace PMM.API.Controllers
             var assignment = await _projectAssignmentService.EditProjectAssignmentAsync(projectAssignmentId, form);
             return new ApiResponse(assignment, StatusCodes.Status200OK);
         }
+
+        [ProducesResponseType(typeof(List<ProjectDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [HttpGet("user/{userId:int}/projects")]
+        public async Task<ApiResponse> GetProjectsByUserId(int userId)
+        {
+            var projects = await _projectAssignmentService.GetProjectsByUserIdAsync(userId);
+            return new ApiResponse(projects, StatusCodes.Status200OK);
+        }
     }
 }
