@@ -97,8 +97,8 @@ namespace PMM.Core.Services
             if (!string.IsNullOrEmpty(form.Search))
             {
                 query = query.Where(e =>
-                    e.Name.Contains(form.Search) ||
-                    e.Email.Contains(form.Search));
+                    e.Name.ToLower().Contains(form.Search.Trim().ToLower()) ||
+                    e.Email.ToLower().Contains(form.Search.Trim().ToLower()));
             }
 
             query = OrderByHelper.OrderByDynamic(query, form.SortBy, form.SortDesc);
