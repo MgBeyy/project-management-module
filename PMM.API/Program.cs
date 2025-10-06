@@ -59,7 +59,7 @@ using (var scope = app.Services.CreateScope())
 
 
 //CORS
-app.UseCors(WebApplicationBuilderExtension.MyAllowSpecificOrigins);
+app.UseCors("AllowFrontend");
 
 app.UseHttpsRedirection();
 
