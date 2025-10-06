@@ -47,6 +47,10 @@ namespace PMM.Core.Services
             if (!validation.IsValid)
                 throw new BusinessException(validation.Errors);
 
+            var existing = await _projectRepository.GetByCodeAsync(form.Code);
+            if (existing is not null)
+                throw new BusinessException("Bu kod ile kayıtlı bir proje bulunmaktadır.");
+
             if (form.PlannedDeadline is not null)
             {
                 if (form.PlannedDeadline < form.PlannedStartDate)
