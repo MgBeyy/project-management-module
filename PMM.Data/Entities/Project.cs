@@ -26,6 +26,7 @@ namespace PMM.Data.Entities
 
         public virtual ICollection<ProjectAssignment> Assignments { get; set; }
         public virtual ICollection<TaskEntity> Tasks { get; set; }
+        public virtual ICollection<FileEntity> Files { get; set; }
 
         public int CreatedById { get; set; }
         public virtual User CreatedByUser { get; set; }
