@@ -12,12 +12,12 @@ namespace PMM.Core.Forms
         public int? Id { get; set; }
         public string? Code { get; set; }
         public string? Title { get; set; }
-        public DateTime? PlannedStartDate { get; set; }
-        public DateTime? PlannedStartDateMin { get; set; }
-        public DateTime? PlannedStartDateMax { get; set; }
-        public DateTime? PlannedDeadline { get; set; }
-        public DateTime? PlannedDeadlineMin { get; set; }
-        public DateTime? PlannedDeadlineMax { get; set; }
+        public DateOnly? PlannedStartDate { get; set; }
+        public DateOnly? PlannedStartDateMin { get; set; }
+        public DateOnly? PlannedStartDateMax { get; set; }
+        public DateOnly? PlannedDeadline { get; set; }
+        public DateOnly? PlannedDeadlineMin { get; set; }
+        public DateOnly? PlannedDeadlineMax { get; set; }
         public int? PlannedHours { get; set; }
         public int? PlannedHoursMin { get; set; }
         public int? PlannedHoursMax { get; set; }

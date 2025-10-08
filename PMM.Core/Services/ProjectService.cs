@@ -25,9 +25,12 @@ namespace PMM.Core.Services
     {
         private readonly ILogger<ProjectService> _logger;
         private readonly IProjectRepository _projectRepository;
+        private readonly IProjectRelationRepository _projectRelationRepository;
         private readonly IClientRepository _clientRepository;
         private readonly IUserRepository _userRepository;
+
         public ProjectService(IProjectRepository projectRepository,
+            IProjectRelationRepository projectRelationRepository,
             IClientRepository clientRepository,
             ILogger<ProjectService> logger,
             IUserRepository userRepository,
@@ -36,6 +39,7 @@ namespace PMM.Core.Services
         {
             _logger = logger;
             _projectRepository = projectRepository;
+            _projectRelationRepository = projectRelationRepository;
             _clientRepository = clientRepository;
             _userRepository = userRepository;
         }
@@ -65,7 +69,7 @@ namespace PMM.Core.Services
             }
             if (form.Status is null)
             {
-                if (form.PlannedStartDate != null && form.PlannedStartDate < DateTime.UtcNow.Date)
+                if (form.PlannedStartDate != null && form.PlannedStartDate < DateOnly.FromDateTime(DateTime.UtcNow))
                 {
                     form.Status = EProjectStatus.Active;
                 }
@@ -75,8 +79,12 @@ namespace PMM.Core.Services
                 }
             }
 
-            if (form.ParentProjectId is not null)
-                _ = await _projectRepository.GetByIdAsync(form.ParentProjectId) ?? throw new NotFoundException("Ebeveyn Proje Bulunamadı!");
+            if (form.ParentProjectIds != null && form.ParentProjectIds.Count != 0)
+            {
+                foreach (var parentId in form.ParentProjectIds)
+                    _ = await _projectRepository.GetByIdAsync(parentId) ?? throw new NotFoundException($"ID {parentId} ile ebeveyn proje bulunamadı!");
+            }
+
             if (form.ClientId is not null)
                 _ = await _clientRepository.GetByIdAsync(form.ClientId) ?? throw new NotFoundException("Müşteri Bulunamadı!");
 
@@ -85,7 +93,28 @@ namespace PMM.Core.Services
             project.CreatedById = LoggedInUser.Id;
             _projectRepository.Create(project);
             await _projectRepository.SaveChangesAsync();
-            return ProjectMapper.Map(project);
+
+            if (form.ParentProjectIds != null && form.ParentProjectIds.Count != 0)
+            {
+                foreach (var parentId in form.ParentProjectIds)
+                {
+                    var relation = new ProjectRelation
+                    {
+                        ParentProjectId = parentId,
+                        ChildProjectId = project.Id,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedById = LoggedInUser.Id
+                    };
+                    _projectRelationRepository.Create(relation);
+                }
+                await _projectRelationRepository.SaveChangesAsync();
+            }
+
+            var createdProject = await _projectRepository.Query(p => p.Id == project.Id)
+                .Include(p => p.ParentRelations)
+                .FirstOrDefaultAsync();
+
+            return ProjectMapper.Map(createdProject);
         }
 
         public async Task<ProjectDto> EditProjectAsync(int projectId, UpdateProjectForm form)
@@ -99,7 +128,6 @@ namespace PMM.Core.Services
 
             var project = await _projectRepository.GetByIdAsync(projectId) ?? throw new NotFoundException("Proje Bulunamadı!");
 
-
             if (form.PlannedDeadline is not null && form.PlannedStartDate is not null)
             {
                 if (form.PlannedDeadline < form.PlannedStartDate)
@@ -111,15 +139,56 @@ namespace PMM.Core.Services
                     throw new BusinessException("Proje bitirme tarihi başlama tarihinden önce olamaz.");
             }
 
-            if (form.ParentProjectId is not null)
-                _ = await _projectRepository.GetByIdAsync(form.ParentProjectId) ?? throw new NotFoundException("Üst Proje Bulunamadı!");
+            if (form.ParentProjectIds != null && form.ParentProjectIds.Count != 0)
+            {
+                foreach (var parentId in form.ParentProjectIds)
+                {
+                    if (parentId == projectId)
+                        throw new BusinessException("Bir proje kendi parent'ı olamaz!");
+
+                    _ = await _projectRepository.GetByIdAsync(parentId) ?? throw new NotFoundException($"ID {parentId} ile üst proje bulunamadı!");
+
+                    var childProjects = await _projectRelationRepository.GetByParentProjectIdAsync(projectId);
+                    if (childProjects.Any(c => c.ChildProjectId == parentId))
+                        throw new BusinessException("Bir proje, kendi alt projelerinden birine üst proje olarak atanamaz.");
+                }
+            }
 
             project = ProjectMapper.Map(form, project);
             project.UpdatedAt = DateTime.UtcNow;
             project.UpdatedById = LoggedInUser.Id;
             _projectRepository.Update(project);
             await _projectRepository.SaveChangesAsync();
-            return ProjectMapper.Map(project);
+
+            var existingRelations = await _projectRelationRepository.GetByChildProjectIdAsync(projectId);
+            foreach (var relation in existingRelations)
+            {
+                _projectRelationRepository.Delete(relation);
+            }
+            await _projectRelationRepository.SaveChangesAsync();
+
+            // Yeni parent ilişkilerini oluştur
+            if (form.ParentProjectIds != null && form.ParentProjectIds.Any())
+            {
+                foreach (var parentId in form.ParentProjectIds)
+                {
+                    var relation = new ProjectRelation
+                    {
+                        ParentProjectId = parentId,
+                        ChildProjectId = project.Id,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedById = LoggedInUser.Id
+                    };
+                    _projectRelationRepository.Create(relation);
+                }
+                await _projectRelationRepository.SaveChangesAsync();
+            }
+
+            var updatedProject = await _projectRepository.Query(p => p.Id == project.Id)
+                .Include(p => p.ParentRelations)
+                .FirstOrDefaultAsync();
+
+            return ProjectMapper.Map(updatedProject);
         }
 
         public async Task<PagedResult<ProjectDto>> Query(QueryProjectForm form)
@@ -176,7 +245,7 @@ namespace PMM.Core.Services
                 query = query.Where(e => e.Priority == form.Priority);
 
             if (form.ParentProjectId.HasValue)
-                query = query.Where(e => e.ParentProjectId == form.ParentProjectId);
+                query = query.Where(e => e.ParentRelations.Any(pr => pr.ParentProjectId == form.ParentProjectId));
 
             if (form.ClientId.HasValue)
                 query = query.Where(e => e.ClientId == form.ClientId);
@@ -189,6 +258,7 @@ namespace PMM.Core.Services
             int totalRecords = await query.CountAsync();
 
             var projects = await query
+                .Include(p => p.ParentRelations)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -204,22 +274,34 @@ namespace PMM.Core.Services
 
         public async Task<ProjectDto> GetProjectAsync(int projectId)
         {
-            var project = await _projectRepository.GetByIdAsync(projectId);
+            var project = await _projectRepository.Query(p => p.Id == projectId)
+                .Include(p => p.ParentRelations)
+                .FirstOrDefaultAsync();
+
             if (project == null)
                 throw new NotFoundException("Proje Bulunamadı!");
+
             return ProjectMapper.Map(project);
         }
+
         public async Task<DetailedProjectDto> GetDetailedProjectAsync(int projectId)
         {
-            var project = await _projectRepository.GetByIdAsync(projectId);
+            var project = await _projectRepository.Query(p => p.Id == projectId)
+                .Include(p => p.ParentRelations)
+                    .ThenInclude(pr => pr.ParentProject)
+                .FirstOrDefaultAsync();
+
             if (project == null)
                 throw new NotFoundException("Proje Bulunamadı!");
 
             var detailedProjectDto = ProjectMapper.DetailedMap(project);
 
-            detailedProjectDto.ParentProject = project.ParentProjectId.HasValue
-                ? ProjectMapper.Map(await _projectRepository.GetByIdAsync(project.ParentProjectId.Value))
-                : null;
+            if (project.ParentRelations != null && project.ParentRelations.Any())
+            {
+                detailedProjectDto.ParentProjects = project.ParentRelations
+                    .Select(pr => ProjectMapper.Map(pr.ParentProject))
+                    .ToList();
+            }
 
             detailedProjectDto.Client = project.ClientId.HasValue
                 ? ClientMapper.Map(await _clientRepository.GetByIdAsync(project.ClientId.Value))
@@ -233,6 +315,7 @@ namespace PMM.Core.Services
                 var updatedBy = await _userRepository.GetByIdAsync(project.UpdatedById);
                 detailedProjectDto.UpdatedByUser = updatedBy != null ? IdNameMapper.Map(updatedBy.Id, updatedBy.Name) : null;
             }
+
             return detailedProjectDto;
         }
     }

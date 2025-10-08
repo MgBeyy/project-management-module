@@ -11,8 +11,8 @@ namespace PMM.Data.Contexts.ClassMaps
             builder.ToTable("ProjectAssignments");
             builder.HasKey(pa => pa.Id);
             builder.Property(pa => pa.Id).ValueGeneratedOnAdd();
-            builder.Property(pa => pa.StartedAt).IsRequired(false);
-            builder.Property(pa => pa.EndAt).IsRequired(false);
+            builder.Property(pa => pa.StartedAt).IsRequired(false).HasColumnType("date");
+            builder.Property(pa => pa.EndAt).IsRequired(false).HasColumnType("date");
             builder.Property(pa => pa.ExpectedHours).IsRequired(false);
             builder.Property(pa => pa.SpentHours).IsRequired(false);
             builder.Property(pa => pa.Role).IsRequired().HasConversion<string>();
