@@ -1,5 +1,5 @@
 import CrudModal from "../features/crud-modal/components/crud-modal";
-import CustomTable from "../features/table/components/custom-table";
+import CustomTable from "../features/filters/components/projcets-table";
 import { Divider } from "antd";
 
 export default function Activities() {
