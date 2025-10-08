@@ -15,8 +15,8 @@ namespace PMM.Core.Forms
         public DateOnly? PlannedDeadline { get; set; }
         [Range(0, int.MaxValue, ErrorMessage = "Planlanan toplam saat negatif bir değer alamaz!")]
         public int? PlannedHours { get; set; }
-        public DateTime? StartedAt { get; set; }
-        public DateTime? EndAt { get; set; }
+        public DateOnly? StartedAt { get; set; }
+        public DateOnly? EndAt { get; set; }
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public EProjectStatus? Status { get; set; }
         [JsonConverter(typeof(JsonStringEnumConverter))]
