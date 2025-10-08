@@ -14,8 +14,8 @@ namespace PMM.Data.Contexts.ClassMaps
             builder.HasIndex(p => p.Code).IsUnique();
             builder.Property(p => p.Title).IsRequired().HasMaxLength(256);
             builder.Property(p => p.PlannedStartDate).IsRequired().HasColumnType("date");
-            builder.Property(p => p.PlannedDeadline).IsRequired().HasColumnType("date");
-            builder.Property(p => p.PlannedHours).IsRequired();
+            builder.Property(p => p.PlannedDeadline).IsRequired(false).HasColumnType("date");
+            builder.Property(p => p.PlannedHours).IsRequired(false);
             builder.Property(p => p.StartedAt).IsRequired(false);
             builder.Property(p => p.EndAt).IsRequired(false);
             builder.Property(p => p.Status).IsRequired().HasConversion<string>();
