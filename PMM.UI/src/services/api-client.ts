@@ -1,7 +1,7 @@
 import axios from "axios";
 import { toast } from "react-toastify";
 const apiClient = axios.create({
-  baseURL: "http://localhost:7087/api",
+  baseURL: "https://localhost:7087/api",
   withCredentials: true,
 });
 // apiClient.interceptors.request.use(config => {
