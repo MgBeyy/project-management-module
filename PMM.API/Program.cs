@@ -18,7 +18,6 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        // Enum'larý string olarak serialize et
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
@@ -60,7 +59,7 @@ using (var scope = app.Services.CreateScope())
 
 
 //CORS
-app.UseCors(WebApplicationBuilderExtension.MyAllowSpecificOrigins);
+app.UseCors("AllowFrontend");
 
 app.UseHttpsRedirection();
 

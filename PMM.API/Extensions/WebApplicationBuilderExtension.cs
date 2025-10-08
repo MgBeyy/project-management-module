@@ -49,12 +49,13 @@ namespace PMM.API.Extensions
             // ===== CORS Configuration (Mandatory for API/Frontend communication) =====
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy(name: MyAllowSpecificOrigins,
+                options.AddPolicy("AllowFrontend",
                     policy =>
                     {
-                        policy.AllowAnyOrigin()
+                        policy.WithOrigins("http://localhost:5173")
                               .AllowAnyHeader()
-                              .AllowAnyMethod();
+                              .AllowAnyMethod()
+                              .AllowCredentials();
                     });
             });
 

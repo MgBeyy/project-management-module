@@ -57,5 +57,15 @@ namespace PMM.API.Controllers
             var task = await _taskService.EditTaskAsync(taskId, form);
             return new ApiResponse(task, StatusCodes.Status200OK);
         }
+
+        [ProducesResponseType(typeof(List<TaskDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [HttpGet("{taskId:int}/subtasks")]
+        public async Task<ApiResponse> GetSubTasksByTaskId(int taskId)
+        {
+            var subTasks = await _taskService.GetSubTasksByTaskId(taskId);
+            return new ApiResponse(subTasks, StatusCodes.Status200OK);
+        }
     }
 }
