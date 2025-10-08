@@ -1,5 +1,6 @@
 ﻿using AutoWrapper.Wrappers;
 using Microsoft.AspNetCore.Mvc;
+using PMM.Core.Common;
 using PMM.Core.DTOs;
 using PMM.Core.Forms;
 using PMM.Core.Services;
@@ -26,12 +27,13 @@ namespace PMM.API.Controllers
             await _clientService.AddClientAsync(form);
             return new ApiResponse("Client created successfully", StatusCodes.Status200OK);
         }
-        [ProducesResponseType(typeof(List<ClientDto>), StatusCodes.Status200OK)]
+
+        [ProducesResponseType(typeof(PagedResult<ClientDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [HttpGet()]
-        public async Task<ApiResponse> GetAll()
+        public async Task<ApiResponse> Query([FromQuery] QueryClientForm form)
         {
-            var clients = await _clientService.GetAllClients();
+            var clients = await _clientService.Query(form);
             return new ApiResponse(clients, StatusCodes.Status200OK);
         }
         [ProducesResponseType(typeof(ClientDto), StatusCodes.Status200OK)]
