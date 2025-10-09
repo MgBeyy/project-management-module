@@ -51,10 +51,10 @@ namespace PMM.Core.Services
                 throw new BusinessException(validation.Errors);
 
             if (form.EndTime <= form.StartTime)
-                throw new BusinessException("Bitiþ zamaný baþlangýç zamanýndan sonra olmalýdýr!");
+                throw new BusinessException("BitiÅŸ zamanÄ± baÅŸlangÄ±Ã§ zamanÄ±ndan sonra olmalÄ±dÄ±r!");
 
-            _ = await _taskRepository.GetByIdAsync(form.TaskId) ?? throw new NotFoundException("Görev Bulunamadý!");
-            _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("Kullanýcý Bulunamadý!");
+            _ = await _taskRepository.GetByIdAsync(form.TaskId) ?? throw new NotFoundException("GÃ¶rev BulunamadÄ±!");
+            _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("KullanÄ±cÄ± BulunamadÄ±!");
 
             var activity = ActivityMapper.Map(form);
             activity.CreatedAt = DateTime.UtcNow;
@@ -70,7 +70,7 @@ namespace PMM.Core.Services
         {
             var activity = await _activityRepository.GetByIdAsync(activityId);
             if (activity == null)
-                throw new NotFoundException("Aktivite Bulunamadý!");
+                throw new NotFoundException("Aktivite BulunamadÄ±!");
 
             return ActivityMapper.Map(activity);
         }
@@ -178,9 +178,9 @@ namespace PMM.Core.Services
                 throw new BusinessException(validation.Errors);
 
             if (form.EndTime <= form.StartTime)
-                throw new BusinessException("Bitiþ zamaný baþlangýç zamanýndan sonra olmalýdýr!");
+                throw new BusinessException("BitiÅŸ zamanÄ± baÅŸlangÄ±Ã§ zamanÄ±ndan sonra olmalÄ±dÄ±r!");
 
-            var activity = await _activityRepository.GetByIdAsync(activityId) ?? throw new NotFoundException("Aktivite Bulunamadý!");
+            var activity = await _activityRepository.GetByIdAsync(activityId) ?? throw new NotFoundException("Aktivite BulunamadÄ±!");
 
             ActivityMapper.Map(form, activity);
             activity.UpdatedAt = DateTime.UtcNow;
@@ -196,7 +196,7 @@ namespace PMM.Core.Services
         {
             var activity = await _activityRepository.GetByIdAsync(activityId);
             if (activity == null)
-                throw new NotFoundException("Aktivite Bulunamadý!");
+                throw new NotFoundException("Aktivite BulunamadÄ±!");
 
             _activityRepository.Delete(activity);
             await _activityRepository.SaveChangesAsync();
@@ -204,7 +204,7 @@ namespace PMM.Core.Services
 
         public async Task<List<ActivityDto>> GetActivitiesByTaskIdAsync(int taskId)
         {
-            _ = await _taskRepository.GetByIdAsync(taskId) ?? throw new NotFoundException("Görev Bulunamadý!");
+            _ = await _taskRepository.GetByIdAsync(taskId) ?? throw new NotFoundException("GÃ¶rev BulunamadÄ±!");
 
             var activities = _activityRepository.Query(a => a.TaskId == taskId);
             return ActivityMapper.Map(await activities.ToListAsync());
@@ -212,7 +212,7 @@ namespace PMM.Core.Services
 
         public async Task<List<ActivityDto>> GetActivitiesByUserIdAsync(int userId)
         {
-            _ = await _userRepository.GetByIdAsync(userId) ?? throw new NotFoundException("Kullanýcý Bulunamadý!");
+            _ = await _userRepository.GetByIdAsync(userId) ?? throw new NotFoundException("KullanÄ±cÄ± BulunamadÄ±!");
 
             var activities = _activityRepository.Query(a => a.UserId == userId);
             return ActivityMapper.Map(await activities.ToListAsync());

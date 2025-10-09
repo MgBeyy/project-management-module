@@ -43,7 +43,7 @@ namespace PMM.Core.Services
         {
             var client = await _clientRepository.GetByIdAsync(clientId);
             if (client == null)
-                throw new NotFoundException("Client Bulunamadı!");
+                throw new NotFoundException("Müşteri Bulunamadı!");
             _clientRepository.Delete(client);
             await _clientRepository.SaveChangesAsync();
         }
@@ -58,10 +58,10 @@ namespace PMM.Core.Services
                 throw new BusinessException(validation.Errors);
 
             if (clientId == null)
-                throw new ArgumentNullException("ClientId Boş Olamaz!");
+                throw new ArgumentNullException("Müşteri Id Boş Olamaz!");
             var client = await _clientRepository.GetByIdAsync(clientId);
             if (client == null)
-                throw new NotFoundException("Client Bulunamadı!");
+                throw new NotFoundException("Müşteri Bulunamadı!");
             client.Name = form.name;
             _clientRepository.Update(client);
             await _clientRepository.SaveChangesAsync();
@@ -73,7 +73,7 @@ namespace PMM.Core.Services
         {
             var client = await _clientRepository.GetByIdAsync(clientId);
             if (client == null)
-                throw new NotFoundException("Client Bulunamadı!");
+                throw new NotFoundException("Müşteri Bulunamadı!");
 
             return ClientMapper.Map(client);
         }

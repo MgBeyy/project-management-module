@@ -49,9 +49,9 @@ namespace PMM.Core.Services
             if (!validation.IsValid)
                 throw new BusinessException(validation.Errors);
 
-            _ = await _projectRepository.GetByIdAsync(form.ProjectId) ?? throw new NotFoundException("Ýlgili Proje Bulunamadý! Önce bir proje oluþturun");
+            _ = await _projectRepository.GetByIdAsync(form.ProjectId) ?? throw new NotFoundException("Ä°lgili Proje BulunamadÄ±! Ã–nce bir proje oluÅŸturun");
             if (form.ParentTaskId.HasValue)
-                _ = await _taskRepository.GetByIdAsync(form.ParentTaskId) ?? throw new NotFoundException("Ýlgili Üst Task Bulunamadý!");
+                _ = await _taskRepository.GetByIdAsync(form.ParentTaskId) ?? throw new NotFoundException("Ä°lgili Ã¼st gÃ¶rev BulunamadÄ±!");
 
             var task = TaskMapper.Map(form);
             task.CreatedAt = DateTime.UtcNow;
@@ -65,7 +65,7 @@ namespace PMM.Core.Services
         {
             var task = await _taskRepository.GetByIdAsync(taskId);
             if (task == null)
-                throw new NotFoundException("Task Bulunamadý!");
+                throw new NotFoundException("GÃ¶rev BulunamadÄ±!");
             return TaskMapper.Map(task);
         }
 
@@ -80,7 +80,7 @@ namespace PMM.Core.Services
 
             var task = await _taskRepository.GetByIdAsync(taskId);
             if (task == null)
-                throw new NotFoundException("Task Bulunamadý!");
+                throw new NotFoundException("GÃ¶rev BulunamadÄ±!");
 
             task = TaskMapper.Map(form, task);
             task.UpdatedAt = DateTime.UtcNow;

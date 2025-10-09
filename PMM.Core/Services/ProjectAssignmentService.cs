@@ -46,7 +46,7 @@ namespace PMM.Core.Services
                 throw new BusinessException(validation.Errors);
 
             _ = await _projectRepository.GetByIdAsync(form.ProjectId) ?? throw new NotFoundException("Proje Bulunamadı!");
-            _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("User Bulunamadı!");
+            _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("Kullanıcı Bulunamadı!");
 
             if (form.EndAt is not null && form.StartedAt is not null)
             {

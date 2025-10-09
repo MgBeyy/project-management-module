@@ -41,8 +41,8 @@ namespace PMM.Core.Services
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
                 throw new BusinessException(validation.Errors);
-            _ = await _taskRepository.GetByIdAsync(form.TaskId) ?? throw new NotFoundException("Görev Bulunamadý!");
-            _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("Kullanýcý Bulunamadý!");
+            _ = await _taskRepository.GetByIdAsync(form.TaskId) ?? throw new NotFoundException("GÃ¶rev BulunamadÄ±!");
+            _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("KullanÄ±cÄ± BulunamadÄ±!");
             var ta = TaskAssignmentMapper.Map(form);
             ta.CreatedAt = DateTime.UtcNow;
             ta.CreatedById = LoggedInUser.Id;
@@ -59,14 +59,14 @@ namespace PMM.Core.Services
         {
             var ta = await _taskAssignmentRepository.GetByIdAsync(taskAssignmentId);
             if (ta == null)
-                throw new NotFoundException("Görev Atamasý Bulunamadý!");
+                throw new NotFoundException("GÃ¶rev AtamasÄ± BulunamadÄ±!");
             return TaskAssignmentMapper.Map(ta);
         }
         public async Task DeleteTaskAssignmentAsync(int taskAssignmentId)
         {
             var ta = await _taskAssignmentRepository.GetByIdAsync(taskAssignmentId);
             if (ta == null)
-                throw new NotFoundException("Görev Atamasý Bulunamadý!");
+                throw new NotFoundException("GÃ¶rev AtamasÄ± BulunamadÄ±!");
             _taskAssignmentRepository.Delete(ta);
             await _taskAssignmentRepository.SaveChangesAsync();
         }

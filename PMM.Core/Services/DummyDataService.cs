@@ -46,7 +46,6 @@ namespace PMM.Core.Services
 
         private async Task SeedClientsAsync()
         {
-            // Mevcut veritabanýnda client var mý diye kontrol edelim, varsa ekleme yapmayalým.
             if (_clientRepository.QueryAll().Any()) return;
 
             var clients = new List<Client>
@@ -68,7 +67,6 @@ namespace PMM.Core.Services
 
         private async Task SeedUsersAsync()
         {
-            // Mevcut veritabanýnda user var mý diye kontrol edelim, varsa ekleme yapmayalým.
             if (_userRepository.QueryAll().Any()) return;
 
             var users = new List<User>
@@ -90,7 +88,6 @@ namespace PMM.Core.Services
 
         private async Task SeedProjectsAsync()
         {
-            // Mevcut veritabanýnda proje var mý diye kontrol edelim, varsa ekleme yapmayalým.
             if (_projectRepository.QueryAll().Any()) return;
 
             var clients = _clientRepository.QueryAll().ToList();
@@ -101,8 +98,6 @@ namespace PMM.Core.Services
 
             var projects = new List<Project>();
 
-            // ### 1. Adým: Ana Projeleri (Parent) Oluþturma ###
-            // Toplam 15 projenin bir kýsmýný ana proje olarak oluþturalým (örneðin 5 tane).
             for (int i = 1; i <= 5; i++)
             {
                 var randomUser = users[_rand.Next(users.Count)];
@@ -127,12 +122,10 @@ namespace PMM.Core.Services
             await _projectRepository.CreateRangeAsync(projects);
             await _projectRepository.SaveChangesAsync();
 
-            // ### 2. Adým: Alt Projeleri (Child) Oluþturma ###
             var parentProjects = _projectRepository.QueryAll().ToList();
             if (!parentProjects.Any()) return;
 
             var childProjects = new List<Project>();
-            // Kalan 10 projeyi oluþturalým
             for (int i = 1; i <= 10; i++)
             {
                 var randomUser = users[_rand.Next(users.Count)];
@@ -157,14 +150,11 @@ namespace PMM.Core.Services
             await _projectRepository.CreateRangeAsync(childProjects);
             await _projectRepository.SaveChangesAsync();
 
-            // ### 3. Adým: Proje Ýliþkilerini Oluþturma ###
-            // Her alt projeye 1-3 arasý rastgele parent proje ata
             var allProjects = _projectRepository.QueryAll().ToList();
             var projectRelations = new List<ProjectRelation>();
 
             foreach (var childProject in childProjects)
             {
-                // Rastgele 1-3 arasý parent sayýsý belirle
                 var parentCount = _rand.Next(1, 4);
                 var selectedParents = parentProjects.OrderBy(x => Guid.NewGuid()).Take(parentCount).ToList();
 
@@ -186,7 +176,6 @@ namespace PMM.Core.Services
 
         private async Task SeedProjectAssignmentsAsync()
         {
-            // Mevcut veritabanýnda atama var mý diye kontrol edelim, varsa ekleme yapmayalým.
             if (_projectAssignmentRepository.QueryAll().Any()) return;
 
             var projects = _projectRepository.QueryAll().ToList();
@@ -197,19 +186,16 @@ namespace PMM.Core.Services
             var assignments = new List<ProjectAssignment>();
             var roles = (EProjectAssignmentRole[])Enum.GetValues(typeof(EProjectAssignmentRole));
 
-            // Ayný kullanýcýyý ayný projeye tekrar atamamak için bir kontrol mekanizmasý
             var createdAssignments = new HashSet<(int, int)>();
 
-            // 30 adet rastgele atama oluþtur.
             for (int i = 0; i < 30; i++)
             {
                 var project = projects[_rand.Next(projects.Count)];
                 var user = users[_rand.Next(users.Count)];
 
-                // Eðer bu kullanýcý bu projeye zaten atandýysa, döngünün bu adýmýný atla ve yeni bir deneme yap.
                 if (createdAssignments.Contains((project.Id, user.Id)))
                 {
-                    i--; // Sayaç artýþýný telafi et
+                    i--;
                     continue;
                 }
 
@@ -217,7 +203,7 @@ namespace PMM.Core.Services
                 {
                     ProjectId = project.Id,
                     UserId = user.Id,
-                    Role = roles[_rand.Next(roles.Length)], // Rolü rastgele seç
+                    Role = roles[_rand.Next(roles.Length)], 
                     CreatedAt = DateTime.UtcNow,
                     CreatedById = user.Id
                 });
