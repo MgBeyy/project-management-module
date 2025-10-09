@@ -24,10 +24,16 @@ namespace PMM.Core.Services
     public class TaskService : _BaseService, ITaskService
     {
         private readonly ITaskRepository _taskRepository;
+        private readonly ITaskLabelRepository _taskLabelRepository;
+        private readonly ILabelRepository _labelRepository;
         private readonly ILogger<TaskService> _logger;
         private readonly IUserRepository _userRepository;
         private readonly IProjectRepository _projectRepository;
-        public TaskService(ITaskRepository taskRepository,
+
+        public TaskService(
+            ITaskRepository taskRepository,
+            ITaskLabelRepository taskLabelRepository,
+            ILabelRepository labelRepository,
             ILogger<TaskService> logger,
             IUserRepository userRepository,
             IProjectRepository projectRepository,
@@ -35,6 +41,8 @@ namespace PMM.Core.Services
             : base(principal, logger, userRepository)
         {
             _taskRepository = taskRepository;
+            _taskLabelRepository = taskLabelRepository;
+            _labelRepository = labelRepository;
             _logger = logger;
             _userRepository = userRepository;
             _projectRepository = projectRepository;
@@ -53,19 +61,54 @@ namespace PMM.Core.Services
             if (form.ParentTaskId.HasValue)
                 _ = await _taskRepository.GetByIdAsync(form.ParentTaskId) ?? throw new NotFoundException("İlgili üst görev Bulunamadı!");
 
+            // Label validation
+            if (form.LabelIds != null && form.LabelIds.Count != 0)
+            {
+                foreach (var labelId in form.LabelIds)
+                    _ = await _labelRepository.GetByIdAsync(labelId) ?? throw new NotFoundException($"ID {labelId} ile etiket bulunamadı!");
+            }
+
             var task = TaskMapper.Map(form);
             task.CreatedAt = DateTime.UtcNow;
             task.CreatedById = LoggedInUser.Id;
             _taskRepository.Create(task);
             await _taskRepository.SaveChangesAsync();
-            return TaskMapper.Map(task);
+
+            // Label relations oluşturma
+            if (form.LabelIds != null && form.LabelIds.Count != 0)
+            {
+                foreach (var labelId in form.LabelIds)
+                {
+                    var taskLabel = new TaskLabel
+                    {
+                        TaskId = task.Id,
+                        LabelId = labelId,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedById = LoggedInUser.Id
+                    };
+                    _taskLabelRepository.Create(taskLabel);
+                }
+                await _taskLabelRepository.SaveChangesAsync();
+            }
+
+            var createdTask = await _taskRepository.Query(t => t.Id == task.Id)
+                .Include(t => t.TaskLabels)
+                    .ThenInclude(tl => tl.Label)
+                .FirstOrDefaultAsync();
+
+            return TaskMapper.Map(createdTask);
         }
 
         public async Task<TaskDto> GetTaskAsync(int taskId)
         {
-            var task = await _taskRepository.GetByIdAsync(taskId);
+            var task = await _taskRepository.Query(t => t.Id == taskId)
+                .Include(t => t.TaskLabels)
+                    .ThenInclude(tl => tl.Label)
+                .FirstOrDefaultAsync();
+
             if (task == null)
                 throw new NotFoundException("Görev Bulunamadı!");
+
             return TaskMapper.Map(task);
         }
 
@@ -82,12 +125,49 @@ namespace PMM.Core.Services
             if (task == null)
                 throw new NotFoundException("Görev Bulunamadı!");
 
+            // Label validation
+            if (form.LabelIds != null && form.LabelIds.Count != 0)
+            {
+                foreach (var labelId in form.LabelIds)
+                    _ = await _labelRepository.GetByIdAsync(labelId) ?? throw new NotFoundException($"ID {labelId} ile etiket bulunamadı!");
+            }
+
             task = TaskMapper.Map(form, task);
             task.UpdatedAt = DateTime.UtcNow;
             task.UpdatedById = LoggedInUser.Id;
             _taskRepository.Update(task);
             await _taskRepository.SaveChangesAsync();
-            return TaskMapper.Map(task);
+
+            // Mevcut label relations silme ve yeni oluşturma
+            var existingLabels = await _taskLabelRepository.GetByTaskIdAsync(taskId);
+            foreach (var taskLabel in existingLabels)
+            {
+                _taskLabelRepository.Delete(taskLabel);
+            }
+            await _taskLabelRepository.SaveChangesAsync();
+
+            if (form.LabelIds != null && form.LabelIds.Any())
+            {
+                foreach (var labelId in form.LabelIds)
+                {
+                    var taskLabel = new TaskLabel
+                    {
+                        TaskId = task.Id,
+                        LabelId = labelId,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedById = LoggedInUser.Id
+                    };
+                    _taskLabelRepository.Create(taskLabel);
+                }
+                await _taskLabelRepository.SaveChangesAsync();
+            }
+
+            var updatedTask = await _taskRepository.Query(t => t.Id == task.Id)
+                .Include(t => t.TaskLabels)
+                    .ThenInclude(tl => tl.Label)
+                .FirstOrDefaultAsync();
+
+            return TaskMapper.Map(updatedTask);
         }
 
         public async Task<PagedResult<TaskDto>> Query(QueryTaskForm form)
@@ -142,6 +222,8 @@ namespace PMM.Core.Services
             int pageSize = form.PageSize ?? 10;
             int totalRecords = await query.CountAsync();
             var tasks = await query
+                .Include(t => t.TaskLabels)
+                    .ThenInclude(tl => tl.Label)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -157,7 +239,10 @@ namespace PMM.Core.Services
 
         public async Task<List<TaskDto>> GetSubTasksByTaskId(int taskId)
         {
-            var subTasks = await _taskRepository.Query(x => x.ParentTaskId == taskId).ToListAsync();
+            var subTasks = await _taskRepository.Query(x => x.ParentTaskId == taskId)
+                .Include(t => t.TaskLabels)
+                    .ThenInclude(tl => tl.Label)
+                .ToListAsync();
             return TaskMapper.Map(subTasks);
         }
     }

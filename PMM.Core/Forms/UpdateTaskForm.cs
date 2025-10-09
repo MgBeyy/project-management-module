@@ -12,5 +12,6 @@ namespace PMM.Core.Forms
         public int Weight { get; set; }
         [Required]
         public ETaskStatus Status { get; set; }
+        public List<int>? LabelIds { get; set; }
     }
 }

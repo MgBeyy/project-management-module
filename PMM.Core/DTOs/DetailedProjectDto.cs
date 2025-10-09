@@ -20,6 +20,8 @@ namespace PMM.Core.DTOs
         public int? ClientId { get; set; }
         public ClientDto? Client { get; set; }
 
+        public List<LabelDto>? Labels { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public int? CreatedById { get; set; }
         public IdNameDto? CreatedByUser { get; set; }

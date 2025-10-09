@@ -26,11 +26,15 @@ namespace PMM.Core.Services
         private readonly ILogger<ProjectService> _logger;
         private readonly IProjectRepository _projectRepository;
         private readonly IProjectRelationRepository _projectRelationRepository;
+        private readonly IProjectLabelRepository _projectLabelRepository;
+        private readonly ILabelRepository _labelRepository;
         private readonly IClientRepository _clientRepository;
         private readonly IUserRepository _userRepository;
 
         public ProjectService(IProjectRepository projectRepository,
             IProjectRelationRepository projectRelationRepository,
+            IProjectLabelRepository projectLabelRepository,
+            ILabelRepository labelRepository,
             IClientRepository clientRepository,
             ILogger<ProjectService> logger,
             IUserRepository userRepository,
@@ -40,6 +44,8 @@ namespace PMM.Core.Services
             _logger = logger;
             _projectRepository = projectRepository;
             _projectRelationRepository = projectRelationRepository;
+            _projectLabelRepository = projectLabelRepository;
+            _labelRepository = labelRepository;
             _clientRepository = clientRepository;
             _userRepository = userRepository;
         }
@@ -88,12 +94,20 @@ namespace PMM.Core.Services
             if (form.ClientId is not null)
                 _ = await _clientRepository.GetByIdAsync(form.ClientId) ?? throw new NotFoundException("Müşteri Bulunamadı!");
 
+            // Label validation
+            if (form.LabelIds != null && form.LabelIds.Count != 0)
+            {
+                foreach (var labelId in form.LabelIds)
+                    _ = await _labelRepository.GetByIdAsync(labelId) ?? throw new NotFoundException($"ID {labelId} ile etiket bulunamadı!");
+            }
+
             var project = ProjectMapper.Map(form);
             project.CreatedAt = DateTime.UtcNow;
             project.CreatedById = LoggedInUser.Id;
             _projectRepository.Create(project);
             await _projectRepository.SaveChangesAsync();
 
+            // Parent relations oluşturma
             if (form.ParentProjectIds != null && form.ParentProjectIds.Count != 0)
             {
                 foreach (var parentId in form.ParentProjectIds)
@@ -110,8 +124,27 @@ namespace PMM.Core.Services
                 await _projectRelationRepository.SaveChangesAsync();
             }
 
+            // Label relations oluşturma
+            if (form.LabelIds != null && form.LabelIds.Count != 0)
+            {
+                foreach (var labelId in form.LabelIds)
+                {
+                    var projectLabel = new ProjectLabel
+                    {
+                        ProjectId = project.Id,
+                        LabelId = labelId,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedById = LoggedInUser.Id
+                    };
+                    _projectLabelRepository.Create(projectLabel);
+                }
+                await _projectLabelRepository.SaveChangesAsync();
+            }
+
             var createdProject = await _projectRepository.Query(p => p.Id == project.Id)
                 .Include(p => p.ParentRelations)
+                .Include(p => p.ProjectLabels)
+                    .ThenInclude(pl => pl.Label)
                 .FirstOrDefaultAsync();
 
             return ProjectMapper.Map(createdProject);
@@ -154,12 +187,20 @@ namespace PMM.Core.Services
                 }
             }
 
+            // Label validation
+            if (form.LabelIds != null && form.LabelIds.Count != 0)
+            {
+                foreach (var labelId in form.LabelIds)
+                    _ = await _labelRepository.GetByIdAsync(labelId) ?? throw new NotFoundException($"ID {labelId} ile etiket bulunamadı!");
+            }
+
             project = ProjectMapper.Map(form, project);
             project.UpdatedAt = DateTime.UtcNow;
             project.UpdatedById = LoggedInUser.Id;
             _projectRepository.Update(project);
             await _projectRepository.SaveChangesAsync();
 
+            // Mevcut parent relations silme ve yeni oluşturma
             var existingRelations = await _projectRelationRepository.GetByChildProjectIdAsync(projectId);
             foreach (var relation in existingRelations)
             {
@@ -167,7 +208,6 @@ namespace PMM.Core.Services
             }
             await _projectRelationRepository.SaveChangesAsync();
 
-            // Yeni parent ilişkilerini oluştur
             if (form.ParentProjectIds != null && form.ParentProjectIds.Any())
             {
                 foreach (var parentId in form.ParentProjectIds)
@@ -184,8 +224,34 @@ namespace PMM.Core.Services
                 await _projectRelationRepository.SaveChangesAsync();
             }
 
+            // Mevcut label relations silme ve yeni oluşturma
+            var existingLabels = await _projectLabelRepository.GetByProjectIdAsync(projectId);
+            foreach (var projectLabel in existingLabels)
+            {
+                _projectLabelRepository.Delete(projectLabel);
+            }
+            await _projectLabelRepository.SaveChangesAsync();
+
+            if (form.LabelIds != null && form.LabelIds.Any())
+            {
+                foreach (var labelId in form.LabelIds)
+                {
+                    var projectLabel = new ProjectLabel
+                    {
+                        ProjectId = project.Id,
+                        LabelId = labelId,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedById = LoggedInUser.Id
+                    };
+                    _projectLabelRepository.Create(projectLabel);
+                }
+                await _projectLabelRepository.SaveChangesAsync();
+            }
+
             var updatedProject = await _projectRepository.Query(p => p.Id == project.Id)
                 .Include(p => p.ParentRelations)
+                .Include(p => p.ProjectLabels)
+                    .ThenInclude(pl => pl.Label)
                 .FirstOrDefaultAsync();
 
             return ProjectMapper.Map(updatedProject);
@@ -259,6 +325,8 @@ namespace PMM.Core.Services
 
             var projects = await query
                 .Include(p => p.ParentRelations)
+                .Include(p => p.ProjectLabels)
+                    .ThenInclude(pl => pl.Label)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -276,6 +344,8 @@ namespace PMM.Core.Services
         {
             var project = await _projectRepository.Query(p => p.Id == projectId)
                 .Include(p => p.ParentRelations)
+                .Include(p => p.ProjectLabels)
+                    .ThenInclude(pl => pl.Label)
                 .FirstOrDefaultAsync();
 
             if (project == null)
@@ -289,6 +359,8 @@ namespace PMM.Core.Services
             var project = await _projectRepository.Query(p => p.Id == projectId)
                 .Include(p => p.ParentRelations)
                     .ThenInclude(pr => pr.ParentProject)
+                .Include(p => p.ProjectLabels)
+                    .ThenInclude(pl => pl.Label)
                 .FirstOrDefaultAsync();
 
             if (project == null)

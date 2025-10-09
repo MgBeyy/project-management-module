@@ -16,10 +16,13 @@ namespace PMM.Core.Forms
         public DateOnly? StartedAt { get; set; }
         public DateOnly? EndAt { get; set; }
         [JsonConverter(typeof(JsonStringEnumConverter))]
+        [Required]
         public EProjectStatus? Status { get; set; }
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public EProjectPriority Priority { get; set; } = EProjectPriority.Regular;
 
         public List<int>? ParentProjectIds { get; set; }
+
+        public List<int>? LabelIds { get; set; }
     }
 }

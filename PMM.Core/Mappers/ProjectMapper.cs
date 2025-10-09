@@ -42,6 +42,9 @@ namespace PMM.Core.Mappers
                     .Select(pr => pr.ParentProjectId)
                     .ToList(),
                 ClientId = project.ClientId,
+                Labels = project.ProjectLabels?
+                    .Select(pl => LabelMapper.Map(pl.Label))
+                    .ToList(),
                 CreatedAt = project.CreatedAt,
                 CreatedById = project.CreatedById,
                 UpdatedAt = project.UpdatedAt,
@@ -69,6 +72,9 @@ namespace PMM.Core.Mappers
                 Status = project.Status,
                 Priority = project.Priority,
                 ClientId = project.ClientId,
+                Labels = project.ProjectLabels?
+                    .Select(pl => LabelMapper.Map(pl.Label))
+                    .ToList(),
                 CreatedAt = project.CreatedAt,
                 CreatedById = project.CreatedById,
                 UpdatedAt = project.UpdatedAt,

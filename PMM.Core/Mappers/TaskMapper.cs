@@ -30,6 +30,9 @@ namespace PMM.Core.Mappers
                 Description = task.Description,
                 Weight = task.Weight,
                 Status = task.Status,
+                Labels = task.TaskLabels?
+                    .Select(tl => LabelMapper.Map(tl.Label))
+                    .ToList(),
                 CreatedAt = task.CreatedAt,
                 CreatedById = task.CreatedById,
                 UpdatedAt = task.UpdatedAt,

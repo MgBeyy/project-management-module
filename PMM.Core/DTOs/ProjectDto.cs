@@ -18,6 +18,7 @@ namespace PMM.Core.DTOs
         public List<int>? ParentProjectIds { get; set; }
 
         public int? ClientId { get; set; }
+        public List<LabelDto>? Labels { get; set; }
         public int? CreatedById { get; set; }
         public DateTime CreatedAt { get; set; }
         public int? UpdatedById { get; set; }

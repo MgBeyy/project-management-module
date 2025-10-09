@@ -15,6 +15,7 @@ namespace PMM.Core.DTOs
         public DateTime? UpdatedAt { get; set; }
         public int? UpdatedById { get; set; }
         public int Weight { get; set; }
+        public List<LabelDto>? Labels { get; set; }
         // public List<TaskAssignmentDto> TaskAssignments { get; set; } // Ýleride eklenebilir
     }
 }
