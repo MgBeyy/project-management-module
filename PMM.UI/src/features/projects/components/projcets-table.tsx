@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import type { ColumnsType } from "antd/es/table";
 import { GetProjects } from "../services/get-projects";
 import Spinner from "../../../components/spinner";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { editProjectsRowInfo } from "@/store/slices/projects-select-row-info-slice";
 export default function CustomTable() {
-  // const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [totalItems, setTotalItems] = useState(0);
@@ -16,8 +16,9 @@ export default function CustomTable() {
   useEffect(() => {
     async function getProjectData() {
       try {
+        console.log("filtersValue in table:", filtersValue);
         const resulte = await GetProjects({
-          query: filtersValue,
+          query: { ...filtersValue, page: currentPage, pageSize: pageSize },
         });
         setTotalItems(resulte.totalRecords || 0);
         setData(resulte.data);
@@ -28,11 +29,10 @@ export default function CustomTable() {
       }
     }
     getProjectData();
-  }, [filtersValue]);
+  }, [filtersValue, pageSize, currentPage]);
   const dataSource = (data || [])
-    .filter(item => item != null) // null/undefined öğeleri filtrele
+    .filter(item => item != null)
     .map((item, index) => {
-      // ✅ Her bir property için güvenli erişim
       return {
         key: index + 1,
         Code: item?.code || "N/A",
@@ -48,7 +48,6 @@ export default function CustomTable() {
       };
     });
 
-  // Header component with tooltip for long titles
   const HeaderWithTooltip = ({
     title,
     maxWidth,
@@ -202,42 +201,11 @@ export default function CustomTable() {
     },
   ];
 
-  // const rowSelection = {
-  //   selectedRowKeys,
-  //   onChange: (selectedRowKeys: React.Key[], selectedRows: any[]) => {
-  //     console.log("Selected Row Keys:", selectedRowKeys);
-  //     console.log("Selected Rows:", selectedRows);
-  //     setSelectedRowKeys(selectedRowKeys);
-  //   },
-  //   onSelect: (record: any, selected: boolean, selectedRows: any[]) => {
-  //     console.log(
-  //       "Record:",
-  //       record,
-  //       "Selected:",
-  //       selected,
-  //       "Selected Rows:",
-  //       selectedRows
-  //     );
-  //   },
-  //   onSelectAll: (
-  //     selected: boolean,
-  //     selectedRows: any[],
-  //     changeRows: any[]
-  //   ) => {
-  //     console.log(
-  //       "Select All:",
-  //       selected,
-  //       "Selected Rows:",
-  //       selectedRows,
-  //       "Change Rows:",
-  //       changeRows
-  //     );
-  //   },
-  // };
   const [selectedRowKey, setSelectedRowKey] = useState(null);
-
+  const dispatch = useDispatch();
   function onRowClick(record: any) {
-    setSelectedRowKey(record.key); // ya da record.key, veri yapına bağlı
+    setSelectedRowKey(record.key);
+    dispatch(editProjectsRowInfo(record));
   }
 
   return (
@@ -253,8 +221,6 @@ export default function CustomTable() {
           bordered
           size="small"
           scroll={{ x: 1200, y: "35vh" }}
-          // rowSelection={rowSelection}
-
           pagination={{
             current: currentPage,
             pageSize: pageSize,
@@ -265,10 +231,10 @@ export default function CustomTable() {
             pageSizeOptions: ["50", "100", "150", "200"],
             onChange: (page, size) => {
               setCurrentPage(page);
-              setPageSize(size || 10);
+              setPageSize(size || 50);
             },
             onShowSizeChange: (_current, size) => {
-              setCurrentPage(1); // Reset to first page when changing page size
+              setCurrentPage(1);
               setPageSize(size);
             },
           }}
@@ -280,24 +246,23 @@ export default function CustomTable() {
                 console.log("Row clicked:", record, "\n", rowIndex);
                 onRowClick(record);
               },
-              // ✅ Sadece inline style kullanıyoruz
               style: {
-                backgroundColor: isSelected ? "#E6F4FF" : "transparent", // ✅ transparent kullan
+                backgroundColor: isSelected ? "#E6F4FF" : "transparent",
                 cursor: "pointer",
                 transition: "background-color 0.2s ease",
               },
               onMouseEnter: e => {
                 if (isSelected) {
-                  e.currentTarget.style.backgroundColor = "#D6E4FF"; // Seçili + hover
+                  e.currentTarget.style.backgroundColor = "#D6E4FF";
                 } else {
-                  e.currentTarget.style.backgroundColor = "#F1F5FF"; // ✅ Normal hover
+                  e.currentTarget.style.backgroundColor = "#F1F5FF";
                 }
               },
               onMouseLeave: e => {
                 if (isSelected) {
-                  e.currentTarget.style.backgroundColor = "#E6F4FF"; // Seçili rengine dön
+                  e.currentTarget.style.backgroundColor = "#E6F4FF";
                 } else {
-                  e.currentTarget.style.backgroundColor = "transparent"; // ✅ transparent'a dön
+                  e.currentTarget.style.backgroundColor = "transparent";
                 }
               },
             };

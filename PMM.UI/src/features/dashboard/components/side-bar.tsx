@@ -10,6 +10,7 @@ export default function SideBar() {
   const itemsOptionsEn = ["Projects", "Tasks", "Activities"];
   const items: MenuProps["items"] = [FaFolderOpen].map((icon, index) => {
     return {
+      className: "h-screen",
       key: `PM_Module`,
       icon: React.createElement(icon),
       label: `PM Module`,

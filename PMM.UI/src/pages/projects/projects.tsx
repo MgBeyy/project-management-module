@@ -1,6 +1,6 @@
-import ProjectsFilter from "@/features/filters/components/projects-filter";
-import CrudModal from "../features/crud-modal/components/crud-modal";
-import CustomTable from "../features/filters/components/projcets-table";
+import ProjectsFilter from "@/features/projects/components/projects-filter";
+import CrudModal from "@/features/projects/components/projects-crud-modal";
+import CustomTable from "@/features/projects/components/projcets-table";
 
 export default function Projects() {
   return (

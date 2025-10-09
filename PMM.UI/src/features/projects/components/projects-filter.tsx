@@ -10,7 +10,7 @@ export default function ProjectsFilter() {
 
   const onChangeNumber: InputNumberProps["onChange"] = value => {
     console.log("Saat değişti:", value);
-    form.setFieldValue("PlannedHourse", value); // ✅ Backend field adını kullan
+    form.setFieldValue("PlannedHourse", value);
   };
 
   const onChangeDate: DatePickerProps["onChange"] = (date, dateString) => {
@@ -24,13 +24,9 @@ export default function ProjectsFilter() {
   const handleSubmit = (values: any) => {
     console.log("✅ Form değerleri (raw):", values);
 
-    // ✅ Tüm Moment/Day.js objelerini string'e çevir
     const serializedPayload = {
-      // ✅ Backend'e uygun field isimleri
       Code: values.code || undefined,
       Title: values.title || undefined,
-
-      // ✅ Tarihleri string formatına çevir
       PlannedStartDate: values.plannedStartDate
         ? values.plannedStartDate
         : undefined,
@@ -40,17 +36,12 @@ export default function ProjectsFilter() {
       StartedAt: values.startedAt ? values.startedAt : undefined,
       EndAt: values.endAt ? values.endAt : undefined,
 
-      // ✅ Diğer alanlar
       PlannedHourse: values.plannedHours || undefined,
       Status: (values.status as ProjectStatus) || undefined,
       Priority: (values.priority as ProjectPriority) || undefined,
-
-      // ✅ Pagination
       page: 1,
       pageSize: 50,
     };
-
-    // ✅ Undefined değerleri temizle
     const cleanedPayload = Object.fromEntries(
       Object.entries(serializedPayload).filter(
         ([_, value]) => value !== undefined && value !== null && value !== ""
@@ -58,25 +49,20 @@ export default function ProjectsFilter() {
     );
 
     console.log("📤 Redux'a gönderilen temizlenmiş payload:", cleanedPayload);
-
     dispatch(addProjectFilter(cleanedPayload));
   };
 
   const handleReset = () => {
     form.resetFields();
-    dispatch(addProjectFilter({})); // ✅ Boş obje gönder
+    dispatch(addProjectFilter({}));
     console.log("Form ve Redux temizlendi");
   };
-
-  // ✅ Status options
   const statusOptions = [
     { value: ProjectStatus.ACTIVE, label: "Aktif" },
     { value: ProjectStatus.INACTIVE, label: "Pasif" },
     { value: ProjectStatus.COMPLETED, label: "Tamamlandı" },
     { value: ProjectStatus.PLANNED, label: "Planlandı" },
   ];
-
-  // ✅ Priority options
   const priorityOptions = [
     { value: ProjectPriority.YUKSEK, label: "Yüksek" },
     { value: ProjectPriority.ORTA, label: "Orta" },
@@ -113,7 +99,7 @@ export default function ProjectsFilter() {
             placeholder="Başlangıç tarihi"
             size="middle"
             style={{ width: "100%" }}
-            format="YYYY-MM-DD" // ✅ Format belirt
+            format="YYYY-MM-DD"
           />
         </Form.Item>
 
@@ -126,7 +112,7 @@ export default function ProjectsFilter() {
             placeholder="Bitiş tarihi"
             size="middle"
             style={{ width: "100%" }}
-            format="YYYY-MM-DD" // ✅ Format belirt
+            format="YYYY-MM-DD"
           />
         </Form.Item>
 
@@ -147,7 +133,7 @@ export default function ProjectsFilter() {
             placeholder="Başlangıç zamanı"
             size="middle"
             style={{ width: "100%" }}
-            format="YYYY-MM-DD HH:mm:ss" // ✅ Format belirt
+            format="YYYY-MM-DD HH:mm:ss"
           />
         </Form.Item>
 
@@ -157,7 +143,7 @@ export default function ProjectsFilter() {
             placeholder="Bitiş zamanı"
             size="middle"
             style={{ width: "100%" }}
-            format="YYYY-MM-DD HH:mm:ss" // ✅ Format belirt
+            format="YYYY-MM-DD HH:mm:ss"
           />
         </Form.Item>
 
