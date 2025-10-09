@@ -44,9 +44,9 @@ namespace PMM.Core.Services
         {
             if (form == null)
                 throw new ArgumentNullException("CreateFileForm is empty");
-            _ = await _projectRepository.GetByIdAsync(form.ProjectId) ?? throw new NotFoundException("Proje Bulunamadý!");
+            _ = await _projectRepository.GetByIdAsync(form.ProjectId) ?? throw new NotFoundException("Proje BulunamadÄ±!");
             if (form.FileContent == null || form.FileContent.Length == 0)
-                throw new ArgumentException("Dosya içeriði boþ!");
+                throw new ArgumentException("Dosya iÃ§eriÄŸi boÅŸ!");
             var extension = Path.GetExtension(form.FileContent.FileName);
             var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
             var fileNameWithExtension = string.IsNullOrWhiteSpace(extension)
@@ -71,7 +71,7 @@ namespace PMM.Core.Services
         {
             var file = await _fileRepository.GetByIdAsync(fileId);
             if (file == null)
-                throw new NotFoundException("Dosya Bulunamadý!");
+                throw new NotFoundException("Dosya BulunamadÄ±!");
             return FileMapper.Map(file);
         }
 
@@ -81,7 +81,7 @@ namespace PMM.Core.Services
                 throw new ArgumentNullException("UpdateFileForm is empty");
             var file = await _fileRepository.GetByIdAsync(fileId);
             if (file == null)
-                throw new NotFoundException("Dosya Bulunamadý!");
+                throw new NotFoundException("Dosya BulunamadÄ±!");
             file.Title = form.Title;
             file.Description = form.Description;
             file.UpdatedAt = DateTime.UtcNow;
@@ -95,7 +95,7 @@ namespace PMM.Core.Services
         {
             var file = await _fileRepository.GetByIdAsync(fileId);
             if (file == null)
-                throw new NotFoundException("Dosya Bulunamadý!");
+                throw new NotFoundException("Dosya BulunamadÄ±!");
             if (File.Exists(file.File))
                 File.Delete(file.File);
             _fileRepository.Delete(file);

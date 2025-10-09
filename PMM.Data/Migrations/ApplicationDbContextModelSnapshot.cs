@@ -22,6 +22,60 @@ namespace PMM.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("PMM.Data.Entities.Activity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("EndTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("TotalHours")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("TaskId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Activities", (string)null);
+                });
+
             modelBuilder.Entity("PMM.Data.Entities.Client", b =>
                 {
                     b.Property<int>("Id")
@@ -87,6 +141,48 @@ namespace PMM.Data.Migrations
                     b.ToTable("Files", (string)null);
                 });
 
+            modelBuilder.Entity("PMM.Data.Entities.Label", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("Labels", (string)null);
+                });
+
             modelBuilder.Entity("PMM.Data.Entities.Project", b =>
                 {
                     b.Property<int>("Id")
@@ -108,30 +204,25 @@ namespace PMM.Data.Migrations
                     b.Property<int>("CreatedById")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime?>("EndAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateOnly?>("EndAt")
+                        .HasColumnType("date");
 
-                    b.Property<int?>("ParentProjectId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("PlannedDeadline")
-                        .IsRequired()
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateOnly?>("PlannedDeadline")
+                        .HasColumnType("date");
 
                     b.Property<int?>("PlannedHours")
-                        .IsRequired()
                         .HasColumnType("integer");
 
-                    b.Property<DateTime?>("PlannedStartDate")
+                    b.Property<DateOnly?>("PlannedStartDate")
                         .IsRequired()
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("date");
 
                     b.Property<string>("Priority")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("StartedAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateOnly?>("StartedAt")
+                        .HasColumnType("date");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -157,8 +248,6 @@ namespace PMM.Data.Migrations
 
                     b.HasIndex("CreatedById");
 
-                    b.HasIndex("ParentProjectId");
-
                     b.HasIndex("UpdatedById");
 
                     b.ToTable("Projects", (string)null);
@@ -178,8 +267,8 @@ namespace PMM.Data.Migrations
                     b.Property<int>("CreatedById")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime?>("EndAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateOnly?>("EndAt")
+                        .HasColumnType("date");
 
                     b.Property<int?>("ExpectedHours")
                         .HasColumnType("integer");
@@ -194,8 +283,8 @@ namespace PMM.Data.Migrations
                     b.Property<int?>("SpentHours")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime?>("StartedAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateOnly?>("StartedAt")
+                        .HasColumnType("date");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -217,6 +306,86 @@ namespace PMM.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("ProjectAssignments", (string)null);
+                });
+
+            modelBuilder.Entity("PMM.Data.Entities.ProjectLabel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LabelId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("LabelId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.HasIndex("ProjectId", "LabelId")
+                        .IsUnique();
+
+                    b.ToTable("ProjectLabels", (string)null);
+                });
+
+            modelBuilder.Entity("PMM.Data.Entities.ProjectRelation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ChildProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ParentProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChildProjectId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.HasIndex("ParentProjectId", "ChildProjectId")
+                        .IsUnique();
+
+                    b.ToTable("ProjectRelations", (string)null);
                 });
 
             modelBuilder.Entity("PMM.Data.Entities.TaskAssignment", b =>
@@ -312,6 +481,46 @@ namespace PMM.Data.Migrations
                     b.ToTable("Tasks", (string)null);
                 });
 
+            modelBuilder.Entity("PMM.Data.Entities.TaskLabel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LabelId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("LabelId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.HasIndex("TaskId", "LabelId")
+                        .IsUnique();
+
+                    b.ToTable("TaskLabels", (string)null);
+                });
+
             modelBuilder.Entity("PMM.Data.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -335,6 +544,40 @@ namespace PMM.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("PMM.Data.Entities.Activity", b =>
+                {
+                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PMM.Data.Entities.TaskEntity", "Task")
+                        .WithMany("Activities")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PMM.Data.Entities.User", "User")
+                        .WithMany("Activities")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Task");
+
+                    b.Navigation("UpdatedByUser");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("PMM.Data.Entities.FileEntity", b =>
@@ -363,6 +606,24 @@ namespace PMM.Data.Migrations
                     b.Navigation("UpdatedByUser");
                 });
 
+            modelBuilder.Entity("PMM.Data.Entities.Label", b =>
+                {
+                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("UpdatedByUser");
+                });
+
             modelBuilder.Entity("PMM.Data.Entities.Project", b =>
                 {
                     b.HasOne("PMM.Data.Entities.Client", "Client")
@@ -375,10 +636,6 @@ namespace PMM.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.Project", "ParentProject")
-                        .WithMany("ChildProjects")
-                        .HasForeignKey("ParentProjectId");
-
                     b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
                         .WithMany()
                         .HasForeignKey("UpdatedById");
@@ -386,8 +643,6 @@ namespace PMM.Data.Migrations
                     b.Navigation("Client");
 
                     b.Navigation("CreatedByUser");
-
-                    b.Navigation("ParentProject");
 
                     b.Navigation("UpdatedByUser");
                 });
@@ -423,6 +678,74 @@ namespace PMM.Data.Migrations
                     b.Navigation("UpdatedByUser");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PMM.Data.Entities.ProjectLabel", b =>
+                {
+                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PMM.Data.Entities.Label", "Label")
+                        .WithMany("ProjectLabels")
+                        .HasForeignKey("LabelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PMM.Data.Entities.Project", "Project")
+                        .WithMany("ProjectLabels")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Label");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("UpdatedByUser");
+                });
+
+            modelBuilder.Entity("PMM.Data.Entities.ProjectRelation", b =>
+                {
+                    b.HasOne("PMM.Data.Entities.Project", "ChildProject")
+                        .WithMany("ParentRelations")
+                        .HasForeignKey("ChildProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PMM.Data.Entities.Project", "ParentProject")
+                        .WithMany("ChildRelations")
+                        .HasForeignKey("ParentProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ChildProject");
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("ParentProject");
+
+                    b.Navigation("UpdatedByUser");
                 });
 
             modelBuilder.Entity("PMM.Data.Entities.TaskAssignment", b =>
@@ -489,31 +812,82 @@ namespace PMM.Data.Migrations
                     b.Navigation("UpdatedByUser");
                 });
 
+            modelBuilder.Entity("PMM.Data.Entities.TaskLabel", b =>
+                {
+                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PMM.Data.Entities.Label", "Label")
+                        .WithMany("TaskLabels")
+                        .HasForeignKey("LabelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PMM.Data.Entities.TaskEntity", "Task")
+                        .WithMany("TaskLabels")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Label");
+
+                    b.Navigation("Task");
+
+                    b.Navigation("UpdatedByUser");
+                });
+
             modelBuilder.Entity("PMM.Data.Entities.Client", b =>
                 {
                     b.Navigation("Projects");
+                });
+
+            modelBuilder.Entity("PMM.Data.Entities.Label", b =>
+                {
+                    b.Navigation("ProjectLabels");
+
+                    b.Navigation("TaskLabels");
                 });
 
             modelBuilder.Entity("PMM.Data.Entities.Project", b =>
                 {
                     b.Navigation("Assignments");
 
-                    b.Navigation("ChildProjects");
+                    b.Navigation("ChildRelations");
 
                     b.Navigation("Files");
+
+                    b.Navigation("ParentRelations");
+
+                    b.Navigation("ProjectLabels");
 
                     b.Navigation("Tasks");
                 });
 
             modelBuilder.Entity("PMM.Data.Entities.TaskEntity", b =>
                 {
+                    b.Navigation("Activities");
+
                     b.Navigation("SubTasks");
 
                     b.Navigation("TaskAssignments");
+
+                    b.Navigation("TaskLabels");
                 });
 
             modelBuilder.Entity("PMM.Data.Entities.User", b =>
                 {
+                    b.Navigation("Activities");
+
                     b.Navigation("ProjectAssignments");
 
                     b.Navigation("TaskAssignments");

@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using PMM.API.Converters;
 using PMM.API.Extensions;
+using PMM.API.ModelBinders;
 using PMM.Data.Contexts;
 using System.Text.Json.Serialization;
 
@@ -7,7 +9,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.ModelBinderProviders.Insert(0, new DateOnlyModelBinderProvider());
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -19,6 +24,8 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new CustomDateOnlyConverter());
+        options.JsonSerializerOptions.Converters.Add(new NullableCustomDateOnlyConverter());
     });
 
 

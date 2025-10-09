@@ -18,7 +18,8 @@ namespace PMM.Data.Entities
         public ETaskStatus Status { get; set; }
 
         public virtual ICollection<TaskAssignment> TaskAssignments { get; set; }
-
+        public virtual ICollection<Activity> Activities { get; set; }
+        public virtual ICollection<TaskLabel> TaskLabels { get; set; }
 
         public DateTime CreatedAt { get; set; }
         public int CreatedById { get; set; }

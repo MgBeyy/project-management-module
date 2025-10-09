@@ -15,6 +15,7 @@ namespace PMM.Core.Services
         private readonly IClientRepository _clientRepository;
         private readonly IUserRepository _userRepository;
         private readonly IProjectRepository _projectRepository;
+        private readonly IProjectRelationRepository _projectRelationRepository;
         private readonly IProjectAssignmentRepository _projectAssignmentRepository;
         private readonly ILogger<DummyDataService> _logger;
         private readonly Random _rand = new Random();
@@ -23,12 +24,14 @@ namespace PMM.Core.Services
             IClientRepository clientRepository,
             IUserRepository userRepository,
             IProjectRepository projectRepository,
+            IProjectRelationRepository projectRelationRepository,
             IProjectAssignmentRepository projectAssignmentRepository,
             ILogger<DummyDataService> logger)
         {
             _clientRepository = clientRepository;
             _userRepository = userRepository;
             _projectRepository = projectRepository;
+            _projectRelationRepository = projectRelationRepository;
             _projectAssignmentRepository = projectAssignmentRepository;
             _logger = logger;
         }
@@ -43,7 +46,6 @@ namespace PMM.Core.Services
 
         private async Task SeedClientsAsync()
         {
-            // Mevcut veritabanýnda client var mý diye kontrol edelim, varsa ekleme yapmayalým.
             if (_clientRepository.QueryAll().Any()) return;
 
             var clients = new List<Client>
@@ -65,7 +67,6 @@ namespace PMM.Core.Services
 
         private async Task SeedUsersAsync()
         {
-            // Mevcut veritabanýnda user var mý diye kontrol edelim, varsa ekleme yapmayalým.
             if (_userRepository.QueryAll().Any()) return;
 
             var users = new List<User>
@@ -87,7 +88,6 @@ namespace PMM.Core.Services
 
         private async Task SeedProjectsAsync()
         {
-            // Mevcut veritabanýnda proje var mý diye kontrol edelim, varsa ekleme yapmayalým.
             if (_projectRepository.QueryAll().Any()) return;
 
             var clients = _clientRepository.QueryAll().ToList();
@@ -98,13 +98,11 @@ namespace PMM.Core.Services
 
             var projects = new List<Project>();
 
-            // ### 1. Adým: Ana Projeleri (Parent) Oluþturma ###
-            // Toplam 15 projenin bir kýsmýný ana proje olarak oluþturalým (örneðin 5 tane).
             for (int i = 1; i <= 5; i++)
             {
                 var randomUser = users[_rand.Next(users.Count)];
                 var randomClient = clients[_rand.Next(clients.Count)];
-                var startDate = DateTime.UtcNow.AddDays(_rand.Next(-10, 10));
+                var startDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(_rand.Next(-10, 10));
 
                 projects.Add(new Project
                 {
@@ -117,31 +115,27 @@ namespace PMM.Core.Services
                     Priority = (EProjectPriority)_rand.Next(0, Enum.GetNames(typeof(EProjectPriority)).Length),
                     CreatedAt = DateTime.UtcNow,
                     CreatedById = randomUser.Id,
-                    ClientId = randomClient.Id,
-                    ParentProjectId = null // Ana projelerin ParentId'si olmaz.
+                    ClientId = randomClient.Id
                 });
             }
 
             await _projectRepository.CreateRangeAsync(projects);
             await _projectRepository.SaveChangesAsync();
 
-            // ### 2. Adým: Alt Projeleri (Child) Oluþturma ###
-            // Veritabanýna kaydedilmiþ ana projeleri ID'leriyle birlikte çekelim.
-            var parentProjects = _projectRepository.QueryAll().Where(p => p.ParentProjectId == null).ToList();
+            var parentProjects = _projectRepository.QueryAll().ToList();
             if (!parentProjects.Any()) return;
 
             var childProjects = new List<Project>();
-            // Kalan 10 projeyi, mevcut ana projelerden birine baðlý olarak oluþturalým.
             for (int i = 1; i <= 10; i++)
             {
                 var randomUser = users[_rand.Next(users.Count)];
-                var parentProject = parentProjects[_rand.Next(parentProjects.Count)]; // Rastgele bir ana proje seç.
-                var startDate = DateTime.UtcNow.AddDays(_rand.Next(5, 20));
+                var randomClient = clients[_rand.Next(clients.Count)];
+                var startDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(_rand.Next(5, 20));
 
                 childProjects.Add(new Project
                 {
                     Code = $"PRJ-C{i:000}",
-                    Title = $"Alt Proje {i} (Ana: {parentProject.Code})",
+                    Title = $"Alt Proje {i}",
                     PlannedStartDate = startDate,
                     PlannedDeadline = startDate.AddDays(_rand.Next(15, 60)),
                     PlannedHours = _rand.Next(50, 250),
@@ -149,18 +143,39 @@ namespace PMM.Core.Services
                     Priority = (EProjectPriority)_rand.Next(0, Enum.GetNames(typeof(EProjectPriority)).Length),
                     CreatedAt = DateTime.UtcNow,
                     CreatedById = randomUser.Id,
-                    ClientId = parentProject.ClientId, // Genellikle alt proje ana projenin müþterisine aittir.
-                    ParentProjectId = parentProject.Id // Ana projenin ID'sini ata.
+                    ClientId = randomClient.Id
                 });
             }
 
             await _projectRepository.CreateRangeAsync(childProjects);
             await _projectRepository.SaveChangesAsync();
+
+            var allProjects = _projectRepository.QueryAll().ToList();
+            var projectRelations = new List<ProjectRelation>();
+
+            foreach (var childProject in childProjects)
+            {
+                var parentCount = _rand.Next(1, 4);
+                var selectedParents = parentProjects.OrderBy(x => Guid.NewGuid()).Take(parentCount).ToList();
+
+                foreach (var parentProject in selectedParents)
+                {
+                    projectRelations.Add(new ProjectRelation
+                    {
+                        ParentProjectId = parentProject.Id,
+                        ChildProjectId = childProject.Id,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedById = users[_rand.Next(users.Count)].Id
+                    });
+                }
+            }
+
+            await _projectRelationRepository.CreateRangeAsync(projectRelations);
+            await _projectRelationRepository.SaveChangesAsync();
         }
 
         private async Task SeedProjectAssignmentsAsync()
         {
-            // Mevcut veritabanýnda atama var mý diye kontrol edelim, varsa ekleme yapmayalým.
             if (_projectAssignmentRepository.QueryAll().Any()) return;
 
             var projects = _projectRepository.QueryAll().ToList();
@@ -171,19 +186,16 @@ namespace PMM.Core.Services
             var assignments = new List<ProjectAssignment>();
             var roles = (EProjectAssignmentRole[])Enum.GetValues(typeof(EProjectAssignmentRole));
 
-            // Ayný kullanýcýyý ayný projeye tekrar atamamak için bir kontrol mekanizmasý
             var createdAssignments = new HashSet<(int, int)>();
 
-            // 30 adet rastgele atama oluþtur.
             for (int i = 0; i < 30; i++)
             {
                 var project = projects[_rand.Next(projects.Count)];
                 var user = users[_rand.Next(users.Count)];
 
-                // Eðer bu kullanýcý bu projeye zaten atandýysa, döngünün bu adýmýný atla ve yeni bir deneme yap.
                 if (createdAssignments.Contains((project.Id, user.Id)))
                 {
-                    i--; // Sayaç artýþýný telafi et
+                    i--;
                     continue;
                 }
 
@@ -191,7 +203,7 @@ namespace PMM.Core.Services
                 {
                     ProjectId = project.Id,
                     UserId = user.Id,
-                    Role = roles[_rand.Next(roles.Length)], // Rolü rastgele seç
+                    Role = roles[_rand.Next(roles.Length)], 
                     CreatedAt = DateTime.UtcNow,
                     CreatedById = user.Id
                 });

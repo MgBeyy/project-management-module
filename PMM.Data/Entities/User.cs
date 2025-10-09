@@ -8,6 +8,7 @@
 
         public ICollection<ProjectAssignment> ProjectAssignments { get; set; }
         public ICollection<TaskAssignment> TaskAssignments { get; set; }
+        public ICollection<Activity> Activities { get; set; }
 
     }
 }

@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using PMM.Core.Common;
 using PMM.Core.DTOs;
 using PMM.Core.Exceptions;
 using PMM.Core.Forms;
@@ -41,7 +43,7 @@ namespace PMM.Core.Services
         {
             var client = await _clientRepository.GetByIdAsync(clientId);
             if (client == null)
-                throw new NotFoundException("Client Bulunamadı!");
+                throw new NotFoundException("Müşteri Bulunamadı!");
             _clientRepository.Delete(client);
             await _clientRepository.SaveChangesAsync();
         }
@@ -56,10 +58,10 @@ namespace PMM.Core.Services
                 throw new BusinessException(validation.Errors);
 
             if (clientId == null)
-                throw new ArgumentNullException("ClientId Boş Olamaz!");
+                throw new ArgumentNullException("Müşteri Id Boş Olamaz!");
             var client = await _clientRepository.GetByIdAsync(clientId);
             if (client == null)
-                throw new NotFoundException("Client Bulunamadı!");
+                throw new NotFoundException("Müşteri Bulunamadı!");
             client.Name = form.name;
             _clientRepository.Update(client);
             await _clientRepository.SaveChangesAsync();
@@ -71,15 +73,46 @@ namespace PMM.Core.Services
         {
             var client = await _clientRepository.GetByIdAsync(clientId);
             if (client == null)
-                throw new NotFoundException("Client Bulunamadı!");
+                throw new NotFoundException("Müşteri Bulunamadı!");
 
             return ClientMapper.Map(client);
         }
-        public async Task<List<ClientDto>> GetAllClients()
-        {
-            var clients = _clientRepository.QueryAll();
 
-            return ClientMapper.Map(clients.ToList());
+        public async Task<PagedResult<ClientDto>> Query(QueryClientForm form)
+        {
+            var query = _clientRepository.Query(x => true);
+
+            if (!string.IsNullOrEmpty(form.Search))
+            {
+                query = query.Where(c =>
+                    c.Name.ToLower().Contains(form.Search.Trim().ToLower()));
+            }
+
+            if (form.Id.HasValue)
+                query = query.Where(c => c.Id == form.Id.Value);
+
+            if (!string.IsNullOrWhiteSpace(form.Name))
+                query = query.Where(c => c.Name.ToLower().Contains(form.Name.Trim().ToLower()));
+
+            query = OrderByHelper.OrderByDynamic(query, form.SortBy, form.SortDesc);
+
+            int page = form.Page ?? 1;
+            int pageSize = form.PageSize ?? 10;
+
+            int totalRecords = await query.CountAsync();
+
+            var clients = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<ClientDto>
+            {
+                Data = ClientMapper.Map(clients),
+                TotalRecords = totalRecords,
+                Page = page,
+                PageSize = pageSize
+            };
         }
     }
     public interface IClientService
@@ -88,6 +121,6 @@ namespace PMM.Core.Services
         Task<ClientDto> GetClientAsync(int clientId);
         Task<ClientDto> EditClientAsync(int clientId, CreateClientForm form);
         Task DeleteClientAsync(int clientId);
-        Task<List<ClientDto>> GetAllClients();
+        Task<PagedResult<ClientDto>> Query(QueryClientForm form);
     }
 }

@@ -20,11 +20,10 @@ namespace PMM.Core.Mappers
                 EndAt = form.EndAt,
                 Status = (EProjectStatus)form.Status,
                 Priority = form.Priority,
-                ParentProjectId = form.ParentProjectId,
                 ClientId = form.ClientId,
-
             };
         }
+
         public static ProjectDto Map(Project project)
         {
             return new ProjectDto
@@ -39,18 +38,25 @@ namespace PMM.Core.Mappers
                 EndAt = project.EndAt,
                 Status = project.Status,
                 Priority = project.Priority,
-                ParentProjectId = project.ParentProjectId,
+                ParentProjectIds = project.ParentRelations?
+                    .Select(pr => pr.ParentProjectId)
+                    .ToList(),
                 ClientId = project.ClientId,
+                Labels = project.ProjectLabels?
+                    .Select(pl => LabelMapper.Map(pl.Label))
+                    .ToList(),
                 CreatedAt = project.CreatedAt,
                 CreatedById = project.CreatedById,
                 UpdatedAt = project.UpdatedAt,
                 UpdatedById = project.UpdatedById,
             };
         }
+
         public static List<ProjectDto> Map(List<Project> projects)
         {
             return projects.Select(p => Map(p)).ToList();
         }
+
         public static DetailedProjectDto DetailedMap(Project project)
         {
             return new DetailedProjectDto
@@ -65,14 +71,17 @@ namespace PMM.Core.Mappers
                 EndAt = project.EndAt,
                 Status = project.Status,
                 Priority = project.Priority,
-                ParentProjectId = project.ParentProjectId,
                 ClientId = project.ClientId,
+                Labels = project.ProjectLabels?
+                    .Select(pl => LabelMapper.Map(pl.Label))
+                    .ToList(),
                 CreatedAt = project.CreatedAt,
                 CreatedById = project.CreatedById,
                 UpdatedAt = project.UpdatedAt,
                 UpdatedById = project.UpdatedById,
             };
         }
+
         public static Project Map(UpdateProjectForm form, Project project)
         {
             project.Title = form.Title;
@@ -83,7 +92,6 @@ namespace PMM.Core.Mappers
             project.EndAt = form.EndAt;
             project.Status = (EProjectStatus)form.Status;
             project.Priority = form.Priority;
-            project.ParentProjectId = form.ParentProjectId;
             return project;
         }
     }

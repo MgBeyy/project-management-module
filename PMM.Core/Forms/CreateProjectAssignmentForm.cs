@@ -11,8 +11,8 @@ namespace PMM.Core.Forms
         public int UserId { get; set; }
         [Required]
         public EProjectAssignmentRole Role { get; set; } = EProjectAssignmentRole.Member;
-        public DateTime? StartedAt { get; set; }
-        public DateTime? EndAt { get; set; }
+        public DateOnly? StartedAt { get; set; }
+        public DateOnly? EndAt { get; set; }
         [Range(0, int.MaxValue, ErrorMessage = "Çalışılması beklenen toplam saat negatif bir değer alamaz!")]
         public int? ExpectedHours { get; set; }
     }

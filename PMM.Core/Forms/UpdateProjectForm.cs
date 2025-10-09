@@ -9,16 +9,20 @@ namespace PMM.Core.Forms
         [Required]
         public string Title { get; set; }
         [Required]
-        public DateTime? PlannedStartDate { get; set; }
-        public DateTime? PlannedDeadline { get; set; }
+        public DateOnly? PlannedStartDate { get; set; }
+        public DateOnly? PlannedDeadline { get; set; }
         [Range(0, int.MaxValue, ErrorMessage = "Planlanan toplam saat negatif bir değer alamaz!")]
         public int? PlannedHours { get; set; }
-        public DateTime? StartedAt { get; set; }
-        public DateTime? EndAt { get; set; }
+        public DateOnly? StartedAt { get; set; }
+        public DateOnly? EndAt { get; set; }
         [JsonConverter(typeof(JsonStringEnumConverter))]
+        [Required]
         public EProjectStatus? Status { get; set; }
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public EProjectPriority Priority { get; set; } = EProjectPriority.Regular;
-        public int? ParentProjectId { get; set; }
+
+        public List<int>? ParentProjectIds { get; set; }
+
+        public List<int>? LabelIds { get; set; }
     }
 }
