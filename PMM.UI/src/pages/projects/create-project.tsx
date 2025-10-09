@@ -7,7 +7,6 @@ import {
   Select,
   AutoComplete,
   Spin,
-  Card,
   ColorPicker,
   message,
   Modal,
@@ -22,31 +21,29 @@ import {
 import axios from "axios";
 import MultiSelectSearch from "../../features/projects/components/multi-select-search";
 import { Link } from "react-router-dom";
+import { getClientsForSelect } from "@/features/projects/services/get-clients-for-select";
+import { createLabel } from "@/features/projects/services/create-label";
+import { createProject } from "@/features/projects/services/create-project";
 export default function CreateProject() {
   const [form] = Form.useForm();
-  const [labelForm] = Form.useForm(); // ✅ Label form için ayrı form instance
+  const [labelForm] = Form.useForm();
 
-  // ✅ Müşteri AutoComplete state'leri
   const [customerOptions, setCustomerOptions] = useState<{ value: string }[]>(
     []
   );
   const [customerValue, setCustomerValue] = useState("");
   const [customerLoading, setCustomerLoading] = useState(false);
 
-  // ✅ Üst Projeler MultiSelect state'i - YENİ!
   const [selectedParentProjects, setSelectedParentProjects] = useState<
     string[]
   >([]);
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
-  // ✅ Label oluşturma state'leri - YENİ!
   const [labelLoading, setLabelLoading] = useState(false);
-  const [labelColor, setLabelColor] = useState("#1890ff"); // Varsayılan renk
+  const [labelColor, setLabelColor] = useState("#1890ff");
   const [isLabelModalVisible, setIsLabelModalVisible] = useState(false);
 
-  // ✅ Müşteri AutoComplete API çağrısı (ESKİ)
   const handleCustomerSearch = async (searchText: string) => {
     if (!searchText || searchText.trim().length < 2) {
-      // ✅ Minimum 2 karakter
       setCustomerOptions([]);
       return;
     }
@@ -58,34 +55,18 @@ export default function CreateProject() {
         "🔍 Müşteri API isteği:",
         `https://localhost:7087/api/Client?Search=${searchText}`
       );
-      const res = await axios.get("https://localhost:7087/api/Client", {
-        params: {
-          Search: searchText.trim(), // ✅ Search parametresi
-          limit: 50, // ✅ Limit ekle
-        },
-        timeout: 5000, // ✅ 5 saniye timeout
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      });
+      const res = await getClientsForSelect(searchText, "/Client");
 
       console.log("✅ Müşteri API yanıtı:", res.data);
 
-      // ✅ Nested API yapısını parse et (projeler gibi)
       const apiResult = res.data?.result?.data || res.data?.data || res.data;
 
-      // ✅ Array kontrolü
       if (!Array.isArray(apiResult)) {
-        console.error(
-          "❌ Müşteri API yanıtı array formatında değil:",
-          apiResult
-        );
+        console.error("Müşteri API yanıtı array formatında değil:", apiResult);
         setCustomerOptions([]);
         return;
       }
 
-      // ✅ AutoComplete formatına çevir
       const data = apiResult.map((item: any) => ({
         value:
           item.name ||
@@ -98,14 +79,13 @@ export default function CreateProject() {
         key: item.id?.toString() || Math.random().toString(),
       }));
 
-      console.log("✅ Formatted müşteri options:", data);
+      console.log("Formatted müşteri options:", data);
       setCustomerOptions(data);
     } catch (err: any) {
-      console.error("❌ Müşteri veri çekme hatası:", err);
+      console.error("Müşteri veri çekme hatası:", err);
 
-      // ✅ Hata durumunda mock data (isteğe bağlı)
       if (err.response?.status === 500 || err.code === "ERR_NETWORK") {
-        console.warn("🎭 Müşteri mock data kullanılıyor...");
+        console.warn("Müşteri mock data kullanılıyor...");
 
         const mockCustomers = [
           { value: "ABC Şirketi", label: "ABC Şirketi", key: "1" },
@@ -126,24 +106,21 @@ export default function CreateProject() {
 
   const showLabelModal = () => {
     setIsLabelModalVisible(true);
-    console.log("🏷️ Label modal açılıyor...");
+    console.log("Label modal açılıyor...");
   };
 
-  // ✅ Modal kapatma fonksiyonu
   const handleLabelModalCancel = () => {
     setIsLabelModalVisible(false);
-    // ✅ Modal kapanırken form'u temizle
     labelForm.resetFields();
     setLabelColor("#1890ff");
-    console.log("❌ Label modal iptal edildi");
+    console.log("Label modal iptal edildi");
   };
 
-  // ✅ Label oluşturma fonksiyonu - güncellendi
   const handleCreateLabel = async (labelValues: any) => {
     setLabelLoading(true);
 
     try {
-      console.log("🏷️ Label oluşturma isteği:", labelValues);
+      console.log("Label oluşturma isteği:", labelValues);
 
       const labelData = {
         name: labelValues.labelName,
@@ -151,31 +128,18 @@ export default function CreateProject() {
         color: labelColor,
       };
 
-      console.log("📤 Label verisi gönderiliyor:", labelData);
+      console.log("Label verisi gönderiliyor:", labelData);
 
-      const response = await axios.post(
-        "https://localhost:7087/api/Label",
-        labelData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          timeout: 10000,
-        }
-      );
+      const response = await createLabel(labelData);
 
-      console.log("✅ Label oluşturuldu:", response.data);
+      console.log("Label oluşturuldu:", response.data);
 
-      // ✅ Başarı mesajı
-      message.success("🎉 Etiket başarıyla oluşturuldu!");
+      message.success("Etiket başarıyla oluşturuldu!");
 
-      // ✅ Modal'ı kapat ve form'u temizle
       setIsLabelModalVisible(false);
       labelForm.resetFields();
       setLabelColor("#1890ff");
 
-      // ✅ Yeni oluşturulan etiketi seçili etiketlere ekle (opsiyonel)
       const newLabelId = response.data?.id || response.data?.result?.id;
       if (newLabelId) {
         const updatedLabels = [...selectedLabels, newLabelId.toString()];
@@ -183,30 +147,28 @@ export default function CreateProject() {
         form.setFieldValue("labels", updatedLabels);
       }
     } catch (error: any) {
-      console.error("❌ Label oluşturma hatası:", error);
+      console.error("Label oluşturma hatası:", error);
 
       if (error.response?.status === 400) {
-        message.error("❌ Geçersiz etiket bilgileri!");
+        message.error("Geçersiz etiket bilgileri!");
       } else if (error.response?.status === 409) {
-        message.error("❌ Bu isimde etiket zaten mevcut!");
+        message.error("Bu isimde etiket zaten mevcut!");
       } else if (error.code === "ERR_NETWORK") {
-        message.error("❌ Bağlantı hatası! Backend çalışıyor mu?");
+        message.error("Bağlantı hatası! Backend çalışıyor mu?");
       } else {
-        message.error("❌ Etiket oluşturulamadı!");
+        message.error("Etiket oluşturulamadı!");
       }
     } finally {
       setLabelLoading(false);
     }
   };
 
-  // ✅ Renk değişimi fonksiyonu
   const handleColorChange = (color: any) => {
     const hexColor = color.toHexString();
     setLabelColor(hexColor);
-    console.log("🎨 Renk değişti:", hexColor);
+    console.log("Renk değişti:", hexColor);
   };
 
-  // ✅ Üst projeler değiştiğinde - YENİ!
   const handleParentProjectsChange = (values: string[]) => {
     setSelectedParentProjects(values);
     form.setFieldValue("parentProjects", values);
@@ -216,20 +178,17 @@ export default function CreateProject() {
     form.setFieldValue("labels", values);
   };
 
-  // ✅ AutoComplete change handlers (MÜŞTERI)
   const handleCustomerChange = (data: string) => {
     setCustomerValue(data);
     form.setFieldValue("customer", data);
   };
 
-  // ✅ AutoComplete select handlers (MÜŞTERI)
   const handleCustomerSelect = (data: string) => {
     console.log("Müşteri seçildi:", data);
     setCustomerValue(data);
     form.setFieldValue("customer", data);
   };
 
-  // ✅ Input change handlers
   const onChangeNumber: InputNumberProps["onChange"] = value => {
     console.log("Saat değişti:", value);
     form.setFieldValue("plannedHours", value);
@@ -243,18 +202,14 @@ export default function CreateProject() {
     console.log("Select değişti:", value, option);
   };
 
-  // ✅ Form submit handler
   const handleSubmit = async (values: any) => {
-    console.log("✅ Proje oluşturma form değerleri:", values);
+    console.log("Proje oluşturma form değerleri:", values);
 
-    // ✅ API için veriyi hazırla
     const projectData = {
-      // ✅ Temel bilgiler
       Code: values.code || undefined,
       Title: values.title || undefined,
-      PlannedHourse: values.plannedHours || undefined, // Backend'deki alan adı
+      PlannedHourse: values.plannedHours || undefined,
 
-      // ✅ Tarih alanları - string formatına çevir
       PlannedStartDate: values.plannedStartDate
         ? values.plannedStartDate.format("YYYY-MM-DD")
         : undefined,
@@ -266,17 +221,14 @@ export default function CreateProject() {
         : undefined,
       EndAt: values.endAt ? values.endAt.format("YYYY-MM-DD") : undefined,
 
-      // ✅ Enum değerler
       Status: values.status || undefined,
       Priority: values.priority || undefined,
 
-      // ✅ İlişkili veriler (ID'ler olarak gönder)
-      ClientId: values.customer || undefined, // Müşteri ID'si
-      ParentProjectIds: selectedParentProjects || [], // Üst proje ID'leri
-      LabelIds: selectedLabels || [], // Etiket ID'leri
+      ClientId: values.customer || undefined,
+      ParentProjectIds: selectedParentProjects || [],
+      LabelIds: selectedLabels || [],
     };
 
-    // ✅ Undefined değerleri temizle
     const cleanedData = Object.fromEntries(
       Object.entries(projectData).filter(
         ([_, value]) =>
@@ -287,70 +239,51 @@ export default function CreateProject() {
       )
     );
 
-    console.log("📤 API'ye gönderilecek proje verisi:", cleanedData);
+    console.log("API'ye gönderilecek proje verisi:", cleanedData);
 
-    // ✅ API çağrısını yap
     try {
-      console.log("🚀 Proje oluşturma API isteği başlıyor...");
+      console.log("Proje oluşturma API isteği başlıyor...");
 
-      const response = await axios.post(
-        "https://localhost:7087/api/Project",
-        cleanedData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          timeout: 15000, // 15 saniye timeout
-        }
-      );
+      const response = await createProject(cleanedData);
 
       console.log("✅ Proje başarıyla oluşturuldu:", response.data);
 
-      // ✅ Başarı mesajı göster
       message.success("🎉 Proje başarıyla oluşturuldu!");
 
-      // ✅ Form'u temizle (opsiyonel)
       form.resetFields();
       setCustomerValue("");
       setCustomerOptions([]);
       setSelectedParentProjects([]);
       setSelectedLabels([]);
-
-      // ✅ Projeler sayfasına yönlendir (opsiyonel)
-      // navigate("/pm-module/projects");
     } catch (error: any) {
-      console.error("❌ Proje oluşturma hatası:", error);
+      console.error("Proje oluşturma hatası:", error);
 
-      // ✅ Hata türüne göre mesaj göster
       if (error.response?.status === 400) {
-        message.error("❌ Geçersiz proje bilgileri! Lütfen kontrol edin.");
+        message.error("Geçersiz proje bilgileri! Lütfen kontrol edin.");
       } else if (error.response?.status === 409) {
-        message.error("❌ Bu proje kodu zaten mevcut!");
+        message.error("Bu proje kodu zaten mevcut!");
       } else if (error.response?.status === 500) {
-        message.error("❌ Sunucu hatası! Lütfen tekrar deneyin.");
+        message.error("Sunucu hatası! Lütfen tekrar deneyin.");
       } else if (error.code === "ERR_NETWORK") {
-        message.error("❌ Bağlantı hatası! Backend çalışıyor mu?");
+        message.error("Bağlantı hatası! Backend çalışıyor mu?");
       } else if (error.code === "ECONNABORTED") {
-        message.error("❌ İstek zaman aşımına uğradı! Tekrar deneyin.");
+        message.error("İstek zaman aşımına uğradı! Tekrar deneyin.");
       } else {
-        message.error("❌ Proje oluşturulamadı! Tekrar deneyin.");
+        message.error("Proje oluşturulamadı! Tekrar deneyin.");
       }
 
-      // ✅ Detaylı hata logları
       if (error.response?.data) {
-        console.error("📋 Backend hata detayı:", error.response.data);
+        console.error("Backend hata detayı:", error.response.data);
       }
     }
   };
 
   const handleReset = () => {
     form.resetFields();
-    // ✅ AutoComplete state'lerini temizle
     setCustomerValue("");
     setCustomerOptions([]);
-    setSelectedParentProjects([]); // ✅ MultiSelect temizle
-    setSelectedLabels([]); // ✅ Label MultiSelect temizle - YENİ!
+    setSelectedParentProjects([]);
+    setSelectedLabels([]);
     console.log("Form temizlendi");
   };
 
@@ -358,7 +291,6 @@ export default function CreateProject() {
     console.log("Projeler sayfasına dönülüyor...");
   };
 
-  // ✅ Status options
   const statusOptions = [
     { value: ProjectStatus.ACTIVE, label: "Aktif" },
     { value: ProjectStatus.INACTIVE, label: "Pasif" },
@@ -366,18 +298,14 @@ export default function CreateProject() {
     { value: ProjectStatus.PLANNED, label: "Planlandı" },
   ];
 
-  // ✅ Priority options
   const priorityOptions = [
     { value: ProjectPriority.YUKSEK, label: "Yüksek" },
     { value: ProjectPriority.ORTA, label: "Orta" },
     { value: ProjectPriority.DUSUK, label: "Düşük" },
   ];
 
-  // ...existing code...
-
   return (
     <div className="h-full w-full p-4">
-      {/* ✅ Üstte geri dönme butonu */}
       <div className="mb-6">
         <Link to="/pm-module/projects">
           <Button
@@ -392,19 +320,17 @@ export default function CreateProject() {
         </Link>
       </div>
 
-      {/* ✅ ANA PROJE OLUŞTURMA FORMU */}
       <Form
         form={form}
         layout="vertical"
         onFinish={handleSubmit}
         onValuesChange={(changedValues, allValues) => {
-          console.log("📝 Değer değişti:", changedValues);
-          console.log("📋 Tüm değerler:", allValues);
+          console.log("Değer değişti:", changedValues);
+          console.log("Tüm değerler:", allValues);
         }}
         className="h-full"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-x-4 gap-y-3">
-          {/* ✅ Tüm mevcut form alanları... */}
           <Form.Item
             label="Proje Kodu"
             name="code"
@@ -563,10 +489,8 @@ export default function CreateProject() {
             />
           </Form.Item>
 
-          {/* ✅ Etiketler alanı + Yeni Etiket butonu - GÜNCELLENDİ! */}
           <Form.Item label="Etiketler" name="labels" className="mb-3">
             <div className="space-y-2">
-              {/* ✅ MultiSelect */}
               <MultiSelectSearch
                 placeholder="Etiket ara ve seç..."
                 onChange={handleLabelsChange}
@@ -576,7 +500,6 @@ export default function CreateProject() {
                 className="w-full"
               />
 
-              {/* ✅ Yeni Etiket Oluştur Butonu */}
               <Button
                 type="dashed"
                 icon={<AiOutlinePlus />}
@@ -594,7 +517,6 @@ export default function CreateProject() {
             </div>
           </Form.Item>
 
-          {/* ✅ Form butonları */}
           <Form.Item className="mb-3 flex items-end col-span-full">
             <div className="flex justify-end w-full gap-3">
               <Button
@@ -617,14 +539,13 @@ export default function CreateProject() {
         </div>
       </Form>
 
-      {/* ✅ ETİKET OLUŞTURMA MODAL'I - YENİ! */}
       <Modal
         title="Yeni Etiket Oluştur"
         open={isLabelModalVisible}
         onCancel={handleLabelModalCancel}
-        footer={null} // ✅ Footer'ı kaldır, form'un kendi butonları olacak
+        footer={null}
         width={600}
-        destroyOnHidden={true} // ✅ Modal kapandığında içeriği temizle
+        destroyOnHidden={true}
       >
         <Form
           form={labelForm}
@@ -633,7 +554,6 @@ export default function CreateProject() {
           className="mt-4"
         >
           <div className="space-y-4">
-            {/* ✅ Label Name */}
             <Form.Item
               label="Etiket Adı"
               name="labelName"
@@ -645,11 +565,10 @@ export default function CreateProject() {
               <Input
                 placeholder="Örn: Frontend, Backend, Bug Fix..."
                 size="middle"
-                autoFocus // ✅ Modal açıldığında odaklan
+                autoFocus
               />
             </Form.Item>
 
-            {/* ✅ Label Description */}
             <Form.Item label="Etiket Açıklaması" name="labelDescription">
               <Input.TextArea
                 placeholder="Etiketin detaylı açıklaması (opsiyonel)"
@@ -658,7 +577,6 @@ export default function CreateProject() {
               />
             </Form.Item>
 
-            {/* ✅ Label Color */}
             <Form.Item label="Etiket Rengi">
               <div className="flex items-center gap-3">
                 <ColorPicker
@@ -671,14 +589,14 @@ export default function CreateProject() {
                     {
                       label: "Recommended",
                       colors: [
-                        "#1890ff", // Blue
-                        "#52c41a", // Green
-                        "#faad14", // Orange
-                        "#f5222d", // Red
-                        "#722ed1", // Purple
-                        "#13c2c2", // Cyan
-                        "#fa541c", // Volcano
-                        "#a0d911", // Lime
+                        "#1890ff",
+                        "#52c41a",
+                        "#faad14",
+                        "#f5222d",
+                        "#722ed1",
+                        "#13c2c2",
+                        "#fa541c",
+                        "#a0d911",
                       ],
                     },
                   ]}
@@ -692,7 +610,6 @@ export default function CreateProject() {
               </div>
             </Form.Item>
 
-            {/* ✅ Modal Butonları */}
             <Form.Item className="mb-0 pt-4">
               <div className="flex justify-end gap-3">
                 <Button onClick={handleLabelModalCancel} size="middle">

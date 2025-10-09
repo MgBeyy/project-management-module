@@ -1,25 +1,22 @@
-import apiClient from "../../../services/api-client"; // dosya yolunu kendi yapına göre düzenle
+import apiClient from "../../../services/api-client";
 
-export async function getClientsForSelect(searchText: string) {
+export async function getClientsForSelect(searchText: string, url: string) {
   try {
-    const res = await apiClient.get("/Client", {
+    const res = await apiClient.get(url, {
       params: {
         Search: searchText.trim(),
         limit: 50,
       },
-      timeout: 5000, // 5 saniye timeout
+      timeout: 5000,
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
     });
 
-    // Interceptor zaten toast mesajlarını gösteriyor.
-    // İstersen sadece veriyi return edebilirsin:
-    return res.data.result?.data || [];
+    return res.data.result || [];
   } catch (error) {
-    console.error("❌ Client verisi alınamadı:", error);
-    // Interceptor zaten hata toast'ını gösterecek.
+    console.error("Client verisi alınamadı:", error);
     return [];
   }
 }

@@ -76,8 +76,8 @@ export default function ProjectsFilter() {
         layout="vertical"
         onFinish={handleSubmit}
         onValuesChange={(changedValues, allValues) => {
-          console.log("📝 Değer değişti:", changedValues);
-          console.log("📋 Tüm değerler:", allValues);
+          console.log("Değer değişti:", changedValues);
+          console.log("Tüm değerler:", allValues);
         }}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-2"
       >
