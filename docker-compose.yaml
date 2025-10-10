@@ -18,15 +18,22 @@ services:
   frontend:
     build:
       context: ./PMM.UI
-      dockerfile: Dockerfile
+      dockerfile: dockerfile # "dockerfile" yerine tam adı "Dockerfile" ise onu kullanın
     ports:
       - "3000:3000"
+    stdin_open: true
+    tty: true
+    # Önemli: Vite'ın dışarıdan erişilebilir olması için host'u 0.0.0.0 yapın
+    command: npm run dev -- --host 0.0.0.0
     environment:
-      - REACT_APP_API_URL=http://backend:5000
+      # Backend servisine doğru Docker ağ adı ile erişim
+      - VITE_APP_API_URL=http://52.90.58.103:5000
     depends_on:
       - backend
     volumes:
-      - ./PMM.UI:/app
+      # Local kodunuzu container'a bağlar
+      - ./PMM.UI:/app 
+      # node_modules'in localden override edilmesini engeller
       - /app/node_modules
 
   db:

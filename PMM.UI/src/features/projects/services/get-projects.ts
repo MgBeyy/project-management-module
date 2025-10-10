@@ -37,11 +37,12 @@ export async function GetProjects({ query }: { query: ProjectQuery }) {
       }
     });
 
-    const url = `/Project?${queryParams.toString()}`;
+    const url = `Project?${queryParams.toString()}`;
     console.log("🌐 API Request URL:", url);
 
     const response = await apiClient.get(url);
     console.log("✅ API Response:", response);
+    console.log("✅ Full Request URL:", response.config.url);
 
     return response.data.result;
   } catch (error: any) {
