@@ -15,7 +15,9 @@ namespace PMM.Core.Mappers
                 Description = form.Description,
                 Title = form.Title,
                 Status = form.Status,
-                Weight = form.Weight.Value
+                Weight = form.Weight.Value,
+                PlannedHours = form.PlannedHours,
+                ActualHours = form.ActualHours
             };
         }
 
@@ -30,6 +32,8 @@ namespace PMM.Core.Mappers
                 Description = task.Description,
                 Weight = task.Weight,
                 Status = task.Status,
+                PlannedHours = task.PlannedHours,
+                ActualHours = task.ActualHours,
                 Labels = task.TaskLabels?
                     .Select(tl => LabelMapper.Map(tl.Label))
                     .ToList(),
@@ -51,6 +55,8 @@ namespace PMM.Core.Mappers
             task.Description = form.Description;
             task.Weight = form.Weight;
             task.Status = form.Status;
+            task.PlannedHours = form.PlannedHours;
+            task.ActualHours = form.ActualHours;
             return task;
         }
     }

@@ -53,12 +53,15 @@ namespace PMM.Core.Services
             if (form.EndTime <= form.StartTime)
                 throw new BusinessException("Bitiş zamanı başlangıç zamanından sonra olmalıdır!");
 
-            _ = await _taskRepository.GetByIdAsync(form.TaskId) ?? throw new NotFoundException("Görev Bulunamadı!");
+            var task = await _taskRepository.GetByIdAsync(form.TaskId) ?? throw new NotFoundException("Görev Bulunamadı!");
             _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("Kullanıcı Bulunamadı!");
 
             var activity = ActivityMapper.Map(form);
             activity.CreatedAt = DateTime.UtcNow;
             activity.CreatedById = LoggedInUser.Id;
+
+            task.ActualHours = (task.ActualHours ?? 0) + activity.TotalHours;
+            _taskRepository.Update(task);
 
             _activityRepository.Create(activity);
             await _activityRepository.SaveChangesAsync();
@@ -181,8 +184,16 @@ namespace PMM.Core.Services
                 throw new BusinessException("Bitiş zamanı başlangıç zamanından sonra olmalıdır!");
 
             var activity = await _activityRepository.GetByIdAsync(activityId) ?? throw new NotFoundException("Aktivite Bulunamadı!");
-
+            
+            var task = await _taskRepository.GetByIdAsync(activity.TaskId);
+            var oldHours = activity.TotalHours;
+            
             ActivityMapper.Map(form, activity);
+            
+            var newHours = activity.TotalHours;
+            task.ActualHours = (task.ActualHours ?? 0) - oldHours + newHours;
+            _taskRepository.Update(task);
+            
             activity.UpdatedAt = DateTime.UtcNow;
             activity.UpdatedById = LoggedInUser.Id;
 
@@ -197,6 +208,11 @@ namespace PMM.Core.Services
             var activity = await _activityRepository.GetByIdAsync(activityId);
             if (activity == null)
                 throw new NotFoundException("Aktivite Bulunamadı!");
+
+            var task = await _taskRepository.GetByIdAsync(activity.TaskId);
+            var activityHours = activity.TotalHours;
+            task.ActualHours = Math.Max(0, (task.ActualHours ?? 0) - activityHours);
+            _taskRepository.Update(task);
 
             _activityRepository.Delete(activity);
             await _activityRepository.SaveChangesAsync();

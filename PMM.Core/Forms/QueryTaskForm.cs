@@ -18,6 +18,12 @@ namespace PMM.Core.Forms
         public int? WeightMin { get; set; }
         public int? WeightMax { get; set; }
         public ETaskStatus? Status { get; set; }
+        public decimal? PlannedHours { get; set; }
+        public decimal? PlannedHoursMin { get; set; }
+        public decimal? PlannedHoursMax { get; set; }
+        public decimal? ActualHours { get; set; }
+        public decimal? ActualHoursMin { get; set; }
+        public decimal? ActualHoursMax { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? CreatedAtMin { get; set; }
         public DateTime? CreatedAtMax { get; set; }

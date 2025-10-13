@@ -3,6 +3,7 @@ using PMM.API.Converters;
 using PMM.API.Extensions;
 using PMM.API.ModelBinders;
 using PMM.Data.Contexts;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,6 +24,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         options.JsonSerializerOptions.Converters.Add(new CustomDateOnlyConverter());
         options.JsonSerializerOptions.Converters.Add(new NullableCustomDateOnlyConverter());

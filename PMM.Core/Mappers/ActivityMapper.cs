@@ -6,10 +6,15 @@ namespace PMM.Core.Mappers
 {
     public class ActivityMapper
     {
+        private static decimal RoundToNearestQuarter(decimal hours)
+        {
+            return Math.Round(hours * 4, MidpointRounding.AwayFromZero) / 4;
+        }
+
         public static Activity Map(CreateActivityForm form)
         {
             var totalHours = (decimal)(form.EndTime - form.StartTime).TotalHours;
-            
+
             return new Activity
             {
                 TaskId = form.TaskId,
@@ -17,7 +22,7 @@ namespace PMM.Core.Mappers
                 Description = form.Description,
                 StartTime = form.StartTime,
                 EndTime = form.EndTime,
-                TotalHours = totalHours
+                TotalHours = RoundToNearestQuarter(totalHours)
             };
         }
 
@@ -49,7 +54,7 @@ namespace PMM.Core.Mappers
             activity.Description = form.Description;
             activity.StartTime = form.StartTime;
             activity.EndTime = form.EndTime;
-            activity.TotalHours = (decimal)(form.EndTime - form.StartTime).TotalHours;
+            activity.TotalHours = RoundToNearestQuarter((decimal)(form.EndTime - form.StartTime).TotalHours);
             return activity;
         }
     }

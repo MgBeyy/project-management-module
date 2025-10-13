@@ -61,7 +61,6 @@ namespace PMM.Core.Services
             if (form.ParentTaskId.HasValue)
                 _ = await _taskRepository.GetByIdAsync(form.ParentTaskId) ?? throw new NotFoundException("İlgili üst görev Bulunamadı!");
 
-            // Label validation
             if (form.LabelIds != null && form.LabelIds.Count != 0)
             {
                 foreach (var labelId in form.LabelIds)
@@ -74,7 +73,6 @@ namespace PMM.Core.Services
             _taskRepository.Create(task);
             await _taskRepository.SaveChangesAsync();
 
-            // Label relations oluşturma
             if (form.LabelIds != null && form.LabelIds.Count != 0)
             {
                 foreach (var labelId in form.LabelIds)
@@ -125,7 +123,6 @@ namespace PMM.Core.Services
             if (task == null)
                 throw new NotFoundException("Görev Bulunamadı!");
 
-            // Label validation
             if (form.LabelIds != null && form.LabelIds.Count != 0)
             {
                 foreach (var labelId in form.LabelIds)
@@ -138,7 +135,6 @@ namespace PMM.Core.Services
             _taskRepository.Update(task);
             await _taskRepository.SaveChangesAsync();
 
-            // Mevcut label relations silme ve yeni oluşturma
             var existingLabels = await _taskLabelRepository.GetByTaskIdAsync(taskId);
             foreach (var taskLabel in existingLabels)
             {
@@ -199,6 +195,18 @@ namespace PMM.Core.Services
                 query = query.Where(t => t.Weight <= form.WeightMax);
             if (form.Status.HasValue)
                 query = query.Where(t => t.Status == form.Status);
+            if (form.PlannedHours.HasValue)
+                query = query.Where(t => t.PlannedHours == form.PlannedHours);
+            if (form.PlannedHoursMin.HasValue)
+                query = query.Where(t => t.PlannedHours >= form.PlannedHoursMin);
+            if (form.PlannedHoursMax.HasValue)
+                query = query.Where(t => t.PlannedHours <= form.PlannedHoursMax);
+            if (form.ActualHours.HasValue)
+                query = query.Where(t => t.ActualHours == form.ActualHours);
+            if (form.ActualHoursMin.HasValue)
+                query = query.Where(t => t.ActualHours >= form.ActualHoursMin);
+            if (form.ActualHoursMax.HasValue)
+                query = query.Where(t => t.ActualHours <= form.ActualHoursMax);
             if (form.CreatedAt.HasValue)
                 query = query.Where(t => t.CreatedAt == form.CreatedAt);
             if (form.CreatedAtMin.HasValue)

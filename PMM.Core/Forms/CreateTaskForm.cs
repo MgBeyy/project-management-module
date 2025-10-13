@@ -15,6 +15,10 @@ namespace PMM.Core.Forms
         [Range(1, 10)]
         public int? Weight { get; set; }
         public ETaskStatus Status { get; set; } = ETaskStatus.Todo;
+        [Range(0, double.MaxValue, ErrorMessage = "Planlanan toplam saat negatif bir değer alamaz!")]
+        public decimal? PlannedHours { get; set; }
+        [Range(0, double.MaxValue, ErrorMessage = "Gerçekleşen toplam saat negatif bir değer alamaz!")]
+        public decimal? ActualHours { get; set; }
         public List<int>? LabelIds { get; set; }
     }
 }

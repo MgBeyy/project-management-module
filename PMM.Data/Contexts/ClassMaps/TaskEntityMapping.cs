@@ -24,6 +24,9 @@ namespace PMM.Data.Contexts.ClassMaps
             builder.Property(t => t.Title).IsRequired().HasMaxLength(256);
 
             builder.Property(t => t.Status).IsRequired().HasConversion<string>();
+            
+            builder.Property(t => t.PlannedHours).IsRequired(false).HasPrecision(18, 2);
+            builder.Property(t => t.ActualHours).IsRequired(false).HasPrecision(18, 2);
 
             builder.Property(t => t.CreatedAt).IsRequired();
             builder.Property(t => t.CreatedById).IsRequired();

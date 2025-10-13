@@ -16,6 +16,9 @@ namespace PMM.Data.Entities
         public string? Description { get; set; }
         public int Weight { get; set; }
         public ETaskStatus Status { get; set; }
+        
+        public decimal? PlannedHours { get; set; }
+        public decimal? ActualHours { get; set; }
 
         public virtual ICollection<TaskAssignment> TaskAssignments { get; set; }
         public virtual ICollection<Activity> Activities { get; set; }
