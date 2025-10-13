@@ -51,10 +51,10 @@ export default function CreateProject() {
     setCustomerLoading(true);
 
     try {
-      console.log(
-        "🔍 Müşteri API isteği:",
-        `https://localhost:7087/api/Client?Search=${searchText}`
-      );
+      const constructedUrl = `/Client?Search=${encodeURIComponent(
+        searchText
+      )}`;
+      console.log("🔍 Müşteri API isteği:", constructedUrl);
       const res = await getClientsForSelect(searchText, "/Client");
 
       console.log("✅ Müşteri API yanıtı:", res.data);
@@ -495,7 +495,7 @@ export default function CreateProject() {
                 placeholder="Etiket ara ve seç..."
                 onChange={handleLabelsChange}
                 value={selectedLabels}
-                apiUrl="https://localhost:7087/api/Label"
+                apiUrl="/Label"
                 size="middle"
                 className="w-full"
               />
