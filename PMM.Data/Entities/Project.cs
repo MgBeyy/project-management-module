@@ -11,6 +11,7 @@ namespace PMM.Data.Entities
         public DateOnly? PlannedStartDate { get; set; }
         public DateOnly? PlannedDeadline { get; set; }
         public int? PlannedHours { get; set; }
+        public decimal? ActualHours { get; set; }
         public DateOnly? StartedAt { get; set; }
         public DateOnly? EndAt { get; set; }
         public EProjectStatus Status { get; set; }

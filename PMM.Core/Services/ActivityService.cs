@@ -28,17 +28,23 @@ namespace PMM.Core.Services
         private readonly IActivityRepository _activityRepository;
         private readonly ITaskRepository _taskRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IProjectRepository _projectRepository;
+        private readonly IProjectRelationRepository _projectRelationRepository;
 
         public ActivityService(IPrincipal principal, ILogger<ActivityService> logger,
             IActivityRepository activityRepository,
             ITaskRepository taskRepository,
-            IUserRepository userRepository
+            IUserRepository userRepository,
+            IProjectRepository projectRepository,
+            IProjectRelationRepository projectRelationRepository
             ) : base(principal, logger, userRepository)
         {
             _logger = logger;
             _activityRepository = activityRepository;
             _taskRepository = taskRepository;
             _userRepository = userRepository;
+            _projectRepository = projectRepository;
+            _projectRelationRepository = projectRelationRepository;
         }
 
         public async Task<ActivityDto> AddActivityAsync(CreateActivityForm form)
@@ -60,8 +66,7 @@ namespace PMM.Core.Services
             activity.CreatedAt = DateTime.UtcNow;
             activity.CreatedById = LoggedInUser.Id;
 
-            task.ActualHours = (task.ActualHours ?? 0) + activity.TotalHours;
-            _taskRepository.Update(task);
+            await UpdateTaskAndParentHours(task.Id, activity.TotalHours);
 
             _activityRepository.Create(activity);
             await _activityRepository.SaveChangesAsync();
@@ -185,14 +190,14 @@ namespace PMM.Core.Services
 
             var activity = await _activityRepository.GetByIdAsync(activityId) ?? throw new NotFoundException("Aktivite Bulunamadı!");
             
-            var task = await _taskRepository.GetByIdAsync(activity.TaskId);
             var oldHours = activity.TotalHours;
             
             ActivityMapper.Map(form, activity);
             
             var newHours = activity.TotalHours;
-            task.ActualHours = (task.ActualHours ?? 0) - oldHours + newHours;
-            _taskRepository.Update(task);
+            var hoursDifference = newHours - oldHours;
+            
+            await UpdateTaskAndParentHours(activity.TaskId, hoursDifference);
             
             activity.UpdatedAt = DateTime.UtcNow;
             activity.UpdatedById = LoggedInUser.Id;
@@ -209,10 +214,9 @@ namespace PMM.Core.Services
             if (activity == null)
                 throw new NotFoundException("Aktivite Bulunamadı!");
 
-            var task = await _taskRepository.GetByIdAsync(activity.TaskId);
             var activityHours = activity.TotalHours;
-            task.ActualHours = Math.Max(0, (task.ActualHours ?? 0) - activityHours);
-            _taskRepository.Update(task);
+            
+            await UpdateTaskAndParentHours(activity.TaskId, -activityHours);
 
             _activityRepository.Delete(activity);
             await _activityRepository.SaveChangesAsync();
@@ -232,6 +236,39 @@ namespace PMM.Core.Services
 
             var activities = _activityRepository.Query(a => a.UserId == userId);
             return ActivityMapper.Map(await activities.ToListAsync());
+        }
+
+        private async Task UpdateTaskAndParentHours(int taskId, decimal hoursChange)
+        {
+            var task = await _taskRepository.GetByIdAsync(taskId);
+            if (task == null) return;
+
+            task.ActualHours = Math.Max(0, (task.ActualHours ?? 0) + hoursChange);
+            _taskRepository.Update(task);
+
+            if (task.ParentTaskId.HasValue)
+            {
+                await UpdateTaskAndParentHours(task.ParentTaskId.Value, hoursChange);
+            }
+            else
+            {
+                await UpdateProjectAndParentHours(task.ProjectId, hoursChange);
+            }
+        }
+
+        private async Task UpdateProjectAndParentHours(int projectId, decimal hoursChange)
+        {
+            var project = await _projectRepository.GetByIdAsync(projectId);
+            if (project == null) return;
+
+            project.ActualHours = Math.Max(0, (project.ActualHours ?? 0) + hoursChange);
+            _projectRepository.Update(project);
+
+            var parentRelations = await _projectRelationRepository.GetByChildProjectIdAsync(projectId);
+            foreach (var relation in parentRelations)
+            {
+                await UpdateProjectAndParentHours(relation.ParentProjectId, hoursChange);
+            }
         }
     }
 }
