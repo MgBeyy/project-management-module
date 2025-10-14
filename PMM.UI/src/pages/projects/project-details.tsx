@@ -4,6 +4,7 @@ import Spinner from "@/components/spinner";
 import { useEffect, useState } from "react";
 import { getProjectByCode, ProjectDetails } from "@/features/projects/services/get-project-by-code";
 import { AiOutlineArrowLeft, AiOutlineCalendar, AiOutlineClockCircle, AiOutlineUser } from "react-icons/ai";
+import { formatDateTime } from "@/helpers/utils";
 
 export default function ProjectDetailsPage() {
   const { code } = useParams();
@@ -79,21 +80,6 @@ export default function ProjectDetailsPage() {
     return priorityMap[priority] || "default";
   };
 
-  const formatDateTime = (dateString: string | null) => {
-    if (!dateString || dateString === "-") return "-";
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleString("tr-TR", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return dateString;
-    }
-  };
 
   return (
     <div className="h-full w-full p-6 bg-gray-50">
