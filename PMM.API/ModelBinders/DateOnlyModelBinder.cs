@@ -35,7 +35,7 @@ namespace PMM.API.ModelBinders
 
             if (string.IsNullOrEmpty(value))
             {
-                // Nullable DateOnly? için null dönebiliriz
+                // Nullable DateOnly? iï¿½in null dï¿½nebiliriz
                 if (Nullable.GetUnderlyingType(bindingContext.ModelType) != null)
                 {
                     bindingContext.Result = ModelBindingResult.Success(null);
@@ -52,7 +52,7 @@ namespace PMM.API.ModelBinders
                 }
             }
 
-            // Eðer hiçbir format çalýþmazsa, hata mesajý ver
+            // Eï¿½er hiï¿½bir format ï¿½alï¿½ï¿½mazsa, hata mesajï¿½ ver
             bindingContext.ModelState.TryAddModelError(
                 modelName,
                 $"The value '{value}' is not valid. Expected formats: {string.Join(", ", _formats)}");

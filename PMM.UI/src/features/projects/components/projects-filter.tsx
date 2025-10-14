@@ -1,12 +1,11 @@
-import { addProjectFilter } from "@/store/slices/projects-filter-slice";
 import { Button, DatePicker, Form, Input, InputNumber, Select } from "antd";
 import type { DatePickerProps, InputNumberProps } from "antd";
-import { useDispatch } from "react-redux";
 import { ProjectStatus, ProjectPriority } from "../services/get-projects";
+import { useProjectsStore } from "@/store/zustand/projects-store";
 
 export default function ProjectsFilter() {
   const [form] = Form.useForm();
-  const dispatch = useDispatch();
+  const { setFilters, resetFilters } = useProjectsStore();
 
   const onChangeNumber: InputNumberProps["onChange"] = value => {
     console.log("Saat değişti:", value);
@@ -28,13 +27,13 @@ export default function ProjectsFilter() {
       Code: values.code || undefined,
       Title: values.title || undefined,
       PlannedStartDate: values.plannedStartDate
-        ? values.plannedStartDate
+        ? values.plannedStartDate.valueOf()
         : undefined,
       PlannedDeadLine: values.plannedEndDate
-        ? values.plannedEndDate
+        ? values.plannedEndDate.valueOf()
         : undefined,
-      StartedAt: values.startedAt ? values.startedAt : undefined,
-      EndAt: values.endAt ? values.endAt : undefined,
+      StartedAt: values.startedAt ? values.startedAt.valueOf() : undefined,
+      EndAt: values.endAt ? values.endAt.valueOf() : undefined,
 
       PlannedHourse: values.plannedHours || undefined,
       Status: (values.status as ProjectStatus) || undefined,
@@ -48,14 +47,14 @@ export default function ProjectsFilter() {
       )
     );
 
-    console.log("📤 Redux'a gönderilen temizlenmiş payload:", cleanedPayload);
-    dispatch(addProjectFilter(cleanedPayload));
+    console.log("📤 Zustand'a gönderilen temizlenmiş payload:", cleanedPayload);
+    setFilters(cleanedPayload);
   };
 
   const handleReset = () => {
     form.resetFields();
-    dispatch(addProjectFilter({}));
-    console.log("Form ve Redux temizlendi");
+    resetFilters();
+    console.log("Form ve Zustand temizlendi");
   };
   const statusOptions = [
     { value: ProjectStatus.ACTIVE, label: "Aktif" },

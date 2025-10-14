@@ -66,5 +66,15 @@ namespace PMM.API.Controllers
             var project = await _projectService.EditProjectAsync(projectId, form);
             return new ApiResponse(project, StatusCodes.Status200OK);
         }
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [HttpDelete("{projectId:int}")]
+        public async Task<ApiResponse> DeleteProject(int projectId)
+        {
+            await _projectService.DeleteProjectAsync(projectId);
+            return new ApiResponse("Proje başarıyla silindi.", StatusCodes.Status200OK);
+        }
     }
 }
