@@ -12,7 +12,6 @@ interface TaskData {
   CreatedById: number;
   UpdatedAt: string | null;
   UpdatedById: number | null;
-  Weight: number;
   PlannedHours: number | null;
   ActualHours: number | null;
 }

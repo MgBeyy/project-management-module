@@ -68,7 +68,6 @@ export default function CreateTaskModal({
         onFinish={handleCreate}
         initialValues={{
           status: TaskStatus.TODO,
-          weight: 0,
         }}
       >
         <Row gutter={16}>
@@ -108,14 +107,6 @@ export default function CreateTaskModal({
             </Select.Option>
             <Select.Option value={TaskStatus.DONE}>Tamamlandı</Select.Option>
           </Select>
-        </Form.Item>
-
-        <Form.Item
-          label="Ağırlık"
-          name="weight"
-          rules={[{ required: true, message: "Ağırlık gereklidir" }]}
-        >
-          <InputNumber style={{ width: "100%" }} min={0} />
         </Form.Item>
 
         <Form.Item label="Planlanan Saat" name="plannedHours">

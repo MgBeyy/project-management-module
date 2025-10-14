@@ -30,7 +30,7 @@ export default function ActivitiesCalendar() {
   const [selectedActivity, setSelectedActivity] = useState<any>(null);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [selectedEndSlot, setSelectedEndSlot] = useState<TimeSlot | null>(null);
-  
+
   // Drag selection state
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<TimeSlot | null>(null);
@@ -108,7 +108,7 @@ export default function ActivitiesCalendar() {
   const getActivitiesStartingInSlot = (date: Dayjs, hour: number, minute: number) => {
     return activities.filter((activity) => {
       const startTime = dayjs(activity.StartTime);
-      
+
       // Aktivitenin başlangıç saati bu slotun içindeyse
       return (
         startTime.isSame(date, "day") &&
@@ -147,12 +147,12 @@ export default function ActivitiesCalendar() {
   const getActivityPosition = (activity: any, allActivitiesInDay: any[]) => {
     const startTime = dayjs(activity.StartTime);
     const endTime = dayjs(activity.EndTime);
-    
+
     // Bu aktivite ile çakışan tüm aktiviteleri bul
     const overlappingActivities = allActivitiesInDay.filter((otherActivity) => {
       const otherStart = dayjs(otherActivity.StartTime);
       const otherEnd = dayjs(otherActivity.EndTime);
-      
+
       // Çakışma kontrolü: Zaman aralıkları kesişiyor mu?
       return (
         startTime.isBefore(otherEnd) && endTime.isAfter(otherStart)
@@ -170,17 +170,17 @@ export default function ActivitiesCalendar() {
 
     // Her aktivite için uygun bir lane (kolon) bul
     const lanes: any[][] = [];
-    
+
     for (const act of sortedActivities) {
       const actStart = dayjs(act.StartTime);
-      
+
       // Mevcut lane'lerden uygun olanı bul
       let placed = false;
       for (let i = 0; i < lanes.length; i++) {
         const lane = lanes[i];
         const lastInLane = lane[lane.length - 1];
         const lastEnd = dayjs(lastInLane.EndTime);
-        
+
         // Bu lane'deki son aktivite bitmişse, bu lane'e yerleştir
         if (!actStart.isBefore(lastEnd)) {
           lane.push(act);
@@ -188,7 +188,7 @@ export default function ActivitiesCalendar() {
           break;
         }
       }
-      
+
       // Uygun lane bulunamadıysa, yeni lane oluştur
       if (!placed) {
         lanes.push([act]);
@@ -203,7 +203,7 @@ export default function ActivitiesCalendar() {
         break;
       }
     }
-    
+
     return {
       totalColumns: lanes.length,
       columnIndex: columnIndex,
@@ -230,13 +230,13 @@ export default function ActivitiesCalendar() {
   const handleMouseUp = () => {
     if (isDragging && selectionRange) {
       setIsDragging(false);
-      
+
       // Calculate start and end times
       const { start, end } = selectionRange;
       const startTime = start.date.hour(start.hour).minute(start.minute);
       const endTimeSlot = end.hour * 60 + end.minute;
       const startTimeSlot = start.hour * 60 + start.minute;
-      
+
       let finalStart, finalEnd;
       if (endTimeSlot >= startTimeSlot) {
         finalStart = startTime;
@@ -245,7 +245,7 @@ export default function ActivitiesCalendar() {
         finalStart = end.date.hour(end.hour).minute(end.minute);
         finalEnd = startTime.add(15, "minute");
       }
-      
+
       setSelectedSlot({
         date: finalStart,
         hour: finalStart.hour(),
@@ -264,14 +264,14 @@ export default function ActivitiesCalendar() {
 
   const isSlotSelected = (date: Dayjs, hour: number, minute: number) => {
     if (!selectionRange) return false;
-    
+
     const { start, end } = selectionRange;
     if (!date.isSame(start.date, "day")) return false;
-    
+
     const slotTime = hour * 60 + minute;
     const startTime = start.hour * 60 + start.minute;
     const endTime = end.hour * 60 + end.minute;
-    
+
     if (endTime >= startTime) {
       return slotTime >= startTime && slotTime <= endTime;
     } else {
@@ -285,7 +285,7 @@ export default function ActivitiesCalendar() {
         handleMouseUp();
       }
     };
-    
+
     window.addEventListener("mouseup", handleGlobalMouseUp);
     return () => window.removeEventListener("mouseup", handleGlobalMouseUp);
   }, [isDragging, selectionRange]);
@@ -422,8 +422,8 @@ export default function ActivitiesCalendar() {
                     {index === 0
                       ? `${hour.toString().padStart(2, "0")}:00`
                       : `${hour.toString().padStart(2, "0")}:${minute
-                          .toString()
-                          .padStart(2, "0")}`}
+                        .toString()
+                        .padStart(2, "0")}`}
                   </div>
 
                   {/* Day Columns */}
@@ -434,7 +434,7 @@ export default function ActivitiesCalendar() {
                       minute
                     );
                     // O günün tüm aktivitelerini al (çakışma kontrolü için)
-                    const allActivitiesInDay = activities.filter(act => 
+                    const allActivitiesInDay = activities.filter(act =>
                       dayjs(act.StartTime).isSame(day, "day")
                     );
                     const isSelected = isSlotSelected(day, hour, minute);
@@ -475,15 +475,15 @@ export default function ActivitiesCalendar() {
                           const duration = getActivityDuration(activity);
                           const slotHeight = 40; // minHeight of each slot
                           const activityHeight = duration * slotHeight - 4; // -4 for gap
-                          
+
                           // Kullanıcıya özel renk
                           const userColor = getUserColor(activity.UserId);
-                          
+
                           // Çakışma pozisyonu hesapla
                           const { totalColumns, columnIndex } = getActivityPosition(activity, allActivitiesInDay);
                           const columnWidth = 100 / totalColumns; // Yüzde cinsinden genişlik
                           const leftOffset = columnWidth * columnIndex; // Yüzde cinsinden sol konum
-                          
+
                           return (
                             <div
                               key={activity.Id}
@@ -520,8 +520,8 @@ export default function ActivitiesCalendar() {
                                 activity.EndTime
                               ).format("HH:mm")}`}
                             >
-                              <div style={{ 
-                                fontWeight: "500", 
+                              <div style={{
+                                fontWeight: "500",
                                 marginBottom: "2px",
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
@@ -529,8 +529,8 @@ export default function ActivitiesCalendar() {
                               }}>
                                 {activity.Description}
                               </div>
-                              <div style={{ 
-                                fontSize: "10px", 
+                              <div style={{
+                                fontSize: "10px",
                                 opacity: 0.9,
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",

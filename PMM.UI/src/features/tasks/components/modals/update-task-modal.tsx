@@ -34,7 +34,6 @@ export default function UpdateTaskModal({
         title: task.Title,
         description: task.Description,
         status: statusValue,
-        weight: task.Weight,
         plannedHours: task.PlannedHours,
         actualHours: task.ActualHours,
       });
@@ -118,29 +117,15 @@ export default function UpdateTaskModal({
           <TextArea rows={4} />
         </Form.Item>
 
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item label="Durum" name="status">
-              <Select>
-                <Select.Option value={TaskStatus.TODO}>Yapılacak</Select.Option>
-                <Select.Option value={TaskStatus.IN_PROGRESS}>
-                  Devam Ediyor
-                </Select.Option>
-                <Select.Option value={TaskStatus.DONE}>Tamamlandı</Select.Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="Ağırlık"
-              name="weight"
-              rules={[{ required: true, message: "Ağırlık gereklidir" }]}
-            >
-              <InputNumber style={{ width: "100%" }} min={0} />
-            </Form.Item>
-
-          </Col>
-        </Row>
+        <Form.Item label="Durum" name="status">
+          <Select>
+            <Select.Option value={TaskStatus.TODO}>Yapılacak</Select.Option>
+            <Select.Option value={TaskStatus.IN_PROGRESS}>
+              Devam Ediyor
+            </Select.Option>
+            <Select.Option value={TaskStatus.DONE}>Tamamlandı</Select.Option>
+          </Select>
+        </Form.Item>
 
         <Row gutter={16}>
           <Col span={12}>

@@ -6,7 +6,6 @@ export interface CreateTaskData {
   title: string;
   description?: string;
   status?: number;
-  weight?: number;
   plannedHours?: number | null;
 }
 
