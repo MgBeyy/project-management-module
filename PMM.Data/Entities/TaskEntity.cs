@@ -24,6 +24,9 @@ namespace PMM.Data.Entities
         public virtual ICollection<Activity> Activities { get; set; }
         public virtual ICollection<TaskLabel> TaskLabels { get; set; }
 
+        public virtual ICollection<TaskDependency> Blocks { get; set; }
+        public virtual ICollection<TaskDependency> BlockedBy { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public int CreatedById { get; set; }
         public virtual User CreatedByUser { get; set; }
