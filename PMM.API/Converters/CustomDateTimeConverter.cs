@@ -4,38 +4,38 @@ using PMM.Core.Helpers;
 
 namespace PMM.API.Converters
 {
-    public class CustomDateOnlyConverter : JsonConverter<DateOnly>
+    public class CustomDateTimeConverter : JsonConverter<DateTime>
     {
-        public override DateOnly Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType == JsonTokenType.Number)
             {
                 var timestamp = reader.GetInt64();
-                return DateTimeHelper.FromUnixMillisecondsToDateOnly(timestamp);
+                return DateTimeHelper.FromUnixMillisecondsToDateTime(timestamp);
             }
 
             var value = reader.GetString();
             if (string.IsNullOrWhiteSpace(value))
-                throw new JsonException("Date value cannot be null or empty.");
+                throw new JsonException("DateTime value cannot be null or empty.");
 
             if (long.TryParse(value, out var timestampFromString))
             {
-                return DateTimeHelper.FromUnixMillisecondsToDateOnly(timestampFromString);
+                return DateTimeHelper.FromUnixMillisecondsToDateTime(timestampFromString);
             }
 
-            throw new JsonException($"Unable to parse date '{value}'. Expected Unix timestamp in milliseconds");
+            throw new JsonException($"Unable to parse DateTime '{value}'. Expected Unix timestamp in milliseconds");
         }
 
-        public override void Write(Utf8JsonWriter writer, DateOnly value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
         {
             var timestamp = DateTimeHelper.ToUnixMilliseconds(value);
             writer.WriteNumberValue(timestamp);
         }
     }
 
-    public class NullableCustomDateOnlyConverter : JsonConverter<DateOnly?>
+    public class NullableCustomDateTimeConverter : JsonConverter<DateTime?>
     {
-        public override DateOnly? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType == JsonTokenType.Null)
                 return null;
@@ -43,7 +43,7 @@ namespace PMM.API.Converters
             if (reader.TokenType == JsonTokenType.Number)
             {
                 var timestamp = reader.GetInt64();
-                return DateTimeHelper.FromUnixMillisecondsToDateOnly(timestamp);
+                return DateTimeHelper.FromUnixMillisecondsToDateTime(timestamp);
             }
 
             var value = reader.GetString();
@@ -52,13 +52,13 @@ namespace PMM.API.Converters
 
             if (long.TryParse(value, out var timestampFromString))
             {
-                return DateTimeHelper.FromUnixMillisecondsToDateOnly(timestampFromString);
+                return DateTimeHelper.FromUnixMillisecondsToDateTime(timestampFromString);
             }
 
-            throw new JsonException($"Unable to parse date '{value}'. Expected Unix timestamp in milliseconds");
+            throw new JsonException($"Unable to parse DateTime '{value}'. Expected Unix timestamp in milliseconds");
         }
 
-        public override void Write(Utf8JsonWriter writer, DateOnly? value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, DateTime? value, JsonSerializerOptions options)
         {
             if (value.HasValue)
             {
