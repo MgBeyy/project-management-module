@@ -20,7 +20,7 @@ type ProjectQuery = {
   Title?: string;
   PlannedStartDate?: string | Date | null;
   PlannedDeadLine?: string | Date | null;
-  PlannedHourse?: number;
+  PlannedHours?: number;
   StartedAt?: string | Date | null;
   EndAt?: string | Date | null;
   Status?: ProjectStatus;

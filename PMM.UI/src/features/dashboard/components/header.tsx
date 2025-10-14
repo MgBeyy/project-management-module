@@ -60,9 +60,9 @@ export default function Header() {
                         {pathSegments[1] === ""
                           ? ""
                           : pathSegmentsMap.find(
-                              segment =>
-                                segment.pathOriginal === pathSegments[1]
-                            )?.pathTr}
+                            segment =>
+                              segment.pathOriginal === pathSegments[1]
+                          )?.pathTr}
                       </span>
                     ),
                   },
@@ -71,21 +71,24 @@ export default function Header() {
             )}
           </div>
         </div>
+        {/* 
         <div className="w-96">
           <SearchInput />
         </div>
-        <div className="flex gap-4 items-center">
-          <div className="text-gray-600 ">
-            <Button type="text" icon={<AiOutlineFullscreenExit />} />
-            <Button type="text" icon={<AiOutlineStar />} />
-            <Button type="text" icon={<AiOutlineMoon />} />
-            <Button type="text" icon={<AiOutlineSetting />} />
-            <Button type="text" icon={<AiOutlineBell />} />
-          </div>
-          <div>
-            <Account />
-          </div>
+
+      <div className="flex gap-4 items-center">
+        <div className="text-gray-600 ">
+          <Button type="text" icon={<AiOutlineFullscreenExit />} />
+          <Button type="text" icon={<AiOutlineStar />} />
+          <Button type="text" icon={<AiOutlineMoon />} />
+          <Button type="text" icon={<AiOutlineSetting />} />
+          <Button type="text" icon={<AiOutlineBell />} />
         </div>
+        <div>
+          <Account />
+        </div>
+      </div>
+      */}
       </header>
     </>
   );

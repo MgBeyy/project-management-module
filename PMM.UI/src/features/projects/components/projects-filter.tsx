@@ -10,7 +10,7 @@ export default function ProjectsFilter() {
 
   const onChangeNumber: InputNumberProps["onChange"] = value => {
     console.log("Saat değişti:", value);
-    form.setFieldValue("PlannedHourse", value);
+    form.setFieldValue("PlannedHours", value);
   };
 
   const onChangeDate: DatePickerProps["onChange"] = (date, dateString) => {
@@ -36,7 +36,7 @@ export default function ProjectsFilter() {
       StartedAt: values.startedAt ? values.startedAt.valueOf() : undefined,
       EndAt: values.endAt ? values.endAt.valueOf() : undefined,
 
-      PlannedHourse: values.plannedHours || undefined,
+      PlannedHours: values.plannedHours || undefined,
       Status: (values.status as ProjectStatus) || undefined,
       Priority: (values.priority as ProjectPriority) || undefined,
       LabelIds: values.labelIds && values.labelIds.length > 0 

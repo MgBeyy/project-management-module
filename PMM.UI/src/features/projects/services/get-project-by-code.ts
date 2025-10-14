@@ -1,4 +1,5 @@
 import apiClient from "@/services/api-client";
+import { formatDate, formatDateTime } from "@/helpers/utils";
 
 export interface Label {
   id: number;
@@ -18,7 +19,7 @@ export interface ProjectDetails {
   Title: string;
   PlannedStartDate: string;
   PlannedDeadLine: string;
-  PlannedHourse: number | null;
+  PlannedHours: number | null;
   StartedAt: string | null;
   EndAt: string | null;
   Status: string;
@@ -37,20 +38,20 @@ function normalize(item: any): ProjectDetails {
     Id: item?.id ?? null,
     Code: item?.code ?? "N/A",
     Title: item?.title ?? "Başlık Yok",
-    PlannedStartDate: item?.plannedStartDate ?? "-",
-    PlannedDeadLine: item?.plannedDeadline ?? item?.plannedDeadLine ?? "-",
-    PlannedHourse: item?.plannedHours ?? item?.plannedHourse ?? null,
-    StartedAt: item?.startedAt ?? null,
-    EndAt: item?.endAt ?? null,
+    PlannedStartDate: formatDate(item?.plannedStartDate),
+    PlannedDeadLine: formatDate(item?.plannedDeadline ?? item?.plannedDeadLine),
+    PlannedHours: item?.plannedHours ?? item?.plannedHours ?? null,
+    StartedAt: formatDateTime(item?.startedAt),
+    EndAt: formatDateTime(item?.endAt),
     Status: item?.status ?? "Belirtilmemiş",
     Priority: item?.priority ?? "Düşük",
     ParentProjectIds: item?.parentProjectIds ?? [],
     ClientId: item?.clientId ?? null,
     Labels: item?.labels ?? [],
     CreatedById: item?.createdById ?? 0,
-    CreatedAt: item?.createdAt ?? "-",
+    CreatedAt: formatDateTime(item?.createdAt),
     UpdatedById: item?.updatedById ?? null,
-    UpdatedAt: item?.updatedAt ?? null,
+    UpdatedAt: formatDateTime(item?.updatedAt),
   };
 }
 

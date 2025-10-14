@@ -149,7 +149,7 @@ export default function ProjectDetailsPage() {
               {project.PlannedDeadLine || "-"}
             </Descriptions.Item>
             <Descriptions.Item label={<><AiOutlineClockCircle className="inline mr-2" />Planlanan Saat</>}>
-              {project.PlannedHourse !== null ? `${project.PlannedHourse} saat` : "-"}
+              {project.PlannedHours !== null ? `${project.PlannedHours} saat` : "-"}
             </Descriptions.Item>
             <Descriptions.Item label="Başlangıç Zamanı">
               {formatDateTime(project.StartedAt)}

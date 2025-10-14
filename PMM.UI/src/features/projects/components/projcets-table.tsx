@@ -5,6 +5,7 @@ import type { ColumnsType } from "antd/es/table";
 import { GetProjects } from "../services/get-projects";
 import Spinner from "../../../components/spinner";
 import { useProjectsStore } from "@/store/zustand/projects-store";
+import { formatDate, formatDateTime, mapStatusToString } from "@/helpers/utils";
 
 export default function CustomTable() {
   const {
@@ -40,13 +41,19 @@ export default function CustomTable() {
           Code: item?.code || "N/A",
           Labels: item?.labels || [],
           Title: item?.title || "Başlık Yok",
-          PlannedStartDate: item?.plannedStartDate || "-",
-          PlannedDeadLine: item?.plannedDeadLine || "-",
-          PlannedHourse: typeof item?.plannedHourse === "number" ? item.plannedHourse : 0,
-          StartedAt: item?.startedAt || null,
-          EndAt: item?.endAt || null,
-          Status: item?.status || "Belirtilmemiş",
+          PlannedStartDate: formatDate(item?.plannedStartDate),
+          PlannedDeadLine: formatDate(item?.plannedDeadline || item?.plannedDeadLine),
+          PlannedHours: typeof item?.plannedHours === "number" ? item.plannedHours : (typeof item?.plannedHours === "number" ? item.plannedHours : 0),
+          StartedAt: formatDateTime(item?.startedAt),
+          EndAt: formatDateTime(item?.endAt),
+          Status: mapStatusToString(item?.status),
           Priority: item?.priority || "Düşük",
+          // Store raw values for editing
+          rawPlannedStartDate: item?.plannedStartDate || null,
+          rawPlannedDeadline: item?.plannedDeadline || item?.plannedDeadLine || null,
+          rawStartedAt: item?.startedAt || null,
+          rawEndAt: item?.endAt || null,
+          rawStatus: typeof item?.status === "number" ? item.status : null,
         }));
       
       setProjects(transformedData);
@@ -166,8 +173,8 @@ export default function CustomTable() {
     },
     {
       title: <HeaderWithTooltip title="Planlanan Saat" maxWidth={120} />,
-      dataIndex: "PlannedHourse",
-      key: "PlannedHourse",
+      dataIndex: "PlannedHours",
+      key: "PlannedHours",
       width: 120,
       ellipsis: {
         showTitle: false,

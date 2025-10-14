@@ -7,11 +7,17 @@ interface ProjectData {
   Title: string;
   PlannedStartDate: string;
   PlannedDeadLine: string;
-  PlannedHourse: number;
+  PlannedHours: number;
   StartedAt: string | null;
   EndAt: string | null;
   Status: string;
   Priority: string;
+  // Raw timestamp values for editing
+  rawPlannedStartDate?: number | null;
+  rawPlannedDeadline?: number | null;
+  rawStartedAt?: number | null;
+  rawEndAt?: number | null;
+  rawStatus?: number;
 }
 
 interface ProjectsState {

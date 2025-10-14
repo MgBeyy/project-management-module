@@ -2,7 +2,7 @@ import { Modal, Form, Input, DatePicker, InputNumber, Select } from "antd";
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { updateProject, UpdateProjectData } from "../../services/update-project";
-import { ProjectStatus, ProjectPriority } from "../../services/get-projects";
+import { ProjectPriority } from "../../services/get-projects";
 import { useNotification } from "@/hooks/useNotification";
 
 interface UpdateProjectModalProps {
@@ -15,11 +15,16 @@ interface UpdateProjectModalProps {
     Title: string;
     PlannedStartDate?: string;
     PlannedDeadLine?: string;
-    PlannedHourse?: number;
+    PlannedHours?: number;
     StartedAt?: string | null;
     EndAt?: string | null;
     Status: string;
     Priority: string;
+    rawPlannedStartDate?: number | null;
+    rawPlannedDeadline?: number | null;
+    rawStartedAt?: number | null;
+    rawEndAt?: number | null;
+    rawStatus?: number;
   } | null;
 }
 
@@ -34,19 +39,19 @@ export default function UpdateProjectModal({
   const notification = useNotification();
   useEffect(() => {
     if (visible && projectData) {
-      // Form alanlarını doldur
+      // Form alanlarını doldur - ham timestamp değerlerini kullan
       form.setFieldsValue({
         title: projectData.Title,
-        plannedStartDate: projectData.PlannedStartDate
-          ? dayjs(projectData.PlannedStartDate)
+        plannedStartDate: projectData.rawPlannedStartDate
+          ? dayjs(projectData.rawPlannedStartDate)
           : null,
-        plannedDeadline: projectData.PlannedDeadLine
-          ? dayjs(projectData.PlannedDeadLine)
+        plannedDeadline: projectData.rawPlannedDeadline
+          ? dayjs(projectData.rawPlannedDeadline)
           : null,
-        plannedHours: projectData.PlannedHourse,
-        startedAt: projectData.StartedAt ? dayjs(projectData.StartedAt) : null,
-        endAt: projectData.EndAt ? dayjs(projectData.EndAt) : null,
-        status: projectData.Status,
+        plannedHours: projectData.PlannedHours,
+        startedAt: projectData.rawStartedAt ? dayjs(projectData.rawStartedAt) : null,
+        endAt: projectData.rawEndAt ? dayjs(projectData.rawEndAt) : null,
+        status: projectData.rawStatus ?? 0,
         priority: projectData.Priority,
       });
     }
@@ -92,10 +97,10 @@ export default function UpdateProjectModal({
   };
 
   const statusOptions = [
-    { value: ProjectStatus.ACTIVE, label: "Aktif" },
-    { value: ProjectStatus.INACTIVE, label: "Pasif" },
-    { value: ProjectStatus.COMPLETED, label: "Tamamlandı" },
-    { value: ProjectStatus.PLANNED, label: "Planlandı" },
+    { value: 0, label: "Planlandı" },
+    { value: 1, label: "Aktif" },
+    { value: 2, label: "Tamamlandı" },
+    { value: 3, label: "Beklemede" },
   ];
 
   const priorityOptions = [
