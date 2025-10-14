@@ -1,4 +1,4 @@
-import { Button, Divider, notification } from "antd";
+import { Button, Divider } from "antd";
 import { useState } from "react";
 import type { ConfigProviderProps } from "antd";
 import {
@@ -9,25 +9,33 @@ import {
 } from "react-icons/ai";
 import { Link } from "react-router-dom";
 import DeleteConfirmModal from "./modals/delete-confirm-modal";
+import UpdateProjectModal from "./modals/update-project-modal";
 import { deleteProject } from "../services/delete-project";
 import { useProjectsStore } from "@/store/zustand/projects-store";
+import { useNotification } from "@/hooks/useNotification";
 
 type SizeType = ConfigProviderProps["componentSize"];
 
 export default function CrudModal() {
   const [size] = useState<SizeType>("middle");
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [updateModalVisible, setUpdateModalVisible] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const notification  = useNotification();
   
   const { selectedProject, clearSelectedProject, triggerRefresh } = useProjectsStore();
 
+  const handleUpdateClick = () => {
+    if (!selectedProject || !selectedProject.Code) {
+      notification.warning("Uyarı", "Lütfen güncellemek için bir proje seçin.");
+      return;
+    }
+    setUpdateModalVisible(true);
+  };
+
   const handleDeleteClick = () => {
     if (!selectedProject || !selectedProject.Code) {
-      notification.warning({
-        message: "Uyarı",
-        description: "Lütfen silmek için bir proje seçin.",
-        placement: "topRight",
-      });
+      notification.warning("Uyarı", "Lütfen silmek için bir proje seçin.");
       return;
     }
     setDeleteModalVisible(true);
@@ -41,12 +49,7 @@ export default function CrudModal() {
     setIsDeleting(true);
     try {
       await deleteProject(selectedProject.Id);
-      
-      notification.success({
-        message: "Başarılı",
-        description: `"${selectedProject.Title}" projesi başarıyla silindi.`,
-        placement: "topRight",
-      });
+      notification.success("Başarılı", `"${selectedProject.Title}" projesi başarıyla silindi.`);
       setDeleteModalVisible(false);
       clearSelectedProject();
       triggerRefresh(); // Tabloyu yenile
@@ -54,11 +57,7 @@ export default function CrudModal() {
 
     } catch (error: any) {
       console.error("Proje silinirken hata:", error);
-      notification.error({
-        message: "Hata",
-        description: error.response?.data?.message || "Proje silinirken bir hata oluştu.",
-        placement: "topRight",
-      });
+      notification.error("Hata", error?.message || "Proje silinirken bir hata oluştu.");
     } finally {
       setIsDeleting(false);
     }
@@ -66,6 +65,10 @@ export default function CrudModal() {
 
   const handleDeleteCancel = () => {
     setDeleteModalVisible(false);
+  };
+
+  const handleUpdateSuccess = () => {
+    triggerRefresh();
   };
 
   return (
@@ -76,9 +79,12 @@ export default function CrudModal() {
         <Link to="/pm-module/projects/create">
           <Button type="primary" icon={<AiOutlinePlus />} size={size} />
         </Link>
-        <Link to="/pm-module/projects/edit">
-          <Button type="primary" icon={<AiOutlineEdit />} size={size} />
-        </Link>
+        <Button 
+          type="primary" 
+          icon={<AiOutlineEdit />} 
+          size={size}
+          onClick={handleUpdateClick}
+        />
         <Link to="/pm-module/projects/view">
           <Button type="primary" icon={<AiOutlineEye />} size={size} />
         </Link>
@@ -91,6 +97,13 @@ export default function CrudModal() {
           danger
         />
       </div>
+
+      <UpdateProjectModal
+        visible={updateModalVisible}
+        onClose={() => setUpdateModalVisible(false)}
+        onSuccess={handleUpdateSuccess}
+        projectData={selectedProject}
+      />
 
       <DeleteConfirmModal
         visible={deleteModalVisible}

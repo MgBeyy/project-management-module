@@ -43,6 +43,22 @@ namespace PMM.API.ModelBinders
                 return Task.CompletedTask;
             }
 
+            // Milisaniye (timestamp) format�n� kontrol et
+            if (long.TryParse(value, out var milliseconds))
+            {
+                try
+                {
+                    var dateTime = DateTimeOffset.FromUnixTimeMilliseconds(milliseconds).DateTime;
+                    var dateOnly = DateOnly.FromDateTime(dateTime);
+                    bindingContext.Result = ModelBindingResult.Success(dateOnly);
+                    return Task.CompletedTask;
+                }
+                catch
+                {
+                    // E�er millisaniye �evirimi ba�ar�s�z olursa, di�er formatlar� dene
+                }
+            }
+
             foreach (var format in _formats)
             {
                 if (DateOnly.TryParseExact(value, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
