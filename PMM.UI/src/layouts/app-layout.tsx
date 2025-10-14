@@ -10,7 +10,7 @@ export default function AppLayout() {
         <SideBar />
         <div className="h-full w-full flex flex-col max-w-[calc(100vw-250px)]">
           <Header />
-          <main className="rounded-md overflow-hidden flex-1 mx-auto mt-5 bg-white border-[#EFEFEF] border-2 w-full">
+          <main className="rounded-md flex-1 mx-auto mt-5 bg-white border-[#EFEFEF] border-2 w-full">
             <Outlet />
           </main>
         </div>
