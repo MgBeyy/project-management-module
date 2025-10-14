@@ -4,6 +4,7 @@ import "./App.css";
 import AppRoutes from "./routes.tsx";
 import { Provider } from "react-redux";
 import { store } from "./store/store.ts";
+import { App as AntApp } from "antd";
 
 // initBilgeModelReact();
 
@@ -11,7 +12,9 @@ function App() {
   return (
     <>
       <Provider store={store}>
-        <AppRoutes />
+        <AntApp notification={{ placement: "bottomRight" }}>
+          <AppRoutes />
+        </AntApp>
       </Provider>
     </>
   );

@@ -5,12 +5,12 @@ import SideBar from "../features/dashboard/components/side-bar";
 
 export default function AppLayout() {
   return (
-    <div className="bg-[#F5F5F5] h-screen w-full flex items-center justify-center">
-      <div className="w-[98%] h-[95%] flex">
+    <div className="bg-[#F5F5F5] w-full h-screen flex items-center justify-center">
+      <div className="flex h-full flex-1">
         <SideBar />
-        <div className="h-full w-full flex flex-col justify-between">
+        <div className="h-full w-full flex flex-col max-w-[calc(100vw-250px)]">
           <Header />
-          <main className="rounded-md overflow-hidden flex-1 w-[98%] mx-auto mt-5 bg-white border-[#EFEFEF] border-2">
+          <main className="rounded-md overflow-hidden flex-1 mx-auto mt-5 bg-white border-[#EFEFEF] border-2 w-full">
             <Outlet />
           </main>
         </div>
