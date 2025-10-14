@@ -12,6 +12,12 @@ interface ProjectData {
   EndAt: string | null;
   Status: string;
   Priority: string;
+  // Raw timestamp values for editing
+  rawPlannedStartDate?: number | null;
+  rawPlannedDeadline?: number | null;
+  rawStartedAt?: number | null;
+  rawEndAt?: number | null;
+  rawStatus?: number;
 }
 
 interface ProjectsState {

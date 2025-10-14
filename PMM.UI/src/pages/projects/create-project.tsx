@@ -212,15 +212,15 @@ export default function CreateProject() {
       PlannedHourse: values.plannedHours || undefined,
 
       PlannedStartDate: values.plannedStartDate
-        ? values.plannedStartDate.format("YYYY-MM-DD")
+        ? values.plannedStartDate.valueOf()
         : undefined,
       PlannedDeadLine: values.plannedEndDate
-        ? values.plannedEndDate.format("YYYY-MM-DD")
+        ? values.plannedEndDate.valueOf()
         : undefined,
       StartedAt: values.startedAt
-        ? values.startedAt.format("YYYY-MM-DD")
+        ? values.startedAt.valueOf()
         : undefined,
-      EndAt: values.endAt ? values.endAt.format("YYYY-MM-DD") : undefined,
+      EndAt: values.endAt ? values.endAt.valueOf() : undefined,
 
       Status: values.status || undefined,
       Priority: values.priority || undefined,

@@ -7,7 +7,7 @@ export interface UpdateProjectData {
   plannedHours?: number | null;
   startedAt?: number | null;
   endAt?: number | null;
-  status: string;
+  status: number;
   priority: string;
   parentProjectIds?: number[];
   labelIds?: number[];
