@@ -95,7 +95,6 @@ namespace PMM.Core.Services
             if (form.ClientId is not null)
                 _ = await _clientRepository.GetByIdAsync(form.ClientId) ?? throw new NotFoundException("Müşteri Bulunamadı!");
 
-            // Label validation
             if (form.LabelIds != null && form.LabelIds.Count != 0)
             {
                 foreach (var labelId in form.LabelIds)
@@ -188,7 +187,6 @@ namespace PMM.Core.Services
                 }
             }
 
-            // Label validation
             if (form.LabelIds != null && form.LabelIds.Count != 0)
             {
                 foreach (var labelId in form.LabelIds)
@@ -201,7 +199,6 @@ namespace PMM.Core.Services
             _projectRepository.Update(project);
             await _projectRepository.SaveChangesAsync();
 
-            // Mevcut parent relations silme ve yeni oluşturma
             var existingRelations = await _projectRelationRepository.GetByChildProjectIdAsync(projectId);
             foreach (var relation in existingRelations)
             {
@@ -225,7 +222,6 @@ namespace PMM.Core.Services
                 await _projectRelationRepository.SaveChangesAsync();
             }
 
-            // Mevcut label relations silme ve yeni oluşturma
             var existingLabels = await _projectLabelRepository.GetByProjectIdAsync(projectId);
             foreach (var projectLabel in existingLabels)
             {
@@ -298,6 +294,13 @@ namespace PMM.Core.Services
                 query = query.Where(e => e.PlannedHours >= form.PlannedHoursMin);
             if (form.PlannedHoursMax.HasValue)
                 query = query.Where(e => e.PlannedHours <= form.PlannedHoursMax);
+
+            if (form.ActualHours.HasValue)
+                query = query.Where(e => e.ActualHours == form.ActualHours);
+            if (form.ActualHoursMin.HasValue)
+                query = query.Where(e => e.ActualHours >= form.ActualHoursMin);
+            if (form.ActualHoursMax.HasValue)
+                query = query.Where(e => e.ActualHours <= form.ActualHoursMax);
 
             if (form.StartedAt.HasValue)
                 query = query.Where(e => e.StartedAt == form.StartedAt);
@@ -398,12 +401,10 @@ namespace PMM.Core.Services
             if (project == null)
                 throw new NotFoundException("Proje Bulunamadı!");
 
-            // İlişkili child project var mı kontrol et
             var childRelations = await _projectRelationRepository.GetByParentProjectIdAsync(projectId);
             if (childRelations.Any())
                 throw new BusinessException("Bu projenin alt projeleri bulunmaktadır. Önce alt projeleri silmelisiniz.");
 
-            // Parent relations sil
             var parentRelations = await _projectRelationRepository.GetByChildProjectIdAsync(projectId);
             foreach (var relation in parentRelations)
             {
@@ -411,7 +412,6 @@ namespace PMM.Core.Services
             }
             await _projectRelationRepository.SaveChangesAsync();
 
-            // Project labels sil
             var projectLabels = await _projectLabelRepository.GetByProjectIdAsync(projectId);
             foreach (var projectLabel in projectLabels)
             {
@@ -419,7 +419,6 @@ namespace PMM.Core.Services
             }
             await _projectLabelRepository.SaveChangesAsync();
 
-            // Projeyi sil
             _projectRepository.Delete(project);
             await _projectRepository.SaveChangesAsync();
         }
