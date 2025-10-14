@@ -21,6 +21,7 @@ namespace PMM.Data.Repositories
         public async Task<TaskEntity?> GetWithLabelsAsync(int taskId)
         {
             return await Query(t => t.Id == taskId)
+                .Include(t => t.Project)
                 .Include(t => t.TaskLabels)
                     .ThenInclude(tl => tl.Label)
                 .FirstOrDefaultAsync();
