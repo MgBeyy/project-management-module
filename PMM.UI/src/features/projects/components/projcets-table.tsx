@@ -1,52 +1,67 @@
-import { Table } from "antd";
-import { useEffect, useState } from "react";
+﻿import { Table, Tag, Tooltip } from "antd";
+import { Link } from "react-router-dom";
+import { useEffect } from "react";
 import type { ColumnsType } from "antd/es/table";
 import { GetProjects } from "../services/get-projects";
 import Spinner from "../../../components/spinner";
-import { useDispatch, useSelector } from "react-redux";
-import { editProjectsRowInfo } from "@/store/slices/projects-select-row-info-slice";
+import { useProjectsStore } from "@/store/zustand/projects-store";
+
 export default function CustomTable() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
-  const [totalItems, setTotalItems] = useState(0);
-  const [data, setData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const filtersValue = useSelector((state: any) => state.projects.value);
+  const {
+    projects,
+    selectedProject,
+    currentPage,
+    pageSize,
+    totalItems,
+    isLoading,
+    filters,
+    refreshTrigger,
+    setProjects,
+    setSelectedProject,
+    setCurrentPage,
+    setPageSize,
+    setTotalItems,
+    setIsLoading,
+  } = useProjectsStore();
+
+  async function getProjectData() {
+    try {
+      console.log("filters in table:", filters);
+      setIsLoading(true);
+      const result = await GetProjects({
+        query: { ...filters, page: currentPage, pageSize: pageSize },
+      });
+      
+      const transformedData = (result.data || [])
+        .filter((item: any) => item != null)
+        .map((item: any, index: number) => ({
+          key: index + 1,
+          Id: item?.id || null,
+          Code: item?.code || "N/A",
+          Labels: item?.labels || [],
+          Title: item?.title || "Başlık Yok",
+          PlannedStartDate: item?.plannedStartDate || "-",
+          PlannedDeadLine: item?.plannedDeadLine || "-",
+          PlannedHourse: typeof item?.plannedHourse === "number" ? item.plannedHourse : 0,
+          StartedAt: item?.startedAt || null,
+          EndAt: item?.endAt || null,
+          Status: item?.status || "Belirtilmemiş",
+          Priority: item?.priority || "Düşük",
+        }));
+      
+      setProjects(transformedData);
+      setTotalItems(result.totalRecords || 0);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching project data:", error);
+      setProjects([]);
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function getProjectData() {
-      try {
-        console.log("filtersValue in table:", filtersValue);
-        const resulte = await GetProjects({
-          query: { ...filtersValue, page: currentPage, pageSize: pageSize },
-        });
-        setTotalItems(resulte.totalRecords || 0);
-        setData(resulte.data);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error fetching project data:", error);
-        setData([]);
-      }
-    }
     getProjectData();
-  }, [filtersValue, pageSize, currentPage]);
-  const dataSource = (data || [])
-    .filter(item => item != null)
-    .map((item, index) => {
-      return {
-        key: index + 1,
-        Code: item?.code || "N/A",
-        Title: item?.title || "Başlık Yok",
-        PlannedStartDate: item?.plannedStartDate || "-",
-        PlannedDeadLine: item?.plannedDeadLine || "-",
-        PlannedHourse:
-          typeof item?.plannedHourse === "number" ? item.plannedHourse : 0,
-        StartedAt: item?.startedAt || null,
-        EndAt: item?.endAt || null,
-        Status: item?.status || "Belirtilmemiş",
-        Priority: item?.priority || "Düşük",
-      };
-    });
+  }, [filters, pageSize, currentPage, refreshTrigger]);
 
   const HeaderWithTooltip = ({
     title,
@@ -77,7 +92,43 @@ export default function CustomTable() {
       ellipsis: {
         showTitle: false,
       },
-      render: (text: string) => <span title={text}>{text}</span>,
+      render: (text: string) => (
+        <Link to={`/pm-module/projects/${encodeURIComponent(text)}`} title={text}>
+          {text}
+        </Link>
+      ),
+    },
+    {
+      title: <HeaderWithTooltip title="Etiketler" maxWidth={200} />,
+      dataIndex: "Labels",
+      key: "Labels",
+      width: 120,
+      render: (labels: any[]) => (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+          {labels && labels.length > 0 ? (
+            labels.map((label: any) => (
+              <Tooltip 
+                key={label.id} 
+                title={label.description || label.name}
+                placement="top"
+              >
+                <Tag
+                  color={label.color}
+                  style={{
+                    margin: 0,
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  {label.name}
+                </Tag>
+              </Tooltip>
+            ))
+          ) : (
+            <span style={{ color: "#999" }}>-</span>
+          )}
+        </div>
+      ),
     },
     {
       title: <HeaderWithTooltip title="Başlık" maxWidth={250} />,
@@ -162,10 +213,10 @@ export default function CustomTable() {
           text === "Tamamlandı"
             ? "#52c41a"
             : text === "Devam Ediyor"
-            ? "#1890ff"
-            : text === "Beklemede"
-            ? "#faad14"
-            : "#666";
+              ? "#1890ff"
+              : text === "Beklemede"
+                ? "#faad14"
+                : "#666";
         return (
           <span title={text} style={{ color }}>
             {text}
@@ -186,12 +237,12 @@ export default function CustomTable() {
           text === "Kritik"
             ? "#ff4d4f"
             : text === "Yüksek"
-            ? "#fa8c16"
-            : text === "Orta"
-            ? "#1890ff"
-            : text === "Düşük"
-            ? "#52c41a"
-            : "#666";
+              ? "#fa8c16"
+              : text === "Orta"
+                ? "#1890ff"
+                : text === "Düşük"
+                  ? "#52c41a"
+                  : "#666";
         return (
           <span title={text} style={{ color, fontWeight: "bold" }}>
             {text}
@@ -201,11 +252,8 @@ export default function CustomTable() {
     },
   ];
 
-  const [selectedRowKey, setSelectedRowKey] = useState(null);
-  const dispatch = useDispatch();
   function onRowClick(record: any) {
-    setSelectedRowKey(record.key);
-    dispatch(editProjectsRowInfo(record));
+    setSelectedProject(record);
   }
 
   return (
@@ -216,7 +264,7 @@ export default function CustomTable() {
         </div>
       ) : (
         <Table
-          dataSource={dataSource}
+          dataSource={projects}
           columns={columns}
           bordered
           size="small"
@@ -239,7 +287,7 @@ export default function CustomTable() {
             },
           }}
           onRow={(record, rowIndex) => {
-            const isSelected = record.key === selectedRowKey;
+            const isSelected = selectedProject?.key === record.key;
 
             return {
               onClick: () => {

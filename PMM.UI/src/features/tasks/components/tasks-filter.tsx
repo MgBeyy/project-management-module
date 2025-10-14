@@ -1,16 +1,14 @@
 import { Button, DatePicker, Form, Input, InputNumber, Select } from "antd";
 import type { DatePickerProps, InputNumberProps } from "antd";
-import { ProjectStatus, ProjectPriority } from "../services/get-projects";
-import { useProjectsStore } from "@/store/zustand/projects-store";
-import MultiSelectSearch from "./multi-select-search";
+import { TaskStatus } from "../services/get-tasks";
+import { useTasksStore } from "@/store/zustand/tasks-store";
 
-export default function ProjectsFilter() {
+export default function TasksFilter() {
   const [form] = Form.useForm();
-  const { setFilters, resetFilters } = useProjectsStore();
+  const { setFilters, resetFilters } = useTasksStore();
 
   const onChangeNumber: InputNumberProps["onChange"] = value => {
-    console.log("Saat değişti:", value);
-    form.setFieldValue("PlannedHourse", value);
+    console.log("Sayı değişti:", value);
   };
 
   const onChangeDate: DatePickerProps["onChange"] = (date, dateString) => {
@@ -25,26 +23,26 @@ export default function ProjectsFilter() {
     console.log("✅ Form değerleri (raw):", values);
 
     const serializedPayload = {
-      Code: values.code || undefined,
       Title: values.title || undefined,
-      PlannedStartDate: values.plannedStartDate
-        ? values.plannedStartDate.valueOf()
+      Description: values.description || undefined,
+      ProjectId: values.projectId || undefined,
+      Status: (values.status as TaskStatus) || undefined,
+      Weight: values.weight || undefined,
+      WeightMin: values.weightMin || undefined,
+      WeightMax: values.weightMax || undefined,
+      PlannedHours: values.plannedHours || undefined,
+      PlannedHoursMin: values.plannedHoursMin || undefined,
+      PlannedHoursMax: values.plannedHoursMax || undefined,
+      CreatedAtMin: values.createdAtMin
+        ? values.createdAtMin.valueOf()
         : undefined,
-      PlannedDeadLine: values.plannedEndDate
-        ? values.plannedEndDate.valueOf()
-        : undefined,
-      StartedAt: values.startedAt ? values.startedAt.valueOf() : undefined,
-      EndAt: values.endAt ? values.endAt.valueOf() : undefined,
-
-      PlannedHourse: values.plannedHours || undefined,
-      Status: (values.status as ProjectStatus) || undefined,
-      Priority: (values.priority as ProjectPriority) || undefined,
-      LabelIds: values.labelIds && values.labelIds.length > 0 
-        ? values.labelIds.map((id: string) => parseInt(id, 10))
+      CreatedAtMax: values.createdAtMax
+        ? values.createdAtMax.valueOf()
         : undefined,
       page: 1,
       pageSize: 50,
     };
+    
     const cleanedPayload = Object.fromEntries(
       Object.entries(serializedPayload).filter(
         ([_, value]) => value !== undefined && value !== null && value !== ""
@@ -60,16 +58,11 @@ export default function ProjectsFilter() {
     resetFilters();
     console.log("Form ve Zustand temizlendi");
   };
+
   const statusOptions = [
-    { value: ProjectStatus.ACTIVE, label: "Aktif" },
-    { value: ProjectStatus.INACTIVE, label: "Pasif" },
-    { value: ProjectStatus.COMPLETED, label: "Tamamlandı" },
-    { value: ProjectStatus.PLANNED, label: "Planlandı" },
-  ];
-  const priorityOptions = [
-    { value: ProjectPriority.YUKSEK, label: "Yüksek" },
-    { value: ProjectPriority.ORTA, label: "Orta" },
-    { value: ProjectPriority.DUSUK, label: "Düşük" },
+    { value: TaskStatus.TODO, label: "Yapılacak" },
+    { value: TaskStatus.IN_PROGRESS, label: "Devam Ediyor" },
+    { value: TaskStatus.DONE, label: "Tamamlandı" },
   ];
 
   return (
@@ -84,77 +77,82 @@ export default function ProjectsFilter() {
         }}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-2"
       >
-        <Form.Item label="Kod" name="code" className="mb-3">
-          <Input placeholder="Kod" size="middle" />
-        </Form.Item>
-
         <Form.Item label="Başlık" name="title" className="mb-3">
           <Input placeholder="Başlık" size="middle" />
         </Form.Item>
 
-        <Form.Item label="Etiketler" name="labelIds" className="mb-3">
-          <MultiSelectSearch
-            placeholder="Etiket ara ve seç..."
-            apiUrl="/Label"
-            size="middle"
-          />
+        <Form.Item label="Açıklama" name="description" className="mb-3">
+          <Input placeholder="Açıklama" size="middle" />
         </Form.Item>
 
-        <Form.Item
-          label="Planlanan Başlangıç"
-          name="plannedStartDate"
-          className="mb-3"
-        >
-          <DatePicker
-            onChange={onChangeDate}
-            placeholder="Başlangıç tarihi"
+        <Form.Item label="Proje ID" name="projectId" className="mb-3">
+          <InputNumber
+            placeholder="Proje ID"
             size="middle"
             style={{ width: "100%" }}
-            format="YYYY-MM-DD"
+            min={1}
           />
         </Form.Item>
 
-        <Form.Item
-          label="Planlanan Bitiş"
-          name="plannedEndDate"
-          className="mb-3"
-        >
-          <DatePicker
-            placeholder="Bitiş tarihi"
-            size="middle"
-            style={{ width: "100%" }}
-            format="YYYY-MM-DD"
-          />
-        </Form.Item>
-
-        <Form.Item label="Planlanan Saat" name="plannedHours" className="mb-3">
+        <Form.Item label="Ağırlık (Min)" name="weightMin" className="mb-3">
           <InputNumber
             min={0}
-            max={10000}
-            placeholder="Saat"
+            placeholder="Min ağırlık"
             onChange={onChangeNumber}
             size="middle"
             style={{ width: "100%" }}
           />
         </Form.Item>
 
-        <Form.Item label="Başlangıç Zamanı" name="startedAt" className="mb-3">
-          <DatePicker
-            showTime
-            placeholder="Başlangıç zamanı"
+        <Form.Item label="Ağırlık (Max)" name="weightMax" className="mb-3">
+          <InputNumber
+            min={0}
+            placeholder="Max ağırlık"
+            onChange={onChangeNumber}
             size="middle"
             style={{ width: "100%" }}
-            format="YYYY-MM-DD HH:mm:ss"
           />
         </Form.Item>
 
-        <Form.Item label="Bitiş Zamanı" name="endAt" className="mb-3">
+        <Form.Item label="Planlanan Saat (Min)" name="plannedHoursMin" className="mb-3">
+          <InputNumber
+            min={0}
+            placeholder="Min saat"
+            onChange={onChangeNumber}
+            size="middle"
+            style={{ width: "100%" }}
+          />
+        </Form.Item>
+
+        <Form.Item label="Planlanan Saat (Max)" name="plannedHoursMax" className="mb-3">
+          <InputNumber
+            min={0}
+            placeholder="Max saat"
+            onChange={onChangeNumber}
+            size="middle"
+            style={{ width: "100%" }}
+          />
+        </Form.Item>
+
+        <Form.Item label="Oluşturulma (Min)" name="createdAtMin" className="mb-3">
           <DatePicker
             showTime
-            placeholder="Bitiş zamanı"
+            placeholder="Min tarih"
             size="middle"
             style={{ width: "100%" }}
             format="YYYY-MM-DD HH:mm:ss"
+            onChange={onChangeDate}
+          />
+        </Form.Item>
+
+        <Form.Item label="Oluşturulma (Max)" name="createdAtMax" className="mb-3">
+          <DatePicker
+            showTime
+            placeholder="Max tarih"
+            size="middle"
+            style={{ width: "100%" }}
+            format="YYYY-MM-DD HH:mm:ss"
+            onChange={onChangeDate}
           />
         </Form.Item>
 
@@ -166,17 +164,6 @@ export default function ProjectsFilter() {
             size="middle"
             style={{ width: "100%" }}
             options={statusOptions}
-          />
-        </Form.Item>
-
-        <Form.Item label="Öncelik" name="priority" className="mb-3">
-          <Select
-            placeholder="Öncelik seçin"
-            allowClear
-            onChange={onChangeSelect}
-            size="middle"
-            style={{ width: "100%" }}
-            options={priorityOptions}
           />
         </Form.Item>
 

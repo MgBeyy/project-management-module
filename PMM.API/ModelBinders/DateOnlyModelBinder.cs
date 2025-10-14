@@ -35,12 +35,28 @@ namespace PMM.API.ModelBinders
 
             if (string.IsNullOrEmpty(value))
             {
-                // Nullable DateOnly? için null dönebiliriz
+                // Nullable DateOnly? iï¿½in null dï¿½nebiliriz
                 if (Nullable.GetUnderlyingType(bindingContext.ModelType) != null)
                 {
                     bindingContext.Result = ModelBindingResult.Success(null);
                 }
                 return Task.CompletedTask;
+            }
+
+            // Milisaniye (timestamp) formatï¿½nï¿½ kontrol et
+            if (long.TryParse(value, out var milliseconds))
+            {
+                try
+                {
+                    var dateTime = DateTimeOffset.FromUnixTimeMilliseconds(milliseconds).DateTime;
+                    var dateOnly = DateOnly.FromDateTime(dateTime);
+                    bindingContext.Result = ModelBindingResult.Success(dateOnly);
+                    return Task.CompletedTask;
+                }
+                catch
+                {
+                    // Eï¿½er millisaniye ï¿½evirimi baï¿½arï¿½sï¿½z olursa, diï¿½er formatlarï¿½ dene
+                }
             }
 
             foreach (var format in _formats)
@@ -52,7 +68,7 @@ namespace PMM.API.ModelBinders
                 }
             }
 
-            // Eðer hiçbir format çalýþmazsa, hata mesajý ver
+            // Eï¿½er hiï¿½bir format ï¿½alï¿½ï¿½mazsa, hata mesajï¿½ ver
             bindingContext.ModelState.TryAddModelError(
                 modelName,
                 $"The value '{value}' is not valid. Expected formats: {string.Join(", ", _formats)}");
