@@ -85,9 +85,6 @@ export default function CrudModal() {
           size={size}
           onClick={handleUpdateClick}
         />
-        <Link to="/pm-module/projects/view">
-          <Button type="primary" icon={<AiOutlineEye />} size={size} />
-        </Link>
         <Button
           type="primary"
           icon={<AiOutlineDelete />}

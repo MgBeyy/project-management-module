@@ -4,6 +4,7 @@ import AppLayout from "./layouts/app-layout";
 // import Tasks from "./pages/tasks";
 // import Activities from "./pages/activities";
 import Projects from "./pages/projects/projects";
+import ProjectDetailsPage from "./pages/projects/project-details";
 import CreateProject from "./pages/projects/create-project";
 import CrudLayout from "./layouts/crud-layout";
 export default function AppRoutes() {
@@ -11,6 +12,7 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/" element={<AppLayout />}>
         <Route path="/pm-module/projects" element={<Projects />} />
+        <Route path="/pm-module/projects/:code" element={<ProjectDetailsPage />} />
 
         {/* <Route path="/pm-module/tasks" element={<Tasks />} />
         <Route path="/pm-module/activities" element={<Activities />} /> */}

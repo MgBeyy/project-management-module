@@ -1,4 +1,5 @@
-﻿import { Table } from "antd";
+﻿import { Table, Tag, Tooltip } from "antd";
+import { Link } from "react-router-dom";
 import { useEffect } from "react";
 import type { ColumnsType } from "antd/es/table";
 import { GetProjects } from "../services/get-projects";
@@ -37,6 +38,7 @@ export default function CustomTable() {
           key: index + 1,
           Id: item?.id || null,
           Code: item?.code || "N/A",
+          Labels: item?.labels || [],
           Title: item?.title || "Başlık Yok",
           PlannedStartDate: item?.plannedStartDate || "-",
           PlannedDeadLine: item?.plannedDeadLine || "-",
@@ -90,7 +92,43 @@ export default function CustomTable() {
       ellipsis: {
         showTitle: false,
       },
-      render: (text: string) => <span title={text}>{text}</span>,
+      render: (text: string) => (
+        <Link to={`/pm-module/projects/${encodeURIComponent(text)}`} title={text}>
+          {text}
+        </Link>
+      ),
+    },
+    {
+      title: <HeaderWithTooltip title="Etiketler" maxWidth={200} />,
+      dataIndex: "Labels",
+      key: "Labels",
+      width: 120,
+      render: (labels: any[]) => (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+          {labels && labels.length > 0 ? (
+            labels.map((label: any) => (
+              <Tooltip 
+                key={label.id} 
+                title={label.description || label.name}
+                placement="top"
+              >
+                <Tag
+                  color={label.color}
+                  style={{
+                    margin: 0,
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  {label.name}
+                </Tag>
+              </Tooltip>
+            ))
+          ) : (
+            <span style={{ color: "#999" }}>-</span>
+          )}
+        </div>
+      ),
     },
     {
       title: <HeaderWithTooltip title="Başlık" maxWidth={250} />,
