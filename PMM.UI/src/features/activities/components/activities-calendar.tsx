@@ -104,26 +104,69 @@ export default function ActivitiesCalendar() {
   const minutes = [0, 15, 30, 45]; // 15 dakikalık aralıklar
   const weekDays = getWeekDays();
 
-  // Sadece başlangıç zamanı bu slota denk gelen aktiviteleri getir
+  // Başlangıç zamanı bu slota denk gelen aktiviteleri getir
+  // Eğer aktivite birden fazla güne yayılıyorsa, her günün başında (00:00) tekrar göster
   const getActivitiesStartingInSlot = (date: Dayjs, hour: number, minute: number) => {
     return activities.filter((activity) => {
       const startTime = dayjs(activity.StartTime);
+      const endTime = dayjs(activity.EndTime);
 
       // Aktivitenin başlangıç saati bu slotun içindeyse
-      return (
-        startTime.isSame(date, "day") &&
+      const startsHere = startTime.isSame(date, "day") &&
         startTime.hour() === hour &&
-        Math.floor(startTime.minute() / 15) * 15 === minute
-      );
+        Math.floor(startTime.minute() / 15) * 15 === minute;
+      
+      if (startsHere) return true;
+
+      // Eğer aktivite birden fazla güne yayılıyorsa
+      if (!startTime.isSame(endTime, "day")) {
+        // Bu gün aktivitenin başlangıç ve bitiş tarihleri arasındaysa
+        // ve bu slot günün başlangıcı (00:00) ise, aktiviteyi göster
+        const isActivityDay = date.isAfter(startTime, "day") && date.isBefore(endTime, "day");
+        const isLastDay = date.isSame(endTime, "day") && date.isAfter(startTime, "day");
+        const isDayStart = hour === 0 && minute === 0;
+        
+        if ((isActivityDay || isLastDay) && isDayStart) {
+          return true;
+        }
+      }
+
+      return false;
     });
   };
 
   // Aktivitenin süresini hesapla (15 dakikalık slot cinsinden)
-  const getActivityDuration = (activity: any) => {
+  // Eğer aktivite birden fazla güne yayılıyorsa, sadece başladığı günün sonuna kadar olan kısmı hesapla
+  const getActivityDuration = (activity: any, currentDate: Dayjs) => {
     const startTime = dayjs(activity.StartTime);
     const endTime = dayjs(activity.EndTime);
-    const durationMinutes = endTime.diff(startTime, "minute");
-    return Math.max(1, Math.ceil(durationMinutes / 15)); // En az 1 slot
+    
+    // Eğer aktivite aynı gün içinde bitiyorsa
+    if (startTime.isSame(endTime, "day")) {
+      const durationMinutes = endTime.diff(startTime, "minute");
+      return Math.max(1, Math.ceil(durationMinutes / 15)); // En az 1 slot
+    }
+    
+    // Aktivite birden fazla güne yayılıyor
+    // Başladığı gün için: o günün sonuna kadar
+    if (startTime.isSame(currentDate, "day")) {
+      const endOfDay = startTime.endOf("day");
+      const durationMinutes = endOfDay.diff(startTime, "minute");
+      return Math.max(1, Math.ceil(durationMinutes / 15));
+    }
+    
+    // Diğer günler için: tam gün (00:00'dan 23:59'a kadar)
+    const startOfDay = currentDate.startOf("day");
+    
+    // Eğer bu gün aktivitenin son günüyse
+    if (endTime.isSame(currentDate, "day")) {
+      const durationMinutes = endTime.diff(startOfDay, "minute");
+      return Math.max(1, Math.ceil(durationMinutes / 15));
+    }
+    
+    // Ara günler için tam gün
+    const fullDayMinutes = 24 * 60;
+    return Math.ceil(fullDayMinutes / 15);
   };
 
   // Kullanıcı ID'sine göre renk üret
@@ -472,7 +515,7 @@ export default function ActivitiesCalendar() {
                         }}
                       >
                         {slotActivities.map((activity: any) => {
-                          const duration = getActivityDuration(activity);
+                          const duration = getActivityDuration(activity, day);
                           const slotHeight = 40; // minHeight of each slot
                           const activityHeight = duration * slotHeight - 4; // -4 for gap
 
