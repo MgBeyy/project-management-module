@@ -2,6 +2,7 @@ import { Button, DatePicker, Form, Input, InputNumber, Select } from "antd";
 import type { DatePickerProps, InputNumberProps } from "antd";
 import { ProjectStatus, ProjectPriority } from "../services/get-projects";
 import { useProjectsStore } from "@/store/zustand/projects-store";
+import MultiSelectSearch from "./multi-select-search";
 
 export default function ProjectsFilter() {
   const [form] = Form.useForm();
@@ -38,6 +39,9 @@ export default function ProjectsFilter() {
       PlannedHourse: values.plannedHours || undefined,
       Status: (values.status as ProjectStatus) || undefined,
       Priority: (values.priority as ProjectPriority) || undefined,
+      LabelIds: values.labelIds && values.labelIds.length > 0 
+        ? values.labelIds.map((id: string) => parseInt(id, 10))
+        : undefined,
       page: 1,
       pageSize: 50,
     };
@@ -86,6 +90,14 @@ export default function ProjectsFilter() {
 
         <Form.Item label="Başlık" name="title" className="mb-3">
           <Input placeholder="Başlık" size="middle" />
+        </Form.Item>
+
+        <Form.Item label="Etiketler" name="labelIds" className="mb-3">
+          <MultiSelectSearch
+            placeholder="Etiket ara ve seç..."
+            apiUrl="/Label"
+            size="middle"
+          />
         </Form.Item>
 
         <Form.Item

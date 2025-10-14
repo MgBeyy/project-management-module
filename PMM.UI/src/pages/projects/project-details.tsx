@@ -1,9 +1,9 @@
-import { Card, Descriptions, Button } from "antd";
+import { Card, Descriptions, Button, Tag, Divider, Badge, Space } from "antd";
 import { Link, useParams } from "react-router-dom";
 import Spinner from "@/components/spinner";
 import { useEffect, useState } from "react";
 import { getProjectByCode, ProjectDetails } from "@/features/projects/services/get-project-by-code";
-import { AiOutlineArrowLeft } from "react-icons/ai";
+import { AiOutlineArrowLeft, AiOutlineCalendar, AiOutlineClockCircle, AiOutlineUser } from "react-icons/ai";
 
 export default function ProjectDetailsPage() {
   const { code } = useParams();
@@ -60,37 +60,154 @@ export default function ProjectDetailsPage() {
     );
   }
 
+  const getStatusColor = (status: string) => {
+    const statusMap: Record<string, string> = {
+      Active: "green",
+      Inactive: "default",
+      Completed: "blue",
+      Planned: "orange",
+    };
+    return statusMap[status] || "default";
+  };
+
+  const getPriorityColor = (priority: string) => {
+    const priorityMap: Record<string, string> = {
+      High: "red",
+      Medium: "orange",
+      Low: "green",
+    };
+    return priorityMap[priority] || "default";
+  };
+
+  const formatDateTime = (dateString: string | null) => {
+    if (!dateString || dateString === "-") return "-";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString("tr-TR", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
   return (
-    <div className="h-full w-full p-4">
+    <div className="h-full w-full p-6 bg-gray-50">
       <div className="mb-4">
         <Link to="/pm-module/projects">
-          <Button type="dashed" icon={<AiOutlineArrowLeft />}>Projeler</Button>
+          <Button type="default" icon={<AiOutlineArrowLeft />} size="large">
+            Projeler
+          </Button>
         </Link>
       </div>
 
-      <Card title={`Proje Detayı • ${project.Code}`} className="shadow-sm">
-        <Descriptions bordered column={1} size="middle">
-          <Descriptions.Item label="Kod">{project.Code}</Descriptions.Item>
-          <Descriptions.Item label="Başlık">{project.Title}</Descriptions.Item>
-          <Descriptions.Item label="Durum">{project.Status}</Descriptions.Item>
-          <Descriptions.Item label="Öncelik">{project.Priority}</Descriptions.Item>
-          <Descriptions.Item label="Planlanan Başlangıç">
-            {project.PlannedStartDate || "-"}
-          </Descriptions.Item>
-          <Descriptions.Item label="Planlanan Bitiş">
-            {project.PlannedDeadLine || "-"}
-          </Descriptions.Item>
-          <Descriptions.Item label="Planlanan Saat">
-            {project.PlannedHourse} saat
-          </Descriptions.Item>
-          <Descriptions.Item label="Başlangıç Zamanı">
-            {project.StartedAt || "-"}
-          </Descriptions.Item>
-          <Descriptions.Item label="Bitiş Zamanı">
-            {project.EndAt || "-"}
-          </Descriptions.Item>
-        </Descriptions>
-      </Card>
+      <div className="grid grid-cols-1 gap-4">
+        {/* Header Card */}
+        <Card className="shadow-md">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                {project.Title}
+              </h1>
+              <Space size="middle">
+                <Tag color="blue" className="text-sm px-3 py-1">
+                  {project.Code}
+                </Tag>
+                <Badge 
+                  status={getStatusColor(project.Status) as any} 
+                  text={project.Status} 
+                />
+                <Tag color={getPriorityColor(project.Priority)}>
+                  {project.Priority} Öncelik
+                </Tag>
+              </Space>
+            </div>
+          </div>
+
+          {/* Labels */}
+          {project.Labels && project.Labels.length > 0 && (
+            <div className="mt-4">
+              <Divider orientation="left" style={{ margin: "16px 0" }}>
+                Etiketler
+              </Divider>
+              <Space size={[8, 8]} wrap>
+                {project.Labels.map((label) => (
+                  <Tag
+                    key={label.id}
+                    color={label.color}
+                    style={{
+                      fontSize: "14px",
+                      padding: "4px 12px",
+                      borderRadius: "6px",
+                    }}
+                  >
+                    {label.name}
+                  </Tag>
+                ))}
+              </Space>
+            </div>
+          )}
+        </Card>
+
+        {/* Main Details Card */}
+        <Card title="Proje Bilgileri" className="shadow-md">
+          <Descriptions bordered column={{ xs: 1, sm: 1, md: 2 }} size="middle">
+            <Descriptions.Item label={<><AiOutlineCalendar className="inline mr-2" />Planlanan Başlangıç</>}>
+              {project.PlannedStartDate || "-"}
+            </Descriptions.Item>
+            <Descriptions.Item label={<><AiOutlineCalendar className="inline mr-2" />Planlanan Bitiş</>}>
+              {project.PlannedDeadLine || "-"}
+            </Descriptions.Item>
+            <Descriptions.Item label={<><AiOutlineClockCircle className="inline mr-2" />Planlanan Saat</>}>
+              {project.PlannedHourse !== null ? `${project.PlannedHourse} saat` : "-"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Başlangıç Zamanı">
+              {formatDateTime(project.StartedAt)}
+            </Descriptions.Item>
+            <Descriptions.Item label="Bitiş Zamanı">
+              {formatDateTime(project.EndAt)}
+            </Descriptions.Item>
+            <Descriptions.Item label="Müşteri ID">
+              {project.ClientId || "-"}
+            </Descriptions.Item>
+          </Descriptions>
+        </Card>
+
+        {/* Additional Info Card */}
+        <Card title="Ek Bilgiler" className="shadow-md">
+          <Descriptions bordered column={1} size="middle">
+            <Descriptions.Item label="Üst Proje ID'leri">
+              {project.ParentProjectIds && project.ParentProjectIds.length > 0 ? (
+                <Space size={[8, 8]} wrap>
+                  {project.ParentProjectIds.map((id) => (
+                    <Tag key={id} color="purple">
+                      ID: {id}
+                    </Tag>
+                  ))}
+                </Space>
+              ) : (
+                "-"
+              )}
+            </Descriptions.Item>
+            <Descriptions.Item label={<><AiOutlineUser className="inline mr-2" />Oluşturan Kullanıcı ID</>}>
+              {project.CreatedById}
+            </Descriptions.Item>
+            <Descriptions.Item label="Oluşturulma Tarihi">
+              {formatDateTime(project.CreatedAt)}
+            </Descriptions.Item>
+            <Descriptions.Item label={<><AiOutlineUser className="inline mr-2" />Güncelleyen Kullanıcı ID</>}>
+              {project.UpdatedById || "-"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Güncellenme Tarihi">
+              {formatDateTime(project.UpdatedAt)}
+            </Descriptions.Item>
+          </Descriptions>
+        </Card>
+      </div>
     </div>
   );
 }
