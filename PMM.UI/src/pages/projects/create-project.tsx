@@ -22,10 +22,9 @@ import { Link } from "react-router-dom";
 import { getClientsForSelect } from "@/features/projects/services/get-clients-for-select";
 import { createLabel } from "@/features/projects/services/create-label";
 import { createProject } from "@/features/projects/services/create-project";
-import { useNotification } from "@/hooks/useNotification";
+import { showNotification } from "@/utils/notification";
 
 export default function CreateProject() {
-  const notification = useNotification();
   const [form] = Form.useForm();
   const [labelForm] = Form.useForm();
 
@@ -135,7 +134,7 @@ export default function CreateProject() {
 
       console.log("Label oluşturuldu:", response.data);
 
-      notification.success("Etiket Oluşturuldu", "Etiket başarıyla oluşturuldu!");
+      showNotification.success("Etiket Oluşturuldu", "🎉 Etiket başarıyla oluşturuldu!");
 
       setIsLabelModalVisible(false);
       labelForm.resetFields();
@@ -150,15 +149,6 @@ export default function CreateProject() {
     } catch (error: any) {
       console.error("Label oluşturma hatası:", error);
 
-      if (error.response?.status === 400) {
-        notification.error("Hata", "Geçersiz etiket bilgileri!");
-      } else if (error.response?.status === 409) {
-        notification.error("Hata", "Bu isimde etiket zaten mevcut!");
-      } else if (error.code === "ERR_NETWORK") {
-        notification.error("Bağlantı Hatası", "Backend çalışıyor mu?");
-      } else {
-        notification.error("Hata", "Etiket oluşturulamadı!");
-      }
     } finally {
       setLabelLoading(false);
     }
@@ -249,7 +239,7 @@ export default function CreateProject() {
 
       console.log("✅ Proje başarıyla oluşturuldu:", response.data);
 
-      notification.success("Proje Oluşturuldu", "🎉 Proje başarıyla oluşturuldu!");
+      showNotification.success("Proje Oluşturuldu", "🎉 Proje başarıyla oluşturuldu!");
 
       form.resetFields();
       setCustomerValue("");
@@ -258,24 +248,7 @@ export default function CreateProject() {
       setSelectedLabels([]);
     } catch (error: any) {
       console.error("Proje oluşturma hatası:", error);
-
-      if (error.response?.status === 400) {
-        notification.error("Geçersiz Bilgiler", "Lütfen proje bilgilerini kontrol edin.");
-      } else if (error.response?.status === 409) {
-        notification.error("Çakışma", "Bu proje kodu zaten mevcut!");
-      } else if (error.response?.status === 500) {
-        notification.error("Sunucu Hatası", "Lütfen tekrar deneyin.");
-      } else if (error.code === "ERR_NETWORK") {
-        notification.error("Bağlantı Hatası", "Backend çalışıyor mu?");
-      } else if (error.code === "ECONNABORTED") {
-        notification.error("Zaman Aşımı", "İstek zaman aşımına uğradı! Tekrar deneyin.");
-      } else {
-        notification.error("Hata", "Proje oluşturulamadı! Tekrar deneyin.");
-      }
-
-      if (error.response?.data) {
-        console.error("Backend hata detayı:", error.response.data);
-      }
+      // API client zaten hata mesajını gösteriyor, burada sadece logluyoruz
     }
   };
 

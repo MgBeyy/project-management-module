@@ -85,7 +85,6 @@ export default function UpdateProjectModal({
       onSuccess();
       onClose();
     } catch (error: any) {
-      notification.error("Hata", error?.message || "Proje güncellenirken bir hata oluştu.")
     } finally {
       setIsLoading(false);
     }

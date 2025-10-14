@@ -23,16 +23,6 @@ export default function DeleteConfirmModal({
       onClose();
     } catch (error: any) {
       console.error("Görev silme hatası:", error);
-
-      if (error.response?.status === 404) {
-        notification.error("Hata", "Görev bulunamadı");
-      } else if (error.response?.status === 500) {
-        notification.error("Sunucu Hatası", "Lütfen tekrar deneyin.");
-      } else if (error.code === "ERR_NETWORK") {
-        notification.error("Bağlantı Hatası", "Backend çalışıyor mu?");
-      } else {
-        notification.error("Hata", "Görev silinemedi! Tekrar deneyin.");
-      }
     }
   };
 

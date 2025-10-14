@@ -54,16 +54,6 @@ export default function CreateActivityModal({
     } catch (error: any) {
       console.error("Etkinlik oluşturma hatası:", error);
 
-      if (error.response?.status === 400) {
-        notification.error("Geçersiz Bilgiler", "Lütfen etkinlik bilgilerini kontrol edin.");
-      } else if (error.response?.status === 500) {
-        notification.error("Sunucu Hatası", "Lütfen tekrar deneyin.");
-      } else if (error.code === "ERR_NETWORK") {
-        notification.error("Bağlantı Hatası", "Backend çalışıyor mu?");
-      } else {
-        notification.error("Hata", "Etkinlik oluşturulamadı! Tekrar deneyin.");
-      }
-
       if (error.response?.data) {
         console.error("Backend hata detayı:", error.response.data);
       }

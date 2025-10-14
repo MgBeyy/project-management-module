@@ -50,19 +50,6 @@ export default function UpdateTaskModal({
     } catch (error: any) {
       console.error("Update error:", error);
 
-      if (error.response?.status === 404) {
-        notification.error("Hata", "Görev bulunamadı");
-      } else if (error.response?.status === 400) {
-        notification.error("Geçersiz Bilgiler", "Lütfen görev bilgilerini kontrol edin.");
-      } else if (error.response?.status === 500) {
-        notification.error("Sunucu Hatası", "Lütfen tekrar deneyin.");
-      } else if (error.code === "ERR_NETWORK") {
-        notification.error("Bağlantı Hatası", "Backend çalışıyor mu?");
-      } else if (error.code === "ECONNABORTED") {
-        notification.error("Zaman Aşımı", "İstek zaman aşımına uğradı! Tekrar deneyin.");
-      } else {
-        notification.error("Hata", "Görev güncellenemedi! Tekrar deneyin.");
-      }
 
       if (error.response?.data) {
         console.error("Backend hata detayı:", error.response.data);

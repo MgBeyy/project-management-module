@@ -52,17 +52,7 @@ export default function UpdateActivityModal({
     } catch (error: any) {
       console.error("Etkinlik güncelleme hatası:", error);
 
-      if (error.response?.status === 404) {
-        notification.error("Hata", "Etkinlik bulunamadı");
-      } else if (error.response?.status === 400) {
-        notification.error("Geçersiz Bilgiler", "Lütfen etkinlik bilgilerini kontrol edin.");
-      } else if (error.response?.status === 500) {
-        notification.error("Sunucu Hatası", "Lütfen tekrar deneyin.");
-      } else if (error.code === "ERR_NETWORK") {
-        notification.error("Bağlantı Hatası", "Backend çalışıyor mu?");
-      } else {
-        notification.error("Hata", "Etkinlik güncellenemedi! Tekrar deneyin.");
-      }
+     
 
       if (error.response?.data) {
         console.error("Backend hata detayı:", error.response.data);
