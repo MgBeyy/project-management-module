@@ -7,8 +7,8 @@ using PMM.Core.Forms;
 using PMM.Core.Mappers;
 using PMM.Core.Validators;
 using PMM.Data.Entities;
-using PMM.Data.Repositories;
 using PMM.Data.Enums;
+using PMM.Data.Repositories;
 using System.Security.Principal;
 
 namespace PMM.Core.Services
@@ -229,8 +229,9 @@ namespace PMM.Core.Services
             int page = form.Page ?? 1;
             int pageSize = form.PageSize ?? 10;
             int totalRecords = await query.CountAsync();
-            
+
             var tasks = await query
+                .Include(t => t.Project)
                 .Include(t => t.TaskLabels)
                     .ThenInclude(tl => tl.Label)
                 .Skip((page - 1) * pageSize)
@@ -280,7 +281,7 @@ namespace PMM.Core.Services
                 var task = await _taskRepository.GetByIdAsync(taskId);
                 if (task == null)
                     throw new NotFoundException($"ID {taskId} ile görev bulunamadı!");
-                
+
                 tasks.Add(task);
             }
 

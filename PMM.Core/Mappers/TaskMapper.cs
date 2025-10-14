@@ -27,6 +27,7 @@ namespace PMM.Core.Mappers
             {
                 Id = task.Id,
                 ProjectId = task.ProjectId,
+                ProjectCode = task.Project?.Code,
                 ParentTaskId = task.ParentTaskId,
                 Title = task.Title,
                 Description = task.Description,
