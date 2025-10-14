@@ -3,7 +3,7 @@ using PMM.Core.Helpers;
 
 namespace PMM.API.ModelBinders
 {
-    public class DateOnlyModelBinder : IModelBinder
+    public class DateTimeModelBinder : IModelBinder
     {
         public Task BindModelAsync(ModelBindingContext bindingContext)
         {
@@ -24,7 +24,7 @@ namespace PMM.API.ModelBinders
 
             if (string.IsNullOrEmpty(value))
             {
-                // Nullable DateOnly? iï¿½in null dï¿½nebiliriz
+                // Nullable DateTime? için null dönebiliriz
                 if (Nullable.GetUnderlyingType(bindingContext.ModelType) != null)
                 {
                     bindingContext.Result = ModelBindingResult.Success(null);
@@ -32,13 +32,13 @@ namespace PMM.API.ModelBinders
                 return Task.CompletedTask;
             }
 
-            // Sadece Unix timestamp (milliseconds) formatï¿½nï¿½ kabul et
+            // Sadece Unix timestamp (milliseconds) formatýný kabul et
             if (long.TryParse(value, out var timestamp))
             {
                 try
                 {
-                    var dateOnly = DateTimeHelper.FromUnixMillisecondsToDateOnly(timestamp);
-                    bindingContext.Result = ModelBindingResult.Success(dateOnly);
+                    var dateTime = DateTimeHelper.FromUnixMillisecondsToDateTime(timestamp);
+                    bindingContext.Result = ModelBindingResult.Success(dateTime);
                     return Task.CompletedTask;
                 }
                 catch (Exception ex)

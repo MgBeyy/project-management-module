@@ -13,6 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers(options =>
 {
     options.ModelBinderProviders.Insert(0, new DateOnlyModelBinderProvider());
+    options.ModelBinderProviders.Insert(0, new DateTimeModelBinderProvider());
 });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -28,6 +29,8 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         options.JsonSerializerOptions.Converters.Add(new CustomDateOnlyConverter());
         options.JsonSerializerOptions.Converters.Add(new NullableCustomDateOnlyConverter());
+        options.JsonSerializerOptions.Converters.Add(new CustomDateTimeConverter());
+        options.JsonSerializerOptions.Converters.Add(new NullableCustomDateTimeConverter());
     });
 
 
