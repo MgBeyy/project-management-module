@@ -1,0 +1,55 @@
+import { Modal } from "antd";
+import { deleteTask } from "../../services/delete-task";
+import { useTasksStore } from "@/store/zustand/tasks-store";
+import { useNotification } from "@/hooks/useNotification";
+
+export default function DeleteConfirmModal({
+  visible,
+  onClose,
+  task,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  task: any;
+}) {
+  const notification = useNotification();
+  const { triggerRefresh } = useTasksStore();
+
+  const handleDelete = async () => {
+    try {
+      await deleteTask(task.Id);
+      notification.success("Görev Silindi", "Görev başarıyla silindi!");
+      triggerRefresh();
+      onClose();
+    } catch (error: any) {
+      console.error("Görev silme hatası:", error);
+
+      if (error.response?.status === 404) {
+        notification.error("Hata", "Görev bulunamadı");
+      } else if (error.response?.status === 500) {
+        notification.error("Sunucu Hatası", "Lütfen tekrar deneyin.");
+      } else if (error.code === "ERR_NETWORK") {
+        notification.error("Bağlantı Hatası", "Backend çalışıyor mu?");
+      } else {
+        notification.error("Hata", "Görev silinemedi! Tekrar deneyin.");
+      }
+    }
+  };
+
+  return (
+    <Modal
+      title="Görevi Sil"
+      open={visible}
+      onOk={handleDelete}
+      onCancel={onClose}
+      okText="Sil"
+      cancelText="İptal"
+      okButtonProps={{ danger: true }}
+    >
+      <p>
+        <strong>{task?.Title}</strong> başlıklı görevi silmek istediğinizden
+        emin misiniz?
+      </p>
+    </Modal>
+  );
+}

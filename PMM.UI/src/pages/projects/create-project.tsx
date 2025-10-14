@@ -8,7 +8,6 @@ import {
   AutoComplete,
   Spin,
   ColorPicker,
-  message,
   Modal,
 } from "antd";
 import { useState } from "react";
@@ -18,13 +17,15 @@ import {
   ProjectStatus,
   ProjectPriority,
 } from "../../features/projects/services/get-projects";
-import axios from "axios";
 import MultiSelectSearch from "../../features/projects/components/multi-select-search";
 import { Link } from "react-router-dom";
 import { getClientsForSelect } from "@/features/projects/services/get-clients-for-select";
 import { createLabel } from "@/features/projects/services/create-label";
 import { createProject } from "@/features/projects/services/create-project";
+import { useNotification } from "@/hooks/useNotification";
+
 export default function CreateProject() {
+  const notification = useNotification();
   const [form] = Form.useForm();
   const [labelForm] = Form.useForm();
 
@@ -134,7 +135,7 @@ export default function CreateProject() {
 
       console.log("Label oluşturuldu:", response.data);
 
-      message.success("Etiket başarıyla oluşturuldu!");
+      notification.success("Etiket Oluşturuldu", "Etiket başarıyla oluşturuldu!");
 
       setIsLabelModalVisible(false);
       labelForm.resetFields();
@@ -150,13 +151,13 @@ export default function CreateProject() {
       console.error("Label oluşturma hatası:", error);
 
       if (error.response?.status === 400) {
-        message.error("Geçersiz etiket bilgileri!");
+        notification.error("Hata", "Geçersiz etiket bilgileri!");
       } else if (error.response?.status === 409) {
-        message.error("Bu isimde etiket zaten mevcut!");
+        notification.error("Hata", "Bu isimde etiket zaten mevcut!");
       } else if (error.code === "ERR_NETWORK") {
-        message.error("Bağlantı hatası! Backend çalışıyor mu?");
+        notification.error("Bağlantı Hatası", "Backend çalışıyor mu?");
       } else {
-        message.error("Etiket oluşturulamadı!");
+        notification.error("Hata", "Etiket oluşturulamadı!");
       }
     } finally {
       setLabelLoading(false);
@@ -248,7 +249,7 @@ export default function CreateProject() {
 
       console.log("✅ Proje başarıyla oluşturuldu:", response.data);
 
-      message.success("🎉 Proje başarıyla oluşturuldu!");
+      notification.success("Proje Oluşturuldu", "🎉 Proje başarıyla oluşturuldu!");
 
       form.resetFields();
       setCustomerValue("");
@@ -259,17 +260,17 @@ export default function CreateProject() {
       console.error("Proje oluşturma hatası:", error);
 
       if (error.response?.status === 400) {
-        message.error("Geçersiz proje bilgileri! Lütfen kontrol edin.");
+        notification.error("Geçersiz Bilgiler", "Lütfen proje bilgilerini kontrol edin.");
       } else if (error.response?.status === 409) {
-        message.error("Bu proje kodu zaten mevcut!");
+        notification.error("Çakışma", "Bu proje kodu zaten mevcut!");
       } else if (error.response?.status === 500) {
-        message.error("Sunucu hatası! Lütfen tekrar deneyin.");
+        notification.error("Sunucu Hatası", "Lütfen tekrar deneyin.");
       } else if (error.code === "ERR_NETWORK") {
-        message.error("Bağlantı hatası! Backend çalışıyor mu?");
+        notification.error("Bağlantı Hatası", "Backend çalışıyor mu?");
       } else if (error.code === "ECONNABORTED") {
-        message.error("İstek zaman aşımına uğradı! Tekrar deneyin.");
+        notification.error("Zaman Aşımı", "İstek zaman aşımına uğradı! Tekrar deneyin.");
       } else {
-        message.error("Proje oluşturulamadı! Tekrar deneyin.");
+        notification.error("Hata", "Proje oluşturulamadı! Tekrar deneyin.");
       }
 
       if (error.response?.data) {
