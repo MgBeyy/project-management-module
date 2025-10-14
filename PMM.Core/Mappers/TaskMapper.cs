@@ -40,7 +40,7 @@ namespace PMM.Core.Mappers
                 CreatedAt = task.CreatedAt,
                 CreatedById = task.CreatedById,
                 UpdatedAt = task.UpdatedAt,
-                UpdatedById = task.UpdatedById,
+                UpdatedById = task.UpdatedById
             };
         }
 

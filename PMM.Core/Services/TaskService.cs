@@ -8,6 +8,7 @@ using PMM.Core.Mappers;
 using PMM.Core.Validators;
 using PMM.Data.Entities;
 using PMM.Data.Repositories;
+using PMM.Data.Enums;
 using System.Security.Principal;
 
 namespace PMM.Core.Services
@@ -19,6 +20,8 @@ namespace PMM.Core.Services
         Task<TaskDto> EditTaskAsync(int taskId, UpdateTaskForm form);
         Task<PagedResult<TaskDto>> Query(QueryTaskForm form);
         Task<List<TaskDto>> GetSubTasksByTaskId(int taskId);
+        Task DeleteTaskAsync(int taskId);
+        Task<List<TaskDto>> BulkUpdateTaskStatusAsync(BulkUpdateTaskStatusForm form);
     }
 
     public class TaskService : _BaseService, ITaskService
@@ -26,6 +29,7 @@ namespace PMM.Core.Services
         private readonly ITaskRepository _taskRepository;
         private readonly ITaskLabelRepository _taskLabelRepository;
         private readonly ILabelRepository _labelRepository;
+        private readonly ITaskDependencyRepository _taskDependencyRepository;
         private readonly ILogger<TaskService> _logger;
         private readonly IUserRepository _userRepository;
         private readonly IProjectRepository _projectRepository;
@@ -34,6 +38,7 @@ namespace PMM.Core.Services
             ITaskRepository taskRepository,
             ITaskLabelRepository taskLabelRepository,
             ILabelRepository labelRepository,
+            ITaskDependencyRepository taskDependencyRepository,
             ILogger<TaskService> logger,
             IUserRepository userRepository,
             IProjectRepository projectRepository,
@@ -43,6 +48,7 @@ namespace PMM.Core.Services
             _taskRepository = taskRepository;
             _taskLabelRepository = taskLabelRepository;
             _labelRepository = labelRepository;
+            _taskDependencyRepository = taskDependencyRepository;
             _logger = logger;
             _userRepository = userRepository;
             _projectRepository = projectRepository;
@@ -89,21 +95,13 @@ namespace PMM.Core.Services
                 await _taskLabelRepository.SaveChangesAsync();
             }
 
-            var createdTask = await _taskRepository.Query(t => t.Id == task.Id)
-                .Include(t => t.TaskLabels)
-                    .ThenInclude(tl => tl.Label)
-                .FirstOrDefaultAsync();
-
+            var createdTask = await _taskRepository.GetWithLabelsAsync(task.Id);
             return TaskMapper.Map(createdTask);
         }
 
         public async Task<TaskDto> GetTaskAsync(int taskId)
         {
-            var task = await _taskRepository.Query(t => t.Id == taskId)
-                .Include(t => t.TaskLabels)
-                    .ThenInclude(tl => tl.Label)
-                .FirstOrDefaultAsync();
-
+            var task = await _taskRepository.GetWithLabelsAsync(taskId);
             if (task == null)
                 throw new NotFoundException("Görev Bulunamadı!");
 
@@ -122,6 +120,12 @@ namespace PMM.Core.Services
             var task = await _taskRepository.GetByIdAsync(taskId);
             if (task == null)
                 throw new NotFoundException("Görev Bulunamadı!");
+
+            // Status değişikliği validasyonu
+            if (task.Status != form.Status)
+            {
+                await ValidateTaskStatusChangeAsync(taskId, form.Status);
+            }
 
             if (form.LabelIds != null && form.LabelIds.Count != 0)
             {
@@ -158,11 +162,7 @@ namespace PMM.Core.Services
                 await _taskLabelRepository.SaveChangesAsync();
             }
 
-            var updatedTask = await _taskRepository.Query(t => t.Id == task.Id)
-                .Include(t => t.TaskLabels)
-                    .ThenInclude(tl => tl.Label)
-                .FirstOrDefaultAsync();
-
+            var updatedTask = await _taskRepository.GetWithLabelsAsync(task.Id);
             return TaskMapper.Map(updatedTask);
         }
 
@@ -229,6 +229,7 @@ namespace PMM.Core.Services
             int page = form.Page ?? 1;
             int pageSize = form.PageSize ?? 10;
             int totalRecords = await query.CountAsync();
+            
             var tasks = await query
                 .Include(t => t.TaskLabels)
                     .ThenInclude(tl => tl.Label)
@@ -247,11 +248,152 @@ namespace PMM.Core.Services
 
         public async Task<List<TaskDto>> GetSubTasksByTaskId(int taskId)
         {
-            var subTasks = await _taskRepository.Query(x => x.ParentTaskId == taskId)
-                .Include(t => t.TaskLabels)
-                    .ThenInclude(tl => tl.Label)
-                .ToListAsync();
+            var subTasks = await _taskRepository.GetSubTasksWithLabelsAsync(taskId);
             return TaskMapper.Map(subTasks);
         }
+
+        public async Task DeleteTaskAsync(int taskId)
+        {
+            var task = await _taskRepository.GetByIdAsync(taskId);
+            if (task == null)
+                throw new NotFoundException("Görev Bulunamadı!");
+
+            // Silme validasyonu - bağımlılık kontrolü
+            await ValidateTaskDeletionAsync(taskId);
+
+            _taskRepository.Delete(task);
+            await _taskRepository.SaveChangesAsync();
+        }
+
+        public async Task<List<TaskDto>> BulkUpdateTaskStatusAsync(BulkUpdateTaskStatusForm form)
+        {
+            if (form == null)
+                throw new ArgumentNullException($"{typeof(BulkUpdateTaskStatusForm)} is empty");
+
+            var validation = FormValidator.Validate(form);
+            if (!validation.IsValid)
+                throw new BusinessException(validation.Errors);
+
+            var tasks = new List<TaskEntity>();
+            foreach (var taskId in form.TaskIds)
+            {
+                var task = await _taskRepository.GetByIdAsync(taskId);
+                if (task == null)
+                    throw new NotFoundException($"ID {taskId} ile görev bulunamadı!");
+                
+                tasks.Add(task);
+            }
+
+            // Dependency kontrolü (ignore edilmemişse)
+            if (!form.IgnoreDependencyRules)
+            {
+                foreach (var task in tasks)
+                {
+                    if (task.Status != form.Status)
+                    {
+                        await ValidateTaskStatusChangeAsync(task.Id, form.Status);
+                    }
+                }
+            }
+
+            // Toplu güncelleme
+            var updatedTasks = new List<TaskDto>();
+            foreach (var task in tasks)
+            {
+                if (task.Status != form.Status)
+                {
+                    task.Status = form.Status;
+                    task.UpdatedAt = DateTime.UtcNow;
+                    task.UpdatedById = LoggedInUser.Id;
+                    _taskRepository.Update(task);
+                }
+            }
+
+            await _taskRepository.SaveChangesAsync();
+
+            // Güncellenmiş task'ları döndür
+            foreach (var task in tasks)
+            {
+                var updatedTask = await _taskRepository.GetWithLabelsAsync(task.Id);
+                if (updatedTask != null)
+                {
+                    updatedTasks.Add(TaskMapper.Map(updatedTask));
+                }
+            }
+
+            return updatedTasks;
+        }
+
+        #region Helper Methods
+
+        private async Task ValidateTaskStatusChangeAsync(int taskId, ETaskStatus newStatus)
+        {
+            // Eğer task "Done" durumuna geçirilmeye çalışılıyorsa
+            if (newStatus == ETaskStatus.Done)
+            {
+                // Bu task'ı bloke eden (bağımlı olduğu) task'ları kontrol et
+                var blockingDependencies = await _taskDependencyRepository.GetByBlockedTaskIdAsync(taskId);
+                var incompleteBlockingTasks = new List<string>();
+
+                foreach (var dependency in blockingDependencies)
+                {
+                    var blockingTask = await _taskRepository.GetByIdAsync(dependency.BlockingTaskId);
+                    if (blockingTask != null && blockingTask.Status != ETaskStatus.Done)
+                    {
+                        incompleteBlockingTasks.Add($"'{blockingTask.Title}' (ID: {blockingTask.Id})");
+                    }
+                }
+
+                if (incompleteBlockingTasks.Any())
+                {
+                    throw new BusinessException(
+                        $"Bu görev tamamlanamaz çünkü aşağıdaki bağımlı görevler henüz tamamlanmamış: {string.Join(", ", incompleteBlockingTasks)}"
+                    );
+                }
+            }
+
+            // Eğer task "Done" durumundan başka bir duruma geçirilmeye çalışılıyorsa
+            var currentTask = await _taskRepository.GetByIdAsync(taskId);
+            if (currentTask?.Status == ETaskStatus.Done && newStatus != ETaskStatus.Done)
+            {
+                // Bu task'ın bloke ettiği (bağımlısı olan) task'ları kontrol et
+                var blockedDependencies = await _taskDependencyRepository.GetByBlockingTaskIdAsync(taskId);
+                var completedBlockedTasks = new List<string>();
+
+                foreach (var dependency in blockedDependencies)
+                {
+                    var blockedTask = await _taskRepository.GetByIdAsync(dependency.BlockedTaskId);
+                    if (blockedTask != null && blockedTask.Status == ETaskStatus.Done)
+                    {
+                        completedBlockedTasks.Add($"'{blockedTask.Title}' (ID: {blockedTask.Id})");
+                    }
+                }
+
+                if (completedBlockedTasks.Any())
+                {
+                    throw new BusinessException(
+                        $"Bu görevin durumu değiştirilemez çünkü aşağıdaki bağımlı görevler zaten tamamlanmış: {string.Join(", ", completedBlockedTasks)}"
+                    );
+                }
+            }
+        }
+
+        private async Task ValidateTaskDeletionAsync(int taskId)
+        {
+            // Task'ın bağımlılıklarını kontrol et
+            var blockingDependencies = await _taskDependencyRepository.GetByBlockingTaskIdAsync(taskId);
+            var blockedDependencies = await _taskDependencyRepository.GetByBlockedTaskIdAsync(taskId);
+
+            if (blockingDependencies.Any() || blockedDependencies.Any())
+            {
+                var dependencyCount = blockingDependencies.Count + blockedDependencies.Count;
+                throw new BusinessException(
+                    $"Bu görev silinemez çünkü {dependencyCount} adet bağımlılık ilişkisi bulunmaktadır. " +
+                    "Önce tüm bağımlılıkları kaldırın."
+                );
+            }
+        }
+
+        #endregion
     }
 }
