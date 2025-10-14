@@ -33,7 +33,7 @@ export default function Header() {
   ];
   return (
     <>
-      <header className="w-[98%]  mx-auto rounded-md bg-white border-[#EFEFEF] border-2 p-5 flex items-center justify-between">
+      <header className=" rounded-md bg-white border-[#EFEFEF] border-2 p-5 flex items-center justify-between">
         <div className="flex gap-7 items-center">
           <Link to="/">
             <div className="flex gap-2 text-gray-600">
