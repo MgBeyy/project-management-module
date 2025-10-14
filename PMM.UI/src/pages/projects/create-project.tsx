@@ -209,7 +209,7 @@ export default function CreateProject() {
     const projectData = {
       Code: values.code || undefined,
       Title: values.title || undefined,
-      PlannedHourse: values.plannedHours || undefined,
+      PlannedHours: values.plannedHours || undefined,
 
       PlannedStartDate: values.plannedStartDate
         ? values.plannedStartDate.valueOf()

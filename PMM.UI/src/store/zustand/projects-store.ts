@@ -7,7 +7,7 @@ interface ProjectData {
   Title: string;
   PlannedStartDate: string;
   PlannedDeadLine: string;
-  PlannedHourse: number;
+  PlannedHours: number;
   StartedAt: string | null;
   EndAt: string | null;
   Status: string;

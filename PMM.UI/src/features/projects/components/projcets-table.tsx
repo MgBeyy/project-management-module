@@ -43,7 +43,7 @@ export default function CustomTable() {
           Title: item?.title || "Başlık Yok",
           PlannedStartDate: formatDate(item?.plannedStartDate),
           PlannedDeadLine: formatDate(item?.plannedDeadline || item?.plannedDeadLine),
-          PlannedHourse: typeof item?.plannedHours === "number" ? item.plannedHours : (typeof item?.plannedHourse === "number" ? item.plannedHourse : 0),
+          PlannedHours: typeof item?.plannedHours === "number" ? item.plannedHours : (typeof item?.plannedHours === "number" ? item.plannedHours : 0),
           StartedAt: formatDateTime(item?.startedAt),
           EndAt: formatDateTime(item?.endAt),
           Status: mapStatusToString(item?.status),
@@ -173,8 +173,8 @@ export default function CustomTable() {
     },
     {
       title: <HeaderWithTooltip title="Planlanan Saat" maxWidth={120} />,
-      dataIndex: "PlannedHourse",
-      key: "PlannedHourse",
+      dataIndex: "PlannedHours",
+      key: "PlannedHours",
       width: 120,
       ellipsis: {
         showTitle: false,

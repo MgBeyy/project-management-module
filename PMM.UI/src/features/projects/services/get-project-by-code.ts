@@ -19,7 +19,7 @@ export interface ProjectDetails {
   Title: string;
   PlannedStartDate: string;
   PlannedDeadLine: string;
-  PlannedHourse: number | null;
+  PlannedHours: number | null;
   StartedAt: string | null;
   EndAt: string | null;
   Status: string;
@@ -40,7 +40,7 @@ function normalize(item: any): ProjectDetails {
     Title: item?.title ?? "Başlık Yok",
     PlannedStartDate: formatDate(item?.plannedStartDate),
     PlannedDeadLine: formatDate(item?.plannedDeadline ?? item?.plannedDeadLine),
-    PlannedHourse: item?.plannedHours ?? item?.plannedHourse ?? null,
+    PlannedHours: item?.plannedHours ?? item?.plannedHours ?? null,
     StartedAt: formatDateTime(item?.startedAt),
     EndAt: formatDateTime(item?.endAt),
     Status: item?.status ?? "Belirtilmemiş",

@@ -15,7 +15,7 @@ interface UpdateProjectModalProps {
     Title: string;
     PlannedStartDate?: string;
     PlannedDeadLine?: string;
-    PlannedHourse?: number;
+    PlannedHours?: number;
     StartedAt?: string | null;
     EndAt?: string | null;
     Status: string;
@@ -48,7 +48,7 @@ export default function UpdateProjectModal({
         plannedDeadline: projectData.rawPlannedDeadline
           ? dayjs(projectData.rawPlannedDeadline)
           : null,
-        plannedHours: projectData.PlannedHourse,
+        plannedHours: projectData.PlannedHours,
         startedAt: projectData.rawStartedAt ? dayjs(projectData.rawStartedAt) : null,
         endAt: projectData.rawEndAt ? dayjs(projectData.rawEndAt) : null,
         status: projectData.rawStatus ?? 0,
