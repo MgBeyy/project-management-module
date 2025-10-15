@@ -5,6 +5,13 @@ interface ProjectData {
   Id: number | null;
   Code: string;
   Title: string;
+  Labels?: Array<{
+    id?: number | string;
+    name?: string;
+    description?: string;
+    color?: string;
+  }>;
+  LabelIds?: string[];
   PlannedStartDate: string;
   PlannedDeadLine: string;
   PlannedHours: number;

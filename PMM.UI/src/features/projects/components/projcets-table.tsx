@@ -35,26 +35,44 @@ export default function CustomTable() {
       
       const transformedData = (result.data || [])
         .filter((item: any) => item != null)
-        .map((item: any, index: number) => ({
-          key: index + 1,
-          Id: item?.id || null,
-          Code: item?.code || "N/A",
-          Labels: item?.labels || [],
-          Title: item?.title || "Başlık Yok",
-          PlannedStartDate: formatDate(item?.plannedStartDate),
-          PlannedDeadLine: formatDate(item?.plannedDeadline || item?.plannedDeadLine),
-          PlannedHours: typeof item?.plannedHours === "number" ? item.plannedHours : (typeof item?.plannedHours === "number" ? item.plannedHours : 0),
-          StartedAt: formatDateTime(item?.startedAt),
-          EndAt: formatDateTime(item?.endAt),
-          Status: mapStatusToString(item?.status),
-          Priority: item?.priority || "Düşük",
-          // Store raw values for editing
-          rawPlannedStartDate: item?.plannedStartDate || null,
-          rawPlannedDeadline: item?.plannedDeadline || item?.plannedDeadLine || null,
-          rawStartedAt: item?.startedAt || null,
-          rawEndAt: item?.endAt || null,
-          rawStatus: typeof item?.status === "number" ? item.status : null,
-        }));
+        .map((item: any, index: number) => {
+          const labelsArray = Array.isArray(item?.labels) ? item.labels : [];
+          const normalizedLabelIds = Array.isArray(item?.labelIds)
+            ? item.labelIds
+                .map((id: any) =>
+                  id !== null && id !== undefined ? String(id) : null
+                )
+                .filter((id: string | null): id is string => Boolean(id))
+            : labelsArray
+                .map((label: any) =>
+                  label?.id !== null && label?.id !== undefined
+                    ? String(label.id)
+                    : null
+                )
+                .filter((id: string | null): id is string => Boolean(id));
+
+          return {
+            key: index + 1,
+            Id: item?.id || null,
+            Code: item?.code || "N/A",
+            Labels: labelsArray,
+            LabelIds: normalizedLabelIds,
+            Title: item?.title || "Başlık Yok",
+            PlannedStartDate: formatDate(item?.plannedStartDate),
+            PlannedDeadLine: formatDate(item?.plannedDeadline || item?.plannedDeadLine),
+            PlannedHours: typeof item?.plannedHours === "number" ? item.plannedHours : (typeof item?.plannedHours === "number" ? item.plannedHours : 0),
+            StartedAt: formatDateTime(item?.startedAt),
+            EndAt: formatDateTime(item?.endAt),
+            Status: mapStatusToString(item?.status),
+            Priority: item?.priority || "Düşük",
+            // Store raw values for editing
+            rawPlannedStartDate: item?.plannedStartDate || null,
+            rawPlannedDeadline: item?.plannedDeadline || item?.plannedDeadLine || null,
+            rawStartedAt: item?.startedAt || null,
+            rawEndAt: item?.endAt || null,
+            rawStatus: typeof item?.status === "number" ? item.status : null,
+          };
+        });
       
       setProjects(transformedData);
       setTotalItems(result.totalRecords || 0);
