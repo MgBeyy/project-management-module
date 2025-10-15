@@ -52,7 +52,6 @@ export default function TasksCustomTable() {
           CreatedById: item?.createdById || null,
           UpdatedAt: item?.updatedAt || null,
           UpdatedById: item?.updatedById || null,
-          Weight: item?.weight || 0,
           PlannedHours: item?.plannedHours || null,
           ActualHours: item?.actualHours || null,
         }));
@@ -157,16 +156,6 @@ export default function TasksCustomTable() {
           </span>
         );
       },
-    },
-    {
-      title: <HeaderWithTooltip title="Ağırlık" maxWidth={100} />,
-      dataIndex: "Weight",
-      key: "Weight",
-      width: 100,
-      ellipsis: {
-        showTitle: false,
-      },
-      render: (text: number) => <span title={text?.toString()}>{text}</span>,
     },
     {
       title: <HeaderWithTooltip title="Planlanan Saat" maxWidth={130} />,

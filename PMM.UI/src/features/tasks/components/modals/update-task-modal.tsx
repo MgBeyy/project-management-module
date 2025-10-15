@@ -34,7 +34,6 @@ export default function UpdateTaskModal({
         title: task.Title,
         description: task.Description,
         status: statusValue,
-        weight: task.Weight,
         plannedHours: task.PlannedHours,
         actualHours: task.ActualHours,
       });
@@ -51,19 +50,6 @@ export default function UpdateTaskModal({
     } catch (error: any) {
       console.error("Update error:", error);
 
-      if (error.response?.status === 404) {
-        notification.error("Hata", "Görev bulunamadı");
-      } else if (error.response?.status === 400) {
-        notification.error("Geçersiz Bilgiler", "Lütfen görev bilgilerini kontrol edin.");
-      } else if (error.response?.status === 500) {
-        notification.error("Sunucu Hatası", "Lütfen tekrar deneyin.");
-      } else if (error.code === "ERR_NETWORK") {
-        notification.error("Bağlantı Hatası", "Backend çalışıyor mu?");
-      } else if (error.code === "ECONNABORTED") {
-        notification.error("Zaman Aşımı", "İstek zaman aşımına uğradı! Tekrar deneyin.");
-      } else {
-        notification.error("Hata", "Görev güncellenemedi! Tekrar deneyin.");
-      }
 
       if (error.response?.data) {
         console.error("Backend hata detayı:", error.response.data);
@@ -118,29 +104,15 @@ export default function UpdateTaskModal({
           <TextArea rows={4} />
         </Form.Item>
 
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item label="Durum" name="status">
-              <Select>
-                <Select.Option value={TaskStatus.TODO}>Yapılacak</Select.Option>
-                <Select.Option value={TaskStatus.IN_PROGRESS}>
-                  Devam Ediyor
-                </Select.Option>
-                <Select.Option value={TaskStatus.DONE}>Tamamlandı</Select.Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="Ağırlık"
-              name="weight"
-              rules={[{ required: true, message: "Ağırlık gereklidir" }]}
-            >
-              <InputNumber style={{ width: "100%" }} min={0} />
-            </Form.Item>
-
-          </Col>
-        </Row>
+        <Form.Item label="Durum" name="status">
+          <Select>
+            <Select.Option value={TaskStatus.TODO}>Yapılacak</Select.Option>
+            <Select.Option value={TaskStatus.IN_PROGRESS}>
+              Devam Ediyor
+            </Select.Option>
+            <Select.Option value={TaskStatus.DONE}>Tamamlandı</Select.Option>
+          </Select>
+        </Form.Item>
 
         <Row gutter={16}>
           <Col span={12}>

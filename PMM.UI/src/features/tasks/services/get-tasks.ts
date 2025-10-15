@@ -14,9 +14,6 @@ type TaskQuery = {
   ParentTaskId?: number;
   Title?: string;
   Description?: string;
-  Weight?: number;
-  WeightMin?: number;
-  WeightMax?: number;
   Status?: TaskStatus;
   PlannedHours?: number;
   PlannedHoursMin?: number;

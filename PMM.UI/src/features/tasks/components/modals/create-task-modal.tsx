@@ -27,20 +27,6 @@ export default function CreateTaskModal({
     } catch (error: any) {
       console.error("Görev oluşturma hatası:", error);
 
-      if (error.response?.status === 400) {
-        notification.error("Geçersiz Bilgiler", "Lütfen görev bilgilerini kontrol edin.");
-      } else if (error.response?.status === 409) {
-        notification.error("Çakışma", "Bu görev zaten mevcut!");
-      } else if (error.response?.status === 500) {
-        notification.error("Sunucu Hatası", "Lütfen tekrar deneyin.");
-      } else if (error.code === "ERR_NETWORK") {
-        notification.error("Bağlantı Hatası", "Backend çalışıyor mu?");
-      } else if (error.code === "ECONNABORTED") {
-        notification.error("Zaman Aşımı", "İstek zaman aşımına uğradı! Tekrar deneyin.");
-      } else {
-        notification.error("Hata", "Görev oluşturulamadı! Tekrar deneyin.");
-      }
-
       if (error.response?.data) {
         console.error("Backend hata detayı:", error.response.data);
       }
@@ -68,7 +54,6 @@ export default function CreateTaskModal({
         onFinish={handleCreate}
         initialValues={{
           status: TaskStatus.TODO,
-          weight: 0,
         }}
       >
         <Row gutter={16}>
@@ -108,14 +93,6 @@ export default function CreateTaskModal({
             </Select.Option>
             <Select.Option value={TaskStatus.DONE}>Tamamlandı</Select.Option>
           </Select>
-        </Form.Item>
-
-        <Form.Item
-          label="Ağırlık"
-          name="weight"
-          rules={[{ required: true, message: "Ağırlık gereklidir" }]}
-        >
-          <InputNumber style={{ width: "100%" }} min={0} />
         </Form.Item>
 
         <Form.Item label="Planlanan Saat" name="plannedHours">

@@ -6,7 +6,6 @@ export interface UpdateTaskData {
   title?: string;
   description?: string;
   status?: number;
-  weight?: number;
   plannedHours?: number | null;
   actualHours?: number | null;
 }
