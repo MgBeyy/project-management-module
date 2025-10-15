@@ -255,7 +255,6 @@ namespace PMM.Core.Services
                     ProjectId = randomProject.Id,
                     Title = $"{taskTitle} {randomSuffix}",
                     Description = $"Description for {taskTitle} task with ID {randomSuffix}",
-                    Weight = _rand.Next(1, 10),
                     Status = statuses[_rand.Next(statuses.Length)],
                     PlannedHours = (decimal)(_rand.NextDouble() * 40 + 1), // 1-40 hours
                     ActualHours = _rand.NextDouble() > 0.5 ? (decimal)(_rand.NextDouble() * 50 + 1) : null,

@@ -187,12 +187,6 @@ namespace PMM.Core.Services
                 query = query.Where(t => t.Title.ToLower().Contains(form.Title.Trim().ToLower()));
             if (!string.IsNullOrWhiteSpace(form.Description))
                 query = query.Where(t => t.Description != null && t.Description.ToLower().Contains(form.Description.Trim().ToLower()));
-            if (form.Weight.HasValue)
-                query = query.Where(t => t.Weight == form.Weight);
-            if (form.WeightMin.HasValue)
-                query = query.Where(t => t.Weight >= form.WeightMin);
-            if (form.WeightMax.HasValue)
-                query = query.Where(t => t.Weight <= form.WeightMax);
             if (form.Status.HasValue)
                 query = query.Where(t => t.Status == form.Status);
             if (form.PlannedHours.HasValue)
