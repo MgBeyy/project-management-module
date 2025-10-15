@@ -2,10 +2,18 @@
 import { Link } from "react-router-dom";
 import { useEffect } from "react";
 import type { ColumnsType } from "antd/es/table";
+import { CaretDownOutlined, CaretUpOutlined } from "@ant-design/icons";
 import { GetProjects } from "../services/get-projects";
 import Spinner from "../../../components/spinner";
-import { useProjectsStore } from "@/store/zustand/projects-store";
+import {
+  ProjectSortKey,
+  ProjectSortOrder,
+  useProjectsStore,
+} from "@/store/zustand/projects-store";
 import { formatDate, formatDateTime, mapStatusToString } from "@/helpers/utils";
+
+type SortableColumnKey = ProjectSortKey;
+type SortOrder = ProjectSortOrder;
 
 export default function CustomTable() {
   const {
@@ -17,20 +25,112 @@ export default function CustomTable() {
     isLoading,
     filters,
     refreshTrigger,
+    sortBy,
+    sortOrder,
     setProjects,
     setSelectedProject,
     setCurrentPage,
     setPageSize,
     setTotalItems,
     setIsLoading,
+    setSortOptions,
   } = useProjectsStore();
+
+  const handleSort = (dataIndex: SortableColumnKey) => {
+    const nextOrder: SortOrder =
+      sortBy !== dataIndex
+        ? "ascend"
+        : sortOrder === "ascend"
+          ? "descend"
+          : sortOrder === "descend"
+            ? null
+            : "ascend";
+
+    setSortOptions(nextOrder ? dataIndex : null, nextOrder);
+  };
+
+  const SortableHeader = ({
+    title,
+    maxWidth,
+    dataIndex,
+  }: {
+    title: string;
+    maxWidth: number;
+    dataIndex: SortableColumnKey;
+  }) => {
+    const isActive = sortBy === dataIndex;
+    const currentOrder = isActive ? sortOrder : null;
+
+    return (
+      <button
+        type="button"
+        onClick={() => handleSort(dataIndex)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          width: "100%",
+          background: "transparent",
+          border: "none",
+          padding: 0,
+          margin: 0,
+          cursor: "pointer",
+          textAlign: "left",
+        }}
+        title={title}
+      >
+        <span
+          style={{
+            maxWidth: maxWidth - 26,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {title}
+        </span>
+        <span
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            lineHeight: 1,
+          }}
+        >
+          <CaretUpOutlined
+            style={{
+              fontSize: 10,
+              color: currentOrder === "ascend" ? "#1677ff" : "#bfbfbf",
+            }}
+          />
+          <CaretDownOutlined
+            style={{
+              fontSize: 10,
+              color: currentOrder === "descend" ? "#1677ff" : "#bfbfbf",
+            }}
+          />
+        </span>
+      </button>
+    );
+  };
 
   async function getProjectData() {
     try {
-      console.log("filters in table:", filters);
       setIsLoading(true);
+
+      const sortParams =
+        sortBy && sortOrder
+          ? { SortBy: sortBy, SortDesc: sortOrder === "descend" }
+          : sortBy
+            ? { SortBy: sortBy, SortDesc: false }
+            : {};
+
       const result = await GetProjects({
-        query: { ...filters, page: currentPage, pageSize: pageSize },
+        query: {
+          ...filters,
+          page: currentPage,
+          pageSize,
+          ...sortParams,
+        },
       });
       
       const transformedData = (result.data || [])
@@ -86,31 +186,11 @@ export default function CustomTable() {
 
   useEffect(() => {
     getProjectData();
-  }, [filters, pageSize, currentPage, refreshTrigger]);
-
-  const HeaderWithTooltip = ({
-    title,
-    maxWidth,
-  }: {
-    title: string;
-    maxWidth: number;
-  }) => (
-    <div
-      style={{
-        maxWidth: maxWidth - 20,
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-      }}
-      title={title}
-    >
-      {title}
-    </div>
-  );
+  }, [filters, pageSize, currentPage, refreshTrigger, sortBy, sortOrder]);
 
   const columns: ColumnsType<any> = [
     {
-      title: <HeaderWithTooltip title="Kod" maxWidth={130} />,
+      title: <SortableHeader title="Kod" maxWidth={130} dataIndex="Code" />,
       dataIndex: "Code",
       key: "Code",
       width: 130,
@@ -124,7 +204,7 @@ export default function CustomTable() {
       ),
     },
     {
-      title: <HeaderWithTooltip title="Etiketler" maxWidth={200} />,
+      title: <SortableHeader title="Etiketler" maxWidth={200} dataIndex="Labels" />,
       dataIndex: "Labels",
       key: "Labels",
       width: 120,
@@ -156,7 +236,7 @@ export default function CustomTable() {
       ),
     },
     {
-      title: <HeaderWithTooltip title="Başlık" maxWidth={250} />,
+      title: <SortableHeader title="Başlık" maxWidth={250} dataIndex="Title" />,
       dataIndex: "Title",
       key: "Title",
       width: 250,
@@ -167,7 +247,11 @@ export default function CustomTable() {
     },
     {
       title: (
-        <HeaderWithTooltip title="Planlanan Başlangıç Tarihi" maxWidth={170} />
+        <SortableHeader
+          title="Planlanan Başlangıç Tarihi"
+          maxWidth={170}
+          dataIndex="PlannedStartDate"
+        />
       ),
       dataIndex: "PlannedStartDate",
       key: "PlannedStartDate",
@@ -179,7 +263,11 @@ export default function CustomTable() {
     },
     {
       title: (
-        <HeaderWithTooltip title="Planlanan Bitiş Tarihi" maxWidth={170} />
+        <SortableHeader
+          title="Planlanan Bitiş Tarihi"
+          maxWidth={170}
+          dataIndex="PlannedDeadLine"
+        />
       ),
       dataIndex: "PlannedDeadLine",
       key: "PlannedDeadLine",
@@ -190,7 +278,7 @@ export default function CustomTable() {
       render: (text: string) => <span title={text}>{text}</span>,
     },
     {
-      title: <HeaderWithTooltip title="Planlanan Saat" maxWidth={120} />,
+      title: <SortableHeader title="Planlanan Saat" maxWidth={120} dataIndex="PlannedHours" />,
       dataIndex: "PlannedHours",
       key: "PlannedHours",
       width: 120,
@@ -202,7 +290,7 @@ export default function CustomTable() {
       ),
     },
     {
-      title: <HeaderWithTooltip title="Başlangıç Zamanı" maxWidth={150} />,
+      title: <SortableHeader title="Başlangıç Zamanı" maxWidth={150} dataIndex="StartedAt" />,
       dataIndex: "StartedAt",
       key: "StartedAt",
       width: 150,
@@ -214,7 +302,7 @@ export default function CustomTable() {
       ),
     },
     {
-      title: <HeaderWithTooltip title="Bitiş Zamanı" maxWidth={150} />,
+      title: <SortableHeader title="Bitiş Zamanı" maxWidth={150} dataIndex="EndAt" />,
       dataIndex: "EndAt",
       key: "EndAt",
       width: 150,
@@ -226,7 +314,7 @@ export default function CustomTable() {
       ),
     },
     {
-      title: <HeaderWithTooltip title="Durum" maxWidth={120} />,
+      title: <SortableHeader title="Durum" maxWidth={120} dataIndex="Status" />,
       dataIndex: "Status",
       key: "Status",
       width: 120,
@@ -250,7 +338,7 @@ export default function CustomTable() {
       },
     },
     {
-      title: <HeaderWithTooltip title="Öncelik" maxWidth={100} />,
+      title: <SortableHeader title="Öncelik" maxWidth={100} dataIndex="Priority" />,
       dataIndex: "Priority",
       key: "Priority",
       width: 100,
