@@ -422,10 +422,7 @@ export default function CreateProjectModal({
     }
 
     if ((isEditMode || isViewMode) && projectData) {
-      const normalizedLabelOptions =
-        (projectData.Labels || [])
-          .map(normalizeLabelOption)
-          .filter((option): option is MultiSelectOption => Boolean(option));
+      const normalizedLabelOptions: MultiSelectOption[] = [];
 
       const derivedLabelIds =
         projectData.LabelIds && projectData.LabelIds.length > 0
@@ -434,7 +431,7 @@ export default function CreateProjectModal({
                 id !== null && id !== undefined ? String(id) : null
               )
               .filter((id): id is string => Boolean(id))
-          : normalizedLabelOptions.map(option => String(option.value));
+          : [];
 
       const derivedParentProjectIds = (projectData.ParentProjectIds || [])
         .map(parentId =>
@@ -941,7 +938,7 @@ export default function CreateProjectModal({
             <Form.Item
               label="Planlanan Saat"
               name="plannedHours"
-              rules={[{ required: true, message: "Planlanan saat zorunludur!" }]}
+              rules={[{ required: false, message: "Planlanan saat zorunludur!" }]}
               className="mb-3"
             >
               <InputNumber
@@ -962,7 +959,7 @@ export default function CreateProjectModal({
               label="Planlanan Başlangıç"
               name="plannedStartDate"
               rules={[
-                { required: true, message: "Başlangıç tarihi zorunludur!" },
+                { required: false, message: "Başlangıç tarihi zorunludur!" },
               ]}
               className="mb-3"
             >
@@ -982,7 +979,7 @@ export default function CreateProjectModal({
             <Form.Item
               label="Planlanan Bitiş"
               name="plannedEndDate"
-              rules={[{ required: true, message: "Bitiş tarihi zorunludur!" }]}
+              rules={[{ required: false, message: "Bitiş tarihi zorunludur!" }]}
               className="mb-3"
             >
               <DatePicker
@@ -1026,7 +1023,7 @@ export default function CreateProjectModal({
             <Form.Item
               label="Proje Durumu"
               name="status"
-              rules={[{ required: true, message: "Proje durumu zorunludur!" }]}
+              rules={[{ required: false, message: "Proje durumu zorunludur!" }]}
               className="mb-3"
             >
               <Select
@@ -1046,7 +1043,7 @@ export default function CreateProjectModal({
             <Form.Item
               label="Proje Önceliği"
               name="priority"
-              rules={[{ required: true, message: "Proje önceliği zorunludur!" }]}
+              rules={[{ required: false, message: "Proje önceliği zorunludur!" }]}
               className="mb-3"
             >
               <Select

@@ -4,6 +4,7 @@ import { useTasksStore } from "@/store/zustand/tasks-store";
 import DeleteConfirmModal from "./modals/delete-confirm-modal";
 import UpdateTaskModal from "./modals/update-task-modal";
 import CreateTaskModal from "./modals/create-task-modal";
+import { AiOutlineDelete, AiOutlineEdit, AiOutlineEye, AiOutlinePlus } from "react-icons/ai";
 
 export default function TasksCrudModal() {
   const { selectedTask } = useTasksStore();
@@ -16,28 +17,23 @@ export default function TasksCrudModal() {
       <Space>
         <Button
           type="primary"
+          icon={<AiOutlinePlus />}
+          size={"middle"}
           onClick={() => setIsCreateModalVisible(true)}
-          style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
-        >
-          Yeni Görev Oluştur
-        </Button>
-
-        <Button
-          type="default"
-          onClick={() => setIsUpdateModalVisible(true)}
-          disabled={!selectedTask}
-        >
-          Görevi Güncelle
-        </Button>
-
+        />
         <Button
           type="primary"
-          danger
+          icon={<AiOutlineEdit />}
+          size={"middle"}
+          onClick={() => setIsUpdateModalVisible(true)}
+        />
+        <Button
+          type="primary"
+          icon={<AiOutlineDelete />}
+          size={"middle"}
           onClick={() => setIsDeleteModalVisible(true)}
-          disabled={!selectedTask}
-        >
-          Görevi Sil
-        </Button>
+          danger
+        />
       </Space>
 
       <CreateTaskModal
