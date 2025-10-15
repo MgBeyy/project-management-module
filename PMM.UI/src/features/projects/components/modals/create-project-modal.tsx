@@ -660,13 +660,13 @@ export default function CreateProjectModal({
         response = await updateLabel(editingLabelId, payload);
         showNotification.success(
           "Etiket Güncellendi",
-          "🎉 Etiket başarıyla güncellendi!"
+          " Etiket başarıyla güncellendi!"
         );
       } else {
         response = await createLabel(payload);
         showNotification.success(
           "Etiket Oluşturuldu",
-          "🎉 Etiket başarıyla oluşturuldu!"
+          " Etiket başarıyla oluşturuldu!"
         );
       }
 
@@ -802,7 +802,7 @@ export default function CreateProjectModal({
         };
 
         await updateProject(projectData.Id, updateData);
-        showNotification.success("Proje Güncellendi", "🎉 Proje başarıyla güncellendi!");
+        showNotification.success("Proje Güncellendi", " Proje başarıyla güncellendi!");
       } else {
         // Create mode
         const createData = {
@@ -842,7 +842,7 @@ export default function CreateProjectModal({
         console.log("API'ye gönderilecek proje verisi:", cleanedData);
 
         await createProject(cleanedData);
-        showNotification.success("Proje Oluşturuldu", "🎉 Proje başarıyla oluşturuldu!");
+        showNotification.success("Proje Oluşturuldu", " Proje başarıyla oluşturuldu!");
       }
 
       handleReset();

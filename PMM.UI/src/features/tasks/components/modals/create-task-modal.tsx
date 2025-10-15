@@ -184,7 +184,7 @@ export default function CreateTaskModal({
   const handleCreate = async (values: any) => {
     try {
       await createTask(values);
-      notification.success("Görev Oluşturuldu", "🎉 Görev başarıyla oluşturuldu!");
+      notification.success("Görev Oluşturuldu", " Görev başarıyla oluşturuldu!");
       triggerRefresh();
       form.resetFields();
       onClose();
