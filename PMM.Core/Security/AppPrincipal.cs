@@ -1,7 +1,6 @@
 ﻿using System.Security.Principal;
-// using Employee.Portal.Data.Enums; // Şimdilik EPermission kullanılmadığı için kaldırılabilir.
 
-namespace Employee.Portal.Core.Security
+namespace PMM.Core.Security
 {
     // Interface'i de DTO'ya uygun olarak güncelleyelim.
     public interface IAppPrincipal : IPrincipal
