@@ -21,6 +21,9 @@ namespace PMM.Core.Forms
         public int? PlannedHours { get; set; }
         public int? PlannedHoursMin { get; set; }
         public int? PlannedHoursMax { get; set; }
+        public decimal? ActualHours { get; set; }
+        public decimal? ActualHoursMin { get; set; }
+        public decimal? ActualHoursMax { get; set; }
         public DateOnly? StartedAt { get; set; }
         public DateOnly? EndAt { get; set; }
         public EProjectStatus? Status { get; set; }
