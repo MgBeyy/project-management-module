@@ -1,8 +1,7 @@
 ﻿namespace PMM.Data.Entities
 {
-    public class Client
+    public class Client : _BaseEntity
     {
-        public int Id { get; set; }
         public string Name { get; set; }
         public virtual ICollection<Project> Projects { get; set; }
     }

@@ -4,13 +4,13 @@ using PMM.Data.Entities;
 
 namespace PMM.Data.Contexts.ClassMaps
 {
-    public class TaskEntityMapping : IEntityTypeConfiguration<TaskEntity>
+    public class TaskEntityMapping : _BaseEntityTypeConfiguration<TaskEntity>
     {
-        public void Configure(EntityTypeBuilder<TaskEntity> builder)
+        public override void Configure(EntityTypeBuilder<TaskEntity> builder)
         {
+            base.Configure(builder);
+
             builder.ToTable("Tasks");
-            builder.HasKey(t => t.Id);
-            builder.Property(t => t.Id).ValueGeneratedOnAdd();
 
             builder.Property(t => t.ProjectId).IsRequired();
             builder.HasOne(t => t.Project)
@@ -27,14 +27,6 @@ namespace PMM.Data.Contexts.ClassMaps
 
             builder.Property(t => t.PlannedHours).IsRequired(false).HasPrecision(18, 2);
             builder.Property(t => t.ActualHours).IsRequired(false).HasPrecision(18, 2);
-
-            builder.Property(t => t.CreatedAt).IsRequired();
-            builder.Property(t => t.CreatedById).IsRequired();
-            builder.HasOne(t => t.CreatedByUser).WithMany().HasForeignKey(t => t.CreatedById);
-
-            builder.Property(t => t.UpdatedAt).IsRequired(false);
-            builder.Property(t => t.UpdatedById).IsRequired(false);
-            builder.HasOne(t => t.UpdatedByUser).WithMany().HasForeignKey(t => t.UpdatedById);
         }
     }
 }

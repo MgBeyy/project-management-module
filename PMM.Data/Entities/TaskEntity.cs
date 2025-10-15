@@ -2,9 +2,8 @@ using PMM.Data.Enums;
 
 namespace PMM.Data.Entities
 {
-    public class TaskEntity
+    public class TaskEntity : _BaseEntity
     {
-        public int Id { get; set; }
         public int ProjectId { get; set; }
         public virtual Project Project { get; set; }
 
@@ -25,14 +24,5 @@ namespace PMM.Data.Entities
 
         public virtual ICollection<TaskDependency> Blocks { get; set; }
         public virtual ICollection<TaskDependency> BlockedBy { get; set; }
-
-        public DateTime CreatedAt { get; set; }
-        public int CreatedById { get; set; }
-        public virtual User CreatedByUser { get; set; }
-
-        public DateTime? UpdatedAt { get; set; }
-        public int? UpdatedById { get; set; }
-        public virtual User? UpdatedByUser { get; set; }
-
     }
 }

@@ -4,15 +4,14 @@ using PMM.Data.Entities;
 
 namespace PMM.Data.Contexts.ClassMaps
 {
-    public class ClientMapping : IEntityTypeConfiguration<Client>
+    public class ClientMapping : _BaseEntityTypeConfiguration<Client>
     {
-        public void Configure(EntityTypeBuilder<Client> builder)
+        public override void Configure(EntityTypeBuilder<Client> builder)
         {
-            builder.ToTable("Clients");
-            builder.HasKey(c => c.Id);
-            builder.Property(c => c.Id).ValueGeneratedOnAdd();
-            builder.Property(c => c.Name).IsRequired().HasMaxLength(256);
+            base.Configure(builder);
 
+            builder.ToTable("Clients");
+            builder.Property(c => c.Name).IsRequired().HasMaxLength(256);
         }
     }
 }

@@ -4,13 +4,13 @@ using PMM.Data.Entities;
 
 namespace PMM.Data.Contexts.ClassMaps
 {
-    public class ActivityMapping : IEntityTypeConfiguration<Activity>
+    public class ActivityMapping : _BaseEntityTypeConfiguration<Activity>
     {
-        public void Configure(EntityTypeBuilder<Activity> builder)
+        public override void Configure(EntityTypeBuilder<Activity> builder)
         {
+            base.Configure(builder);
+
             builder.ToTable("Activities");
-            builder.HasKey(a => a.Id);
-            builder.Property(a => a.Id).ValueGeneratedOnAdd();
 
             builder.Property(a => a.TaskId).IsRequired();
             builder.HasOne(a => a.Task)
@@ -30,20 +30,6 @@ namespace PMM.Data.Contexts.ClassMaps
             builder.Property(a => a.EndTime).IsRequired();
 
             builder.Property(a => a.TotalHours).IsRequired().HasPrecision(18, 2);
-
-            builder.Property(a => a.CreatedAt).IsRequired();
-            builder.Property(a => a.CreatedById).IsRequired();
-            builder.HasOne(a => a.CreatedByUser)
-                   .WithMany()
-                   .HasForeignKey(a => a.CreatedById)
-                   .OnDelete(DeleteBehavior.Restrict);
-
-            builder.Property(a => a.UpdatedAt).IsRequired(false);
-            builder.Property(a => a.UpdatedById).IsRequired(false);
-            builder.HasOne(a => a.UpdatedByUser)
-                   .WithMany()
-                   .HasForeignKey(a => a.UpdatedById)
-                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
