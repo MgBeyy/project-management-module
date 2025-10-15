@@ -57,7 +57,6 @@ export default function CrudModal() {
 
     } catch (error: any) {
       console.error("Proje silinirken hata:", error);
-      notification.error("Hata", error?.message || "Proje silinirken bir hata oluştu.");
     } finally {
       setIsDeleting(false);
     }

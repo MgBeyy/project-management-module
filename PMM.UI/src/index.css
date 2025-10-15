@@ -1,1 +1,39 @@
 @import "tailwindcss";
+
+/* Ant Design CSS - message ve notification için gerekli */
+
+/* Ant Design Message Container - Görünmüyorsa bu stilleri kullan */
+.ant-message {
+  position: fixed;
+  top: 20px;
+  left: 0;
+  right: 0;
+  z-index: 9999 !important;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+}
+
+.ant-message-notice {
+  pointer-events: all;
+}
+
+.ant-message-notice-content {
+  padding: 10px 16px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08),
+              0 3px 6px -4px rgba(0, 0, 0, 0.12),
+              0 9px 28px 8px rgba(0, 0, 0, 0.05);
+  display: inline-block;
+  max-width: 500px;
+}
+
+.ant-message-error .anticon {
+  color: #ff4d4f;
+}
+
+.ant-message-success .anticon {
+  color: #52c41a;
+}
+

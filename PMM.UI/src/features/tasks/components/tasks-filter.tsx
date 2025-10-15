@@ -27,9 +27,6 @@ export default function TasksFilter() {
       Description: values.description || undefined,
       ProjectId: values.projectId || undefined,
       Status: (values.status as TaskStatus) || undefined,
-      Weight: values.weight || undefined,
-      WeightMin: values.weightMin || undefined,
-      WeightMax: values.weightMax || undefined,
       PlannedHours: values.plannedHours || undefined,
       PlannedHoursMin: values.plannedHoursMin || undefined,
       PlannedHoursMax: values.plannedHoursMax || undefined,
@@ -91,26 +88,6 @@ export default function TasksFilter() {
             size="middle"
             style={{ width: "100%" }}
             min={1}
-          />
-        </Form.Item>
-
-        <Form.Item label="Ağırlık (Min)" name="weightMin" className="mb-3">
-          <InputNumber
-            min={0}
-            placeholder="Min ağırlık"
-            onChange={onChangeNumber}
-            size="middle"
-            style={{ width: "100%" }}
-          />
-        </Form.Item>
-
-        <Form.Item label="Ağırlık (Max)" name="weightMax" className="mb-3">
-          <InputNumber
-            min={0}
-            placeholder="Max ağırlık"
-            onChange={onChangeNumber}
-            size="middle"
-            style={{ width: "100%" }}
           />
         </Form.Item>
 
