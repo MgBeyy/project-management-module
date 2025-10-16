@@ -7,6 +7,7 @@ COPY ProjectManagementModule.sln ./
 COPY PMM.Core/PMM.Core.csproj PMM.Core/
 COPY PMM.Data/PMM.Data.csproj PMM.Data/
 COPY PMM.API/PMM.API.csproj PMM.API/
+COPY PMM.Domain/PMM.Domain.csproj PMM.Domain/
 
 # Restore dependencies
 RUN dotnet restore ProjectManagementModule.sln
