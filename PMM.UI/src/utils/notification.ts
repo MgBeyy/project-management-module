@@ -1,66 +1,44 @@
 import { App } from "antd";
 
-// Global notification API holder - AntApp provider olmadan kullanılabilir
-let notificationApi: ReturnType<typeof App.useApp>["notification"] | null = null;
+type MessageApi = ReturnType<typeof App.useApp>["message"];
 
-// AntApp içinden initialize edilecek
-export const initNotificationApi = (api: ReturnType<typeof App.useApp>["notification"]) => {
-  notificationApi = api;
-  console.log("✅ Notification API initialize edildi");
+let messageApi: MessageApi | null = null;
+
+export const initNotificationApi = (api: MessageApi) => {
+  messageApi = api;
+  console.log("✅ Message API initialize edildi");
 };
 
-// Global notification instance - garantili çalışma için
+const buildContent = (message: string, description?: string) =>
+  description ? `${message} - ${description}` : message;
+
+const ensureMessageApi = () => {
+  if (!messageApi) {
+    console.error("❌ Message API henüz initialize edilmedi!");
+    return false;
+  }
+  return true;
+};
+
 export const showNotification = {
   success: (message: string, description?: string) => {
     console.log("✅ showNotification.success çağrıldı:", message);
-    if (notificationApi) {
-      notificationApi.success({
-        message,
-        description,
-        placement: "bottomRight",
-        duration: 4,
-      });
-    } else {
-      console.error("❌ Notification API henüz initialize edilmedi!");
-    }
+    if (!ensureMessageApi()) return;
+    messageApi!.success(buildContent(message, description), 3);
   },
   error: (message: string, description?: string) => {
     console.log("❌ showNotification.error çağrıldı:", message, description);
-    if (notificationApi) {
-      notificationApi.error({
-        message,
-        description,
-        placement: "bottomRight",
-        duration: 4,
-      });
-    } else {
-      console.error("❌ Notification API henüz initialize edilmedi!");
-    }
+    if (!ensureMessageApi()) return;
+    messageApi!.error(buildContent(message, description), 3);
   },
   warning: (message: string, description?: string) => {
     console.log("⚠️ showNotification.warning çağrıldı:", message);
-    if (notificationApi) {
-      notificationApi.warning({
-        message,
-        description,
-        placement: "bottomRight",
-        duration: 4,
-      });
-    } else {
-      console.error("❌ Notification API henüz initialize edilmedi!");
-    }
+    if (!ensureMessageApi()) return;
+    messageApi!.warning(buildContent(message, description), 3);
   },
   info: (message: string, description?: string) => {
     console.log("ℹ️ showNotification.info çağrıldı:", message);
-    if (notificationApi) {
-      notificationApi.info({
-        message,
-        description,
-        placement: "bottomRight",
-        duration: 4,
-      });
-    } else {
-      console.error("❌ Notification API henüz initialize edilmedi!");
-    }
+    if (!ensureMessageApi()) return;
+    messageApi!.info(buildContent(message, description), 3);
   },
 };

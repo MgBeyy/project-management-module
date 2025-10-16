@@ -4,6 +4,7 @@ interface TaskData {
   key: number;
   Id: number | null;
   ProjectId: number;
+  ProjectCode: string;
   ParentTaskId: number | null;
   Title: string;
   Description: string | null;
@@ -24,7 +25,7 @@ interface TasksState {
   totalItems: number;
   isLoading: boolean;
   filters: Record<string, any>;
-  refreshTrigger: number;
+  refreshTrigger: number | null;
   
   // Actions
   setTasks: (tasks: TaskData[]) => void;
@@ -47,7 +48,7 @@ export const useTasksStore = create<TasksState>((set) => ({
   totalItems: 0,
   isLoading: true,
   filters: {},
-  refreshTrigger: 0,
+  refreshTrigger: null,
   
   setTasks: (tasks) => set({ tasks }),
   
@@ -67,5 +68,5 @@ export const useTasksStore = create<TasksState>((set) => ({
   
   clearSelectedTask: () => set({ selectedTask: null }),
   
-  triggerRefresh: () => set((state) => ({ refreshTrigger: state.refreshTrigger + 1 })),
+  triggerRefresh: () => set((state) => ({ refreshTrigger: state.refreshTrigger ? state.refreshTrigger + 1 : 1})),
 }));

@@ -1,13 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Select, Spin } from "antd";
 import type { SelectProps } from "antd";
 import getMultiSelectSearch from "../services/get-multi-select-search";
+import type { CSSProperties } from "react";
+import type { DefaultOptionType } from "antd/es/select";
 
-interface ProjectOption {
+export interface MultiSelectOption extends DefaultOptionType {
   value: string;
   label: string;
   key: string;
+  [key: string]: any;
 }
+
+const mergeOptionArrays = (
+  existing: MultiSelectOption[],
+  incoming: MultiSelectOption[]
+) => {
+  const map = new Map<string, MultiSelectOption>();
+  existing.forEach(option => map.set(String(option.value), option));
+  incoming.forEach(option => map.set(String(option.value), option));
+  return Array.from(map.values());
+};
 
 interface MultiSelectSearchProps {
   placeholder?: string;
@@ -16,6 +29,11 @@ interface MultiSelectSearchProps {
   apiUrl: string;
   className?: string;
   size?: "small" | "middle" | "large";
+  disabled?: boolean;
+  style?: CSSProperties;
+  initialOptions?: MultiSelectOption[];
+  tagRender?: SelectProps["tagRender"];
+  onOptionsChange?: (options: MultiSelectOption[]) => void;
 }
 
 const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
@@ -25,16 +43,49 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
   apiUrl,
   className = "",
   size = "middle",
+  disabled = false,
+  style,
+  initialOptions,
+  tagRender,
+  onOptionsChange,
 }) => {
-  const [options, setOptions] = useState<ProjectOption[]>([]);
+  const [options, setOptions] = useState<MultiSelectOption[]>(initialOptions || []);
   const [loading, setLoading] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
+  useEffect(() => {
+    if (!initialOptions) {
+      return;
+    }
+
+    setOptions(prev => {
+      if (initialOptions.length === 0) {
+        if (prev.length === 0) {
+          return prev;
+        }
+        if (onOptionsChange) {
+          onOptionsChange([]);
+        }
+        return [];
+      }
+
+      const merged = mergeOptionArrays(prev, initialOptions);
+      if (onOptionsChange) {
+        onOptionsChange(merged);
+      }
+      return merged;
+    });
+  }, [initialOptions, onOptionsChange]);
+
   const handleSearch = async (searchText: string) => {
+    if (disabled) {
+      return;
+    }
+
     setSearchValue(searchText);
 
     if (!searchText || searchText.trim().length < 2) {
-      setOptions([]);
+      setOptions(initialOptions ? [...initialOptions] : []);
       return;
     }
 
@@ -61,7 +112,7 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
         return;
       }
 
-      const formattedOptions: ProjectOption[] = apiResult.map((item: any) => {
+      const formattedOptions: MultiSelectOption[] = apiResult.map((item: any) => {
         const id = item.id?.toString() || Math.random().toString();
         let value = id;
         let label = "";
@@ -93,11 +144,18 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
           value: value,
           label: label,
           key: id,
+          ...item,
         };
       });
 
       console.log("✅ Formatted options:", formattedOptions);
-      setOptions(formattedOptions);
+      setOptions(prev => {
+        const merged = mergeOptionArrays(prev, formattedOptions);
+        if (onOptionsChange) {
+          onOptionsChange(merged);
+        }
+        return merged;
+      });
     } catch (error: any) {
       console.error("❌ Üst proje arama hatası:", error);
 
@@ -114,6 +172,9 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
     }
   };
   const handleChange = (selectedValues: string[]) => {
+    if (disabled) {
+      return;
+    }
     onChange?.(selectedValues);
   };
 
@@ -134,6 +195,7 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
     showSearch: true,
     allowClear: true,
     size: size,
+    disabled,
     loading: loading,
     notFoundContent: loading ? (
       <div className="flex justify-center items-center py-4">
@@ -151,8 +213,9 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
     ),
     options: options,
     maxTagCount: "responsive",
-    style: { width: "100%" },
+    style: { width: "100%", ...(style || {}) },
     className: `${className}`,
+    tagRender,
   };
 
   return (

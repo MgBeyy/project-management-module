@@ -6,7 +6,7 @@ import { FaFolderOpen } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
 export default function SideBar() {
-  const itemsOptions = ["Projeler", "Gorevler", "Etikinlikler"];
+  const itemsOptions = ["Projeler", "Görevler", "Etkinlikler"];
   const itemsOptionsEn = ["Projects", "Tasks", "Activities"];
   const items: MenuProps["items"] = [FaFolderOpen].map((icon, index) => {
     return {

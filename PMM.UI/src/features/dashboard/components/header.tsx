@@ -24,7 +24,7 @@ export default function Header() {
     },
     {
       pathOriginal: "tasks",
-      pathTr: "Gorevler",
+      pathTr: "Görevler",
     },
     {
       pathOriginal: "activities",

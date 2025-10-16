@@ -8,12 +8,12 @@ import { initNotificationApi } from "./utils/notification";
 // initBilgeModelReact();
 
 function AppContent() {
-  const { notification } = AntApp.useApp();
+  const { message } = AntApp.useApp();
 
   useEffect(() => {
-    // Notification API'yi global olarak initialize et
-    initNotificationApi(notification);
-  }, [notification]);
+    // Message API'yi global olarak initialize et
+    initNotificationApi(message);
+  }, [message]);
 
   return <AppRoutes />;
 }
@@ -21,10 +21,7 @@ function AppContent() {
 function App() {
   return (
     <ConfigProvider locale={trTR}>
-      <AntApp 
-        notification={{ placement: "bottomRight" }}
-        message={{ maxCount: 3, top: 20 }}
-      >
+      <AntApp message={{ maxCount: 3, top: 20 }}>
         <AppContent />
       </AntApp>
     </ConfigProvider>

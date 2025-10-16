@@ -25,6 +25,8 @@ type ProjectQuery = {
   EndAt?: string | Date | null;
   Status?: ProjectStatus;
   Priority?: ProjectPriority;
+  SortBy?: string;
+  SortDesc?: boolean;
 };
 
 export async function GetProjects({ query }: { query: ProjectQuery }) {

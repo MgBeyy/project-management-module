@@ -47,7 +47,7 @@ export default function CreateActivityModal({
       };
 
       await createActivity(activityData);
-      notification.success("Etkinlik Oluşturuldu", "🎉 Etkinlik başarıyla oluşturuldu!");
+      notification.success("Etkinlik Oluşturuldu", "Etkinlik başarıyla oluşturuldu!");
       triggerRefresh();
       form.resetFields();
       onClose();

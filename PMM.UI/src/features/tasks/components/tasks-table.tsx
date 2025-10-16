@@ -37,13 +37,13 @@ export default function TasksCustomTable() {
       // Backend response structure: { result: { data: [], totalRecords: 240 } }
       const result = response.result || response;
       const taskData = result.data || [];
-      
       const transformedData = taskData
         .filter((item: any) => item != null)
         .map((item: any, index: number) => ({
           key: index + 1,
           Id: item?.id || null,
           ProjectId: item?.projectId || null,
+          ProjectCode: item?.projectCode || null,
           ParentTaskId: item?.parentTaskId || null,
           Title: item?.title || "Başlık Yok",
           Description: item?.description || "-",
@@ -124,14 +124,18 @@ export default function TasksCustomTable() {
       render: (text: string) => <span title={text}>{text}</span>,
     },
     {
-      title: <HeaderWithTooltip title="Proje ID" maxWidth={100} />,
-      dataIndex: "ProjectId",
-      key: "ProjectId",
+      title: <HeaderWithTooltip title="Proje Kodu" maxWidth={100} />,
+      dataIndex: "ProjectCode",
+      key: "ProjectCode",
       width: 100,
       ellipsis: {
         showTitle: false,
       },
-      render: (text: number) => <span title={text?.toString()}>{text}</span>,
+      render: (text: number) => <span title={text?.toString()}>
+        <a href={`/pm-module/projects/${text}`}>
+        {text}
+        </a>
+        </span>,
     },
     {
       title: <HeaderWithTooltip title="Durum" maxWidth={120} />,
