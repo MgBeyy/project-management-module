@@ -1,36 +1,23 @@
 import { App } from "antd";
 
+const buildContent = (message: string, description?: string) =>
+  description ? `${message} - ${description}` : message;
+
 export const useNotification = () => {
-  const { notification } = App.useApp();
+  const { message: messageApi } = App.useApp();
 
   return {
     success: (message: string, description?: string) => {
-      notification.success({
-        message,
-        description,
-        placement: "bottomRight",
-      });
+      messageApi.success(buildContent(message, description), 3);
     },
     error: (message: string, description?: string) => {
-      notification.error({
-        message,
-        description,
-        placement: "bottomRight",
-      });
+      messageApi.error(buildContent(message, description), 3);
     },
     info: (message: string, description?: string) => {
-      notification.info({
-        message,
-        description,
-        placement: "bottomRight",
-      });
+      messageApi.info(buildContent(message, description), 3);
     },
     warning: (message: string, description?: string) => {
-      notification.warning({
-        message,
-        description,
-        placement: "bottomRight",
-      });
+      messageApi.warning(buildContent(message, description), 3);
     },
   };
 };

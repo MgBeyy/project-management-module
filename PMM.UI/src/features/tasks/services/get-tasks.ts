@@ -11,6 +11,7 @@ type TaskQuery = {
   pageSize?: number;
   Id?: number;
   ProjectId?: number;
+  ProjectCode?: string;
   ParentTaskId?: number;
   Title?: string;
   Description?: string;
@@ -44,7 +45,7 @@ export async function GetTasks({ query }: { query: TaskQuery }) {
       },
       timeout: 15000,
     });
-
+    console.log("GetTasks response:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching tasks:", error);
