@@ -1,13 +1,10 @@
 using Microsoft.Extensions.Logging;
 using PMM.Data.Contexts;
-using PMM.Data.Entities;
+using PMM.Domain.Entities;
+using PMM.Domain.Interfaces.Repositories;
 
 namespace PMM.Data.Repositories
 {
-    public interface IFileRepository : _IBaseRepository<FileEntity>
-    {
-    }
-
     public class FileRepository : _BaseRepository<FileEntity>, IFileRepository
     {
         public FileRepository(ApplicationDbContext context, ILogger<FileRepository> logger)

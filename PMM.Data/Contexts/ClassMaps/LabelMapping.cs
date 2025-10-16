@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using PMM.Data.Entities;
-
+using PMM.Domain.Entities;
 namespace PMM.Data.Contexts.ClassMaps
 {
     public class LabelMapping : _BaseEntityTypeConfiguration<Label>

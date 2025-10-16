@@ -1,15 +1,10 @@
 using Microsoft.Extensions.Logging;
 using PMM.Data.Contexts;
-using PMM.Data.Entities;
+using PMM.Domain.Entities;
+using PMM.Domain.Interfaces.Repositories;
 
 namespace PMM.Data.Repositories
 {
-    public interface IProjectLabelRepository : _IBaseRepository<ProjectLabel>
-    {
-        Task<List<ProjectLabel>> GetByProjectIdAsync(int projectId);
-        Task<List<ProjectLabel>> GetByLabelIdAsync(int labelId);
-    }
-
     public class ProjectLabelRepository : _BaseRepository<ProjectLabel>, IProjectLabelRepository
     {
         public ProjectLabelRepository(ApplicationDbContext context, ILogger<ProjectLabelRepository> logger)

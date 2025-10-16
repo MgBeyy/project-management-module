@@ -1,18 +1,25 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using PMM.Data.Entities;
+using PMM.Domain.Entities;
 
 namespace PMM.Data.Contexts.ClassMaps
 {
-    public class UserMapping : _BaseEntityTypeConfiguration<User>
+    public class UserMapping : IEntityTypeConfiguration<User>
     {
-        public override void Configure(EntityTypeBuilder<User> builder)
+        public void Configure(EntityTypeBuilder<User> builder)
         {
-            base.Configure(builder);
-
             builder.ToTable("Users");
+            builder.HasKey(u => u.Id);
+            builder.Property(u => u.Id).ValueGeneratedOnAdd();
             builder.Property(u => u.Name).IsRequired().HasMaxLength(256);
+            builder.Property(u => u.Email).IsRequired().HasMaxLength(256);
             builder.HasIndex(u => u.Email).IsUnique();
+
+            builder.Property(e => e.IsDeleted).IsRequired().HasDefaultValue(false);
+            builder.HasOne(e => e.DeletedByUser).WithMany().HasForeignKey(e => e.DeletedById).OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasQueryFilter(e => !e.IsDeleted);
         }
     }
 }
+

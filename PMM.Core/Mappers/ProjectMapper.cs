@@ -1,7 +1,7 @@
-﻿using PMM.Core.DTOs;
-using PMM.Core.Forms;
-using PMM.Data.Entities;
-using PMM.Data.Enums;
+﻿using PMM.Domain.DTOs;
+using PMM.Domain.Entities;
+using PMM.Domain.Enums;
+using PMM.Domain.Forms;
 
 namespace PMM.Core.Mappers
 {

@@ -1,24 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PMM.Core.Common;
-using PMM.Core.DTOs;
 using PMM.Core.Exceptions;
-using PMM.Core.Forms;
 using PMM.Core.Mappers;
-using PMM.Data.Repositories;
+using PMM.Domain.DTOs;
+using PMM.Domain.Forms;
+using PMM.Domain.Interfaces.Repositories;
+using PMM.Domain.Interfaces.Services;
 using System.Security.Principal;
 
 namespace PMM.Core.Services
 {
-    public interface IFileService
-    {
-        Task<FileDto> AddFileAsync(CreateFileForm form);
-        Task<FileDto> GetFileAsync(int fileId);
-        Task<FileDto> EditFileAsync(int fileId, UpdateFileForm form);
-        Task DeleteFileAsync(int fileId);
-        Task<PagedResult<FileDto>> Query(QueryFileForm form);
-    }
-
     public class FileService : _BaseService, IFileService
     {
         private readonly IFileRepository _fileRepository;

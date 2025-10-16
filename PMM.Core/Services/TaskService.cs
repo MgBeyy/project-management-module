@@ -1,29 +1,19 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PMM.Core.Common;
-using PMM.Core.DTOs;
 using PMM.Core.Exceptions;
-using PMM.Core.Forms;
 using PMM.Core.Mappers;
 using PMM.Core.Validators;
-using PMM.Data.Entities;
-using PMM.Data.Enums;
-using PMM.Data.Repositories;
+using PMM.Domain.DTOs;
+using PMM.Domain.Entities;
+using PMM.Domain.Enums;
+using PMM.Domain.Forms;
+using PMM.Domain.Interfaces.Repositories;
+using PMM.Domain.Interfaces.Services;
 using System.Security.Principal;
 
 namespace PMM.Core.Services
 {
-    public interface ITaskService
-    {
-        Task<TaskDto> AddTaskAsync(CreateTaskForm form);
-        Task<TaskDto> GetTaskAsync(int taskId);
-        Task<TaskDto> EditTaskAsync(int taskId, UpdateTaskForm form);
-        Task<PagedResult<TaskDto>> Query(QueryTaskForm form);
-        Task<List<TaskDto>> GetSubTasksByTaskId(int taskId);
-        Task DeleteTaskAsync(int taskId);
-        Task<List<TaskDto>> BulkUpdateTaskStatusAsync(BulkUpdateTaskStatusForm form);
-    }
-
     public class TaskService : _BaseService, ITaskService
     {
         private readonly ITaskRepository _taskRepository;

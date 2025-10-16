@@ -1,27 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PMM.Core.Common;
-using PMM.Core.DTOs;
 using PMM.Core.Exceptions;
-using PMM.Core.Forms;
 using PMM.Core.Mappers;
 using PMM.Core.Validators;
-using PMM.Data.Repositories;
+using PMM.Domain.DTOs;
+using PMM.Domain.Forms;
+using PMM.Domain.Interfaces.Repositories;
+using PMM.Domain.Interfaces.Services;
 using System.Security.Principal;
 
 namespace PMM.Core.Services
 {
-    public interface IActivityService
-    {
-        Task<ActivityDto> AddActivityAsync(CreateActivityForm form);
-        Task<ActivityDto> GetActivityAsync(int activityId);
-        Task<PagedResult<ActivityDto>> Query(QueryActivityForm form);
-        Task<ActivityDto> EditActivityAsync(int activityId, UpdateActivityForm form);
-        Task DeleteActivityAsync(int activityId);
-        Task<List<ActivityDto>> GetActivitiesByTaskIdAsync(int taskId);
-        Task<List<ActivityDto>> GetActivitiesByUserIdAsync(int userId);
-    }
-
     public class ActivityService : _BaseService, IActivityService
     {
         private readonly ILogger<ActivityService> _logger;
@@ -189,16 +179,16 @@ namespace PMM.Core.Services
                 throw new BusinessException("Bitiş zamanı başlangıç zamanından sonra olmalıdır!");
 
             var activity = await _activityRepository.GetByIdAsync(activityId) ?? throw new NotFoundException("Aktivite Bulunamadı!");
-            
+
             var oldHours = activity.TotalHours;
-            
+
             ActivityMapper.Map(form, activity);
-            
+
             var newHours = activity.TotalHours;
             var hoursDifference = newHours - oldHours;
-            
+
             await UpdateTaskAndParentHours(activity.TaskId, hoursDifference);
-            
+
             activity.UpdatedAt = DateTime.UtcNow;
             activity.UpdatedById = LoggedInUser.Id;
 
@@ -215,7 +205,7 @@ namespace PMM.Core.Services
                 throw new NotFoundException("Aktivite Bulunamadı!");
 
             var activityHours = activity.TotalHours;
-            
+
             await UpdateTaskAndParentHours(activity.TaskId, -activityHours);
 
             _activityRepository.Delete(activity);

@@ -1,4 +1,4 @@
-﻿using PMM.Core.DTOs;
+﻿using PMM.Domain.DTOs;
 using System.Security.Claims;
 
 namespace PMM.Core.Security

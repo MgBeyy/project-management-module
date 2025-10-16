@@ -1,17 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PMM.Data.Contexts;
-using PMM.Data.Entities;
+using PMM.Domain.Entities;
+using PMM.Domain.Interfaces.Repositories;
 
 namespace PMM.Data.Repositories
 {
-    public interface ITaskRepository : _IBaseRepository<TaskEntity>
-    {
-        Task<TaskEntity?> GetWithLabelsAsync(int taskId);
-        Task<List<TaskEntity>> GetSubTasksWithLabelsAsync(int parentTaskId);
-        Task<TaskEntity?> GetWithDependenciesAsync(int taskId);
-    }
-
     public class TaskRepository : _BaseRepository<TaskEntity>, ITaskRepository
     {
         public TaskRepository(ApplicationDbContext context, ILogger<TaskRepository> logger) : base(context, logger)

@@ -22,7 +22,7 @@ namespace PMM.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("PMM.Data.Entities.Activity", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.Activity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -89,7 +89,7 @@ namespace PMM.Data.Migrations
                     b.ToTable("Activities", (string)null);
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.Client", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.Client", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -136,7 +136,7 @@ namespace PMM.Data.Migrations
                     b.ToTable("Clients", (string)null);
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.FileEntity", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.FileEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -196,7 +196,7 @@ namespace PMM.Data.Migrations
                     b.ToTable("Files", (string)null);
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.Label", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.Label", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -251,7 +251,7 @@ namespace PMM.Data.Migrations
                     b.ToTable("Labels", (string)null);
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.Project", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.Project", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -338,7 +338,7 @@ namespace PMM.Data.Migrations
                     b.ToTable("Projects", (string)null);
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.ProjectAssignment", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.ProjectAssignment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -406,7 +406,7 @@ namespace PMM.Data.Migrations
                     b.ToTable("ProjectAssignments", (string)null);
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.ProjectLabel", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.ProjectLabel", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -459,7 +459,7 @@ namespace PMM.Data.Migrations
                     b.ToTable("ProjectLabels", (string)null);
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.ProjectRelation", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.ProjectRelation", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -512,7 +512,7 @@ namespace PMM.Data.Migrations
                     b.ToTable("ProjectRelations", (string)null);
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.TaskAssignment", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.TaskAssignment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -564,7 +564,7 @@ namespace PMM.Data.Migrations
                     b.ToTable("TaskAssignments", (string)null);
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.TaskDependency", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.TaskDependency", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -618,7 +618,7 @@ namespace PMM.Data.Migrations
                     b.ToTable("TaskDependencies", (string)null);
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.TaskEntity", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.TaskEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -690,7 +690,7 @@ namespace PMM.Data.Migrations
                     b.ToTable("Tasks", (string)null);
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.TaskLabel", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.TaskLabel", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -743,19 +743,13 @@ namespace PMM.Data.Migrations
                     b.ToTable("TaskLabels", (string)null);
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.User", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("CreatedById")
-                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
@@ -765,7 +759,8 @@ namespace PMM.Data.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
@@ -777,51 +772,41 @@ namespace PMM.Data.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("UpdatedById")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("CreatedById");
 
                     b.HasIndex("DeletedById");
 
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasIndex("UpdatedById");
-
                     b.ToTable("Users", (string)null);
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.Activity", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.Activity", b =>
                 {
-                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "DeletedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "DeletedByUser")
                         .WithMany()
                         .HasForeignKey("DeletedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("PMM.Data.Entities.TaskEntity", "Task")
+                    b.HasOne("PMM.Domain.Entities.TaskEntity", "Task")
                         .WithMany("Activities")
                         .HasForeignKey("TaskId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "UpdatedByUser")
                         .WithMany()
                         .HasForeignKey("UpdatedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("PMM.Data.Entities.User", "User")
+                    b.HasOne("PMM.Domain.Entities.User", "User")
                         .WithMany("Activities")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -838,20 +823,20 @@ namespace PMM.Data.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.Client", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.Client", b =>
                 {
-                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "DeletedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "DeletedByUser")
                         .WithMany()
                         .HasForeignKey("DeletedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "UpdatedByUser")
                         .WithMany()
                         .HasForeignKey("UpdatedById")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -863,26 +848,26 @@ namespace PMM.Data.Migrations
                     b.Navigation("UpdatedByUser");
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.FileEntity", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.FileEntity", b =>
                 {
-                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "DeletedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "DeletedByUser")
                         .WithMany()
                         .HasForeignKey("DeletedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("PMM.Data.Entities.Project", "Project")
+                    b.HasOne("PMM.Domain.Entities.Project", "Project")
                         .WithMany("Files")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "UpdatedByUser")
                         .WithMany()
                         .HasForeignKey("UpdatedById")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -896,20 +881,20 @@ namespace PMM.Data.Migrations
                     b.Navigation("UpdatedByUser");
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.Label", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.Label", b =>
                 {
-                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "DeletedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "DeletedByUser")
                         .WithMany()
                         .HasForeignKey("DeletedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "UpdatedByUser")
                         .WithMany()
                         .HasForeignKey("UpdatedById")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -921,24 +906,24 @@ namespace PMM.Data.Migrations
                     b.Navigation("UpdatedByUser");
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.Project", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.Project", b =>
                 {
-                    b.HasOne("PMM.Data.Entities.Client", "Client")
+                    b.HasOne("PMM.Domain.Entities.Client", "Client")
                         .WithMany("Projects")
                         .HasForeignKey("ClientId");
 
-                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "DeletedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "DeletedByUser")
                         .WithMany()
                         .HasForeignKey("DeletedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "UpdatedByUser")
                         .WithMany()
                         .HasForeignKey("UpdatedById")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -952,31 +937,31 @@ namespace PMM.Data.Migrations
                     b.Navigation("UpdatedByUser");
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.ProjectAssignment", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.ProjectAssignment", b =>
                 {
-                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "DeletedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "DeletedByUser")
                         .WithMany()
                         .HasForeignKey("DeletedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("PMM.Data.Entities.Project", "Project")
+                    b.HasOne("PMM.Domain.Entities.Project", "Project")
                         .WithMany("Assignments")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "UpdatedByUser")
                         .WithMany()
                         .HasForeignKey("UpdatedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("PMM.Data.Entities.User", "User")
+                    b.HasOne("PMM.Domain.Entities.User", "User")
                         .WithMany("ProjectAssignments")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -993,32 +978,32 @@ namespace PMM.Data.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.ProjectLabel", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.ProjectLabel", b =>
                 {
-                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "DeletedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "DeletedByUser")
                         .WithMany()
                         .HasForeignKey("DeletedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("PMM.Data.Entities.Label", "Label")
+                    b.HasOne("PMM.Domain.Entities.Label", "Label")
                         .WithMany("ProjectLabels")
                         .HasForeignKey("LabelId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.Project", "Project")
+                    b.HasOne("PMM.Domain.Entities.Project", "Project")
                         .WithMany("ProjectLabels")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "UpdatedByUser")
                         .WithMany()
                         .HasForeignKey("UpdatedById")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1034,32 +1019,32 @@ namespace PMM.Data.Migrations
                     b.Navigation("UpdatedByUser");
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.ProjectRelation", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.ProjectRelation", b =>
                 {
-                    b.HasOne("PMM.Data.Entities.Project", "ChildProject")
+                    b.HasOne("PMM.Domain.Entities.Project", "ChildProject")
                         .WithMany("ParentRelations")
                         .HasForeignKey("ChildProjectId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "DeletedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "DeletedByUser")
                         .WithMany()
                         .HasForeignKey("DeletedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("PMM.Data.Entities.Project", "ParentProject")
+                    b.HasOne("PMM.Domain.Entities.Project", "ParentProject")
                         .WithMany("ChildRelations")
                         .HasForeignKey("ParentProjectId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "UpdatedByUser")
                         .WithMany()
                         .HasForeignKey("UpdatedById")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1075,31 +1060,31 @@ namespace PMM.Data.Migrations
                     b.Navigation("UpdatedByUser");
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.TaskAssignment", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.TaskAssignment", b =>
                 {
-                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "DeletedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "DeletedByUser")
                         .WithMany()
                         .HasForeignKey("DeletedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("PMM.Data.Entities.TaskEntity", "Task")
+                    b.HasOne("PMM.Domain.Entities.TaskEntity", "Task")
                         .WithMany("TaskAssignments")
                         .HasForeignKey("TaskId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "UpdatedByUser")
                         .WithMany()
                         .HasForeignKey("UpdatedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("PMM.Data.Entities.User", "User")
+                    b.HasOne("PMM.Domain.Entities.User", "User")
                         .WithMany("TaskAssignments")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1116,32 +1101,32 @@ namespace PMM.Data.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.TaskDependency", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.TaskDependency", b =>
                 {
-                    b.HasOne("PMM.Data.Entities.TaskEntity", "BlockedTask")
+                    b.HasOne("PMM.Domain.Entities.TaskEntity", "BlockedTask")
                         .WithMany("BlockedBy")
                         .HasForeignKey("BlockedTaskId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.TaskEntity", "BlockingTask")
+                    b.HasOne("PMM.Domain.Entities.TaskEntity", "BlockingTask")
                         .WithMany("Blocks")
                         .HasForeignKey("BlockingTaskId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "DeletedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "DeletedByUser")
                         .WithMany()
                         .HasForeignKey("DeletedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "UpdatedByUser")
                         .WithMany()
                         .HasForeignKey("UpdatedById")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1157,30 +1142,30 @@ namespace PMM.Data.Migrations
                     b.Navigation("UpdatedByUser");
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.TaskEntity", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.TaskEntity", b =>
                 {
-                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "DeletedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "DeletedByUser")
                         .WithMany()
                         .HasForeignKey("DeletedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("PMM.Data.Entities.TaskEntity", "ParentTask")
+                    b.HasOne("PMM.Domain.Entities.TaskEntity", "ParentTask")
                         .WithMany("SubTasks")
                         .HasForeignKey("ParentTaskId");
 
-                    b.HasOne("PMM.Data.Entities.Project", "Project")
+                    b.HasOne("PMM.Domain.Entities.Project", "Project")
                         .WithMany("Tasks")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "UpdatedByUser")
                         .WithMany()
                         .HasForeignKey("UpdatedById")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1196,32 +1181,32 @@ namespace PMM.Data.Migrations
                     b.Navigation("UpdatedByUser");
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.TaskLabel", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.TaskLabel", b =>
                 {
-                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "DeletedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "DeletedByUser")
                         .WithMany()
                         .HasForeignKey("DeletedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("PMM.Data.Entities.Label", "Label")
+                    b.HasOne("PMM.Domain.Entities.Label", "Label")
                         .WithMany("TaskLabels")
                         .HasForeignKey("LabelId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.TaskEntity", "Task")
+                    b.HasOne("PMM.Domain.Entities.TaskEntity", "Task")
                         .WithMany("TaskLabels")
                         .HasForeignKey("TaskId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "UpdatedByUser")
                         .WithMany()
                         .HasForeignKey("UpdatedById")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1237,44 +1222,29 @@ namespace PMM.Data.Migrations
                     b.Navigation("UpdatedByUser");
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.User", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.User", b =>
                 {
-                    b.HasOne("PMM.Data.Entities.User", "CreatedByUser")
-                        .WithMany()
-                        .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("PMM.Data.Entities.User", "DeletedByUser")
+                    b.HasOne("PMM.Domain.Entities.User", "DeletedByUser")
                         .WithMany()
                         .HasForeignKey("DeletedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("PMM.Data.Entities.User", "UpdatedByUser")
-                        .WithMany()
-                        .HasForeignKey("UpdatedById")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("CreatedByUser");
-
                     b.Navigation("DeletedByUser");
-
-                    b.Navigation("UpdatedByUser");
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.Client", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.Client", b =>
                 {
                     b.Navigation("Projects");
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.Label", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.Label", b =>
                 {
                     b.Navigation("ProjectLabels");
 
                     b.Navigation("TaskLabels");
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.Project", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.Project", b =>
                 {
                     b.Navigation("Assignments");
 
@@ -1289,7 +1259,7 @@ namespace PMM.Data.Migrations
                     b.Navigation("Tasks");
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.TaskEntity", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.TaskEntity", b =>
                 {
                     b.Navigation("Activities");
 
@@ -1304,7 +1274,7 @@ namespace PMM.Data.Migrations
                     b.Navigation("TaskLabels");
                 });
 
-            modelBuilder.Entity("PMM.Data.Entities.User", b =>
+            modelBuilder.Entity("PMM.Domain.Entities.User", b =>
                 {
                     b.Navigation("Activities");
 

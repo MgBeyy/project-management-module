@@ -1,10 +1,9 @@
-﻿
-using AutoWrapper.Wrappers;
+﻿using AutoWrapper.Wrappers;
 using Microsoft.AspNetCore.Mvc;
 using PMM.Core.Common;
-using PMM.Core.DTOs;
-using PMM.Core.Forms;
-using PMM.Core.Services;
+using PMM.Domain.DTOs;
+using PMM.Domain.Forms;
+using PMM.Domain.Interfaces.Services;
 
 namespace PMM.API.Controllers
 {
@@ -21,8 +20,16 @@ namespace PMM.API.Controllers
         [HttpPost()]
         public async Task<IActionResult> Create(CreateUserForm form)
         {
-            var user = await _userService.AddUserAsync(form);
-            return StatusCode(StatusCodes.Status201Created, new ApiResponse(user, StatusCodes.Status201Created));
+            try
+            {
+                var user = await _userService.AddUserAsync(form);
+                return StatusCode(StatusCodes.Status201Created, new ApiResponse(user, StatusCodes.Status201Created));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "User creation failed for email: {Email}", form?.Email);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse("User creation failed", StatusCodes.Status500InternalServerError));
+            }
         }
         [ProducesResponseType(typeof(PagedResult<UserDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]

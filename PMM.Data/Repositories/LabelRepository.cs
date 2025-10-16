@@ -1,13 +1,10 @@
 using Microsoft.Extensions.Logging;
 using PMM.Data.Contexts;
-using PMM.Data.Entities;
+using PMM.Domain.Entities;
+using PMM.Domain.Interfaces.Repositories;
 
 namespace PMM.Data.Repositories
 {
-    public interface ILabelRepository : _IBaseRepository<Label>
-    {
-    }
-
     public class LabelRepository : _BaseRepository<Label>, ILabelRepository
     {
         public LabelRepository(ApplicationDbContext context, ILogger<LabelRepository> logger)

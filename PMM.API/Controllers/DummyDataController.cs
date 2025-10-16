@@ -1,6 +1,6 @@
 using AutoWrapper.Wrappers;
 using Microsoft.AspNetCore.Mvc;
-using PMM.Core.Services;
+using PMM.Domain.Interfaces.Services;
 
 namespace PMM.API.Controllers
 {
