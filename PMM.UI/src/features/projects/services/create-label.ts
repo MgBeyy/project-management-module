@@ -2,7 +2,7 @@ import apiClient from "../../../services/api-client";
 
 export async function createLabel(labelData: any) {
   try {
-    const response = await apiClient.post("/Label", labelData, {
+    const response = await apiClient.post("Label", labelData, {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",

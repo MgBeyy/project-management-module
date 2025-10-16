@@ -52,7 +52,7 @@ namespace PMM.API.Extensions
                 options.AddPolicy("AllowFrontend",
                     policy =>
                     {
-                        policy.WithOrigins("http://localhost:5173","http://localhost:3000","http://engzaid.tech:3000","http://frontend:3000")
+                        policy.WithOrigins("http://localhost:5173","http://localhost:3000","http://engzaid.tech:3000","http://frontend:3000","http://52.90.58.103:3000")
                               .AllowAnyHeader()
                               .AllowAnyMethod()
                               .AllowCredentials();
