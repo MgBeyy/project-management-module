@@ -1,27 +1,19 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PMM.Core.Common;
-using PMM.Core.DTOs;
 using PMM.Core.Exceptions;
-using PMM.Core.Forms;
 using PMM.Core.Mappers;
 using PMM.Core.Validators;
-using PMM.Data.Entities;
-using PMM.Data.Enums;
-using PMM.Data.Repositories;
+using PMM.Domain.DTOs;
+using PMM.Domain.Entities;
+using PMM.Domain.Enums;
+using PMM.Domain.Forms;
+using PMM.Domain.Interfaces.Repositories;
+using PMM.Domain.Interfaces.Services;
 using System.Security.Principal;
 
 namespace PMM.Core.Services
 {
-    public interface IProjectService
-    {
-        Task<ProjectDto> AddProjectAsync(CreateProjectForm form);
-        Task<ProjectDto> GetProjectAsync(int projectId);
-        Task<ProjectDto> EditProjectAsync(int projectId, UpdateProjectForm form);
-        Task<PagedResult<ProjectDto>> Query(QueryProjectForm form);
-        Task<DetailedProjectDto> GetDetailedProjectAsync(int projectId);
-        Task DeleteProjectAsync(int projectId);
-    }
     public class ProjectService : _BaseService, IProjectService
     {
         private readonly ILogger<ProjectService> _logger;

@@ -1,12 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PMM.Core.Common;
-using PMM.Core.DTOs;
 using PMM.Core.Exceptions;
-using PMM.Core.Forms;
 using PMM.Core.Mappers;
 using PMM.Core.Validators;
-using PMM.Data.Repositories;
+using PMM.Domain.DTOs;
+using PMM.Domain.Forms;
+using PMM.Domain.Interfaces.Repositories;
+using PMM.Domain.Interfaces.Services;
 using System.Security.Principal;
 
 namespace PMM.Core.Services
@@ -27,16 +28,33 @@ namespace PMM.Core.Services
 
         public async Task AddClientAsync(CreateClientForm form)
         {
-            if (form == null)
-                throw new ArgumentNullException($"{typeof(CreateClientForm)} is empty");
+            try
+            {
+                _logger.LogInformation("Starting AddClientAsync with form: {@Form}", form);
 
-            var validation = FormValidator.Validate(form);
-            if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                if (form == null)
+                    throw new ArgumentNullException($"{typeof(CreateClientForm)} is empty");
 
-            var client = ClientMapper.Map(form);
-            _clientRepository.Create(client);
-            await _clientRepository.SaveChangesAsync();
+                var validation = FormValidator.Validate(form);
+                if (!validation.IsValid)
+                    throw new BusinessException(validation.Errors);
+
+                _logger.LogInformation("Creating client entity for: {Name}", form.Name);
+                var client = ClientMapper.Map(form);
+                client.CreatedAt = DateTime.UtcNow;
+                client.CreatedById = LoggedInUser.Id;
+
+                _logger.LogInformation("Saving client to database: {Name}", client.Name);
+                _clientRepository.Create(client);
+                await _clientRepository.SaveChangesAsync();
+
+                _logger.LogInformation("Client created successfully with ID: {Id}", client.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in AddClientAsync");
+                throw;
+            }
         }
 
         public async Task DeleteClientAsync(int clientId)
@@ -57,12 +75,14 @@ namespace PMM.Core.Services
             if (!validation.IsValid)
                 throw new BusinessException(validation.Errors);
 
-            if (clientId == null)
-                throw new ArgumentNullException("Müşteri Id Boş Olamaz!");
             var client = await _clientRepository.GetByIdAsync(clientId);
             if (client == null)
                 throw new NotFoundException("Müşteri Bulunamadı!");
-            client.Name = form.name;
+
+            client.Name = form.Name;
+            client.UpdatedAt = DateTime.UtcNow;
+            client.UpdatedById = LoggedInUser.Id;
+
             _clientRepository.Update(client);
             await _clientRepository.SaveChangesAsync();
 
@@ -114,13 +134,5 @@ namespace PMM.Core.Services
                 PageSize = pageSize
             };
         }
-    }
-    public interface IClientService
-    {
-        Task AddClientAsync(CreateClientForm form);
-        Task<ClientDto> GetClientAsync(int clientId);
-        Task<ClientDto> EditClientAsync(int clientId, CreateClientForm form);
-        Task DeleteClientAsync(int clientId);
-        Task<PagedResult<ClientDto>> Query(QueryClientForm form);
     }
 }

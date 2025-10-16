@@ -1,15 +1,10 @@
 using Microsoft.Extensions.Logging;
 using PMM.Data.Contexts;
-using PMM.Data.Entities;
+using PMM.Domain.Entities;
+using PMM.Domain.Interfaces.Repositories;
 
 namespace PMM.Data.Repositories
 {
-    public interface ITaskLabelRepository : _IBaseRepository<TaskLabel>
-    {
-        Task<List<TaskLabel>> GetByTaskIdAsync(int taskId);
-        Task<List<TaskLabel>> GetByLabelIdAsync(int labelId);
-    }
-
     public class TaskLabelRepository : _BaseRepository<TaskLabel>, ITaskLabelRepository
     {
         public TaskLabelRepository(ApplicationDbContext context, ILogger<TaskLabelRepository> logger)

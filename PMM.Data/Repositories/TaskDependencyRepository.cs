@@ -1,23 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PMM.Data.Contexts;
-using PMM.Data.Entities;
+using PMM.Domain.Entities;
+using PMM.Domain.Interfaces.Repositories;
 
 namespace PMM.Data.Repositories
 {
-    public interface ITaskDependencyRepository : _IBaseRepository<TaskDependency>
-    {
-        Task<List<TaskDependency>> GetByBlockingTaskIdAsync(int blockingTaskId);
-        Task<List<TaskDependency>> GetByBlockedTaskIdAsync(int blockedTaskId);
-        Task<TaskDependency?> GetByTaskIdsAsync(int blockingTaskId, int blockedTaskId);
-        Task<bool> HasCircularDependencyAsync(int taskId, int targetTaskId);
-        Task DeleteByTaskIdsAsync(int blockingTaskId, int blockedTaskId);
-        Task<TaskDependency?> GetByIdWithTasksAsync(int dependencyId);
-    }
-
     public class TaskDependencyRepository : _BaseRepository<TaskDependency>, ITaskDependencyRepository
     {
-        public TaskDependencyRepository(ApplicationDbContext context, ILogger<TaskDependencyRepository> logger) 
+        public TaskDependencyRepository(ApplicationDbContext context, ILogger<TaskDependencyRepository> logger)
             : base(context, logger)
         {
         }

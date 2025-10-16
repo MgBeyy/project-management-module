@@ -1,8 +1,8 @@
 using AutoWrapper.Wrappers;
 using Microsoft.AspNetCore.Mvc;
-using PMM.Core.DTOs;
-using PMM.Core.Forms;
-using PMM.Core.Services;
+using PMM.Domain.DTOs;
+using PMM.Domain.Forms;
+using PMM.Domain.Interfaces.Services;
 
 namespace PMM.API.Controllers
 {

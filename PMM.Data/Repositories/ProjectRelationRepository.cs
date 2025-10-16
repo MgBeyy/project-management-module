@@ -1,21 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PMM.Data.Contexts;
-using PMM.Data.Entities;
+using PMM.Domain.Entities;
+using PMM.Domain.Interfaces.Repositories;
 
 namespace PMM.Data.Repositories
 {
-    public interface IProjectRelationRepository : _IBaseRepository<ProjectRelation>
-    {
-        Task<List<ProjectRelation>> GetByChildProjectIdAsync(int childProjectId);
-        Task<List<ProjectRelation>> GetByParentProjectIdAsync(int parentProjectId);
-        Task<ProjectRelation?> GetRelationAsync(int parentProjectId, int childProjectId);
-        Task DeleteRelationAsync(int parentProjectId, int childProjectId);
-    }
-    
     public class ProjectRelationRepository : _BaseRepository<ProjectRelation>, IProjectRelationRepository
     {
-        public ProjectRelationRepository(ApplicationDbContext context, ILogger<ProjectRelationRepository> logger) 
+        public ProjectRelationRepository(ApplicationDbContext context, ILogger<ProjectRelationRepository> logger)
             : base(context, logger)
         {
         }
