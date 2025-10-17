@@ -5,7 +5,8 @@
     "paths": {
       "@/*": ["src/*"],
       "@components/*": ["src/lib/components/*"],
-      "@types/*": ["src/lib/types/*"],
+      "@types": ["src/types"],
+      "@types/*": ["src/types/*"],
       "@hooks/*": ["src/lib/hooks/*"],
       "@lib/*": ["src/lib/*"]
     },
