@@ -12,6 +12,9 @@ namespace PMM.Data.Contexts.ClassMaps
 
             builder.ToTable("Tasks");
 
+            builder.HasIndex(t => t.Code).IsUnique();
+            builder.Property(t => t.Code).IsRequired().HasMaxLength(50);
+
             builder.Property(t => t.ProjectId).IsRequired();
             builder.HasOne(t => t.Project)
                    .WithMany(p => p.Tasks)

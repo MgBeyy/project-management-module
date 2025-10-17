@@ -38,5 +38,10 @@ namespace PMM.Data.Repositories
                     .ThenInclude(td => td.BlockingTask)
                 .FirstOrDefaultAsync();
         }
+
+        public async Task<TaskEntity?> GetByCodeAsync(string code)
+        {
+            return await _dbSet.FirstOrDefaultAsync(t => t.Code == code);
+        }
     }
 }

@@ -5,6 +5,7 @@ namespace PMM.Domain.DTOs
     public class TaskDto
     {
         public int Id { get; set; }
+        public string Code { get; set; }
         public int ProjectId { get; set; }
         public string ProjectCode { get; set; }
         public int? ParentTaskId { get; set; }

@@ -6,6 +6,8 @@ namespace PMM.Domain.Forms
     public class CreateTaskForm
     {
         [Required]
+        public string Code { get; set; }
+        [Required]
         public int? ProjectId { get; set; }
         public int? ParentTaskId { get; set; }
         [Required]

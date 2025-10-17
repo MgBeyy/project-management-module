@@ -10,6 +10,7 @@ namespace PMM.Core.Mappers
         {
             return new TaskEntity
             {
+                Code = form.Code,
                 ProjectId = form.ProjectId.Value,
                 ParentTaskId = form.ParentTaskId,
                 Description = form.Description,
@@ -25,6 +26,7 @@ namespace PMM.Core.Mappers
             return new TaskDto
             {
                 Id = task.Id,
+                Code = task.Code,
                 ProjectId = task.ProjectId,
                 ProjectCode = task.Project?.Code,
                 ParentTaskId = task.ParentTaskId,

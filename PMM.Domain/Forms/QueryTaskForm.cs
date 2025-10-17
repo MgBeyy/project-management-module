@@ -10,6 +10,7 @@ namespace PMM.Domain.Forms
         public bool SortDesc { get; set; } = false;
 
         public int? Id { get; set; }
+        public string? Code { get; set; }
         public int? ProjectId { get; set; }
         public int? ParentTaskId { get; set; }
         public string? Title { get; set; }
@@ -32,5 +33,6 @@ namespace PMM.Domain.Forms
         public DateTime? UpdatedAtMin { get; set; }
         public DateTime? UpdatedAtMax { get; set; }
         public int? UpdatedById { get; set; }
+        public string? LabelIds { get; set; }
     }
 }

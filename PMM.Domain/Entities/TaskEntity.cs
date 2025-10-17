@@ -4,6 +4,7 @@ namespace PMM.Domain.Entities
 {
     public class TaskEntity : _BaseEntity
     {
+        public string Code { get; set; }
         public int ProjectId { get; set; }
         public virtual Project Project { get; set; }
 
