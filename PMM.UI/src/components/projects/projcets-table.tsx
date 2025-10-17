@@ -347,19 +347,17 @@ export default function CustomTable() {
         showTitle: false,
       },
       render: (text: string) => {
-        const color =
-          text === "Kritik"
-            ? "#ff4d4f"
-            : text === "Yüksek"
-              ? "#fa8c16"
-              : text === "Orta"
-                ? "#1890ff"
-                : text === "Düşük"
-                  ? "#52c41a"
-                  : "#666";
+        const label =
+            text === "High"
+              ? "Yüksek"
+              : text === "Regular"
+                ? "Orta"
+                : text === "Low"
+                  ? "Düşük"
+                  : "Bilinmiyor";
         return (
-          <span title={text} style={{ color, fontWeight: "bold" }}>
-            {text}
+          <span title={text} style={{ fontWeight: "bold" }}>
+            {label}
           </span>
         );
       },
@@ -408,25 +406,17 @@ export default function CustomTable() {
                 console.log("Row clicked:", record, "\n", rowIndex);
                 onRowClick(record);
               },
-              style: {
-                backgroundColor: isSelected ? "#E6F4FF" : "transparent",
-                cursor: "pointer",
-                transition: "background-color 0.2s ease",
-              },
-              onMouseEnter: e => {
-                if (isSelected) {
-                  e.currentTarget.style.backgroundColor = "#D6E4FF";
-                } else {
-                  e.currentTarget.style.backgroundColor = "#F1F5FF";
-                }
-              },
-              onMouseLeave: e => {
-                if (isSelected) {
-                  e.currentTarget.style.backgroundColor = "#E6F4FF";
-                } else {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }
-              },
+              className: isSelected ? "selected-table-row" : "table-row-hover",
+              style: isSelected
+                ? {
+                    backgroundColor: "#E6F4FF",
+                    cursor: "pointer",
+                    transition: "background-color 0.2s ease",
+                  }
+                : {
+                    cursor: "pointer",
+                    transition: "background-color 0.2s ease",
+                  },
             };
           }}
         />

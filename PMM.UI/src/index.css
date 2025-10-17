@@ -37,3 +37,26 @@
   color: #52c41a;
 }
 
+.table-row-hover:hover {
+  background-color: #F1F5FF !important;
+}
+
+.ant-table-row.table-row-hover:hover {
+  background-color: #F1F5FF !important;
+}
+
+.selected-table-row .ant-table-cell {
+  background-color: #E6F4FF !important;
+}
+
+.selected-table-row:hover .ant-table-cell {
+  background-color: #E6F4FF !important;
+}
+
+.ant-table-row.selected-table-row .ant-table-cell {
+  background-color: #E6F4FF !important;
+}
+
+.ant-table-row.selected-table-row:hover .ant-table-cell {
+  background-color: #E6F4FF !important;
+}
