@@ -24,10 +24,9 @@ export async function createProject(data: CreateProjectData) {
       },
       timeout: 15000,
     });
-
     return response.data;
   } catch (error) {
     console.error("Proje oluşturulurken hata oluştu:", error);
-    return null;
+    throw error;
   }
 }

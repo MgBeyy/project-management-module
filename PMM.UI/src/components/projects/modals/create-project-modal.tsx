@@ -7,25 +7,23 @@ import {
   Select,
   AutoComplete,
   Spin,
-  ColorPicker,
   Modal,
   Tag,
 } from "antd";
 import { useState, useEffect, useCallback } from "react";
 import type { CSSProperties, MouseEvent } from "react";
 import { AiOutlinePlus, AiOutlineEdit } from "react-icons/ai";
-import type { DatePickerProps, InputNumberProps, SelectProps } from "antd";
+import type { InputNumberProps, SelectProps } from "antd";
 import dayjs from "dayjs";
 import MultiSelectSearch, { MultiSelectOption } from "../multi-select-search";
 import { getClientsForSelect } from "@/services/projects/get-clients-for-select";
-import { createLabel } from "@/services/projects/create-label";
-import { updateLabel } from "@/services/projects/update-label";
 import { createProject } from "@/services/projects/create-project";
 import { showNotification } from "@/utils/notification";
 import getMultiSelectSearch from "@/services/projects/get-multi-select-search";
 import { updateProject, UpdateProjectData } from "@/services/projects/update-project";
 import { ProjectPriority } from "@/services/projects/get-projects";
 import type { ProjectModalProps } from "@/types/projects";
+import CreateLabelModal from "./create-label-modal";
 
 const mergeOptions = (
   existing: MultiSelectOption[],
@@ -66,26 +64,6 @@ const normalizeLabelOption = (label: any): MultiSelectOption | null => {
     name: resolvedName,
     ...label,
   };
-};
-
-const extractLabelEntity = (response: any) => {
-  if (!response) {
-    return null;
-  }
-
-  const candidate =
-    response?.result?.data ||
-    response?.data?.result ||
-    response?.data?.data ||
-    response?.result ||
-    response?.data ||
-    response;
-
-  if (Array.isArray(candidate)) {
-    return candidate[0] || null;
-  }
-
-  return candidate;
 };
 
 const normalizeProjectOption = (project: any): MultiSelectOption | null => {
@@ -153,7 +131,6 @@ export default function CreateProjectModal({
   mode = 'create',
 }: ProjectModalProps) {
   const [form] = Form.useForm();
-  const [labelForm] = Form.useForm();
 
   const [customerOptions, setCustomerOptions] = useState<
     { value: string; label: string; key: string }[]
@@ -170,12 +147,12 @@ export default function CreateProjectModal({
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [parentProjectOptions, setParentProjectOptions] = useState<MultiSelectOption[]>([]);
   const [labelSelectOptions, setLabelSelectOptions] = useState<MultiSelectOption[]>([]);
-  const [labelLoading, setLabelLoading] = useState(false);
-  const [labelColor, setLabelColor] = useState("#1890ff");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Label modal state
   const [isLabelModalVisible, setIsLabelModalVisible] = useState(false);
   const [labelModalMode, setLabelModalMode] = useState<'create' | 'edit'>('create');
-  const [editingLabelId, setEditingLabelId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingLabelData, setEditingLabelData] = useState<any>(null);
 
   const isEditMode = mode === 'edit' && !!projectData;
   const isViewMode = mode === 'view' && !!projectData;
@@ -325,8 +302,7 @@ export default function CreateProjectModal({
     setParentProjectOptions([]);
     setLabelSelectOptions([]);
     setLabelModalMode('create');
-    setEditingLabelId(null);
-    setLabelColor("#1890ff");
+    setEditingLabelData(null);
     setIsLabelModalVisible(false);
     console.log("Form temizlendi");
   }, [form]);
@@ -343,11 +319,17 @@ export default function CreateProjectModal({
     const handleEditClick = (event: MouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
       event.stopPropagation();
-      openLabelModalForEdit(
-        String(value),
-        option as MultiSelectOption,
-        typeof label === "string" ? label : label?.toString?.()
-      );
+      
+      const labelData = {
+        id: String(value),
+        name: option?.name || option?.label || '',
+        description: (option as any)?.description || '',
+        color: (option as any)?.color || '#1890ff',
+      };
+
+      setLabelModalMode('edit');
+      setEditingLabelData(labelData);
+      setIsLabelModalVisible(true);
     };
 
     const resolvedColor = (option as any)?.color || "#4a90e2";
@@ -456,7 +438,7 @@ export default function CreateProjectModal({
       setSelectedLabels(derivedLabelIds);
       setLabelSelectOptions(combinedOptions);
       setLabelModalMode('create');
-      setEditingLabelId(null);
+      setEditingLabelData(null);
 
       if (derivedParentProjectIds.length > 0) {
         const normalizedParentOptions = derivedParentProjectIds
@@ -487,11 +469,7 @@ export default function CreateProjectModal({
       const constructedUrl = `/Client?Search=${encodeURIComponent(
         searchText
       )}`;
-      console.log("🔍 Müşteri API isteği:", constructedUrl);
       const res = await getClientsForSelect(searchText, "/Client");
-
-      console.log("✅ Müşteri API yanıtı:", res.data);
-
       const apiResult = res.data?.result?.data || res.data?.data || res.data;
 
       if (!Array.isArray(apiResult)) {
@@ -537,173 +515,31 @@ export default function CreateProjectModal({
     }
   };
 
-  const openLabelModalForCreate = () => {
-    setLabelModalMode('create');
-    setEditingLabelId(null);
-    labelForm.resetFields();
-    setLabelColor("#1890ff");
-    setIsLabelModalVisible(true);
-    console.log("Label modal (create) açılıyor...");
-  };
-
-  const openLabelModalForEdit = (
-    labelId: string,
-    option?: MultiSelectOption,
-    fallbackLabel?: string
-  ) => {
-    if (isViewMode) {
-      return;
-    }
-
-    const normalizedId = String(labelId);
-    const optionSource =
-      option ||
-      labelSelectOptions.find(item => String(item.value) === normalizedId);
-
-    if (option) {
-      setLabelSelectOptions(prev =>
-        mergeOptions(prev, [option as MultiSelectOption])
-      );
-    }
-
-    const resolvedLabel = (() => {
-      if (optionSource?.name) {
-        return optionSource.name as string;
-      }
-      if (typeof optionSource?.label === "string") {
-        return optionSource.label;
-      }
-      if (optionSource?.label != null) {
-        return String(optionSource.label);
-      }
-      if (fallbackLabel) {
-        return fallbackLabel;
-      }
-      return "";
-    })();
-
-    const resolvedDescription =
-      (optionSource as any)?.description ||
-      (optionSource as any)?.labelDescription ||
-      "";
-
-    const resolvedColor =
-      ((optionSource as any)?.color as string) || labelColor || "#1890ff";
-
-    labelForm.setFieldsValue({
-      labelName: resolvedLabel,
-      labelDescription: resolvedDescription,
-    });
-
-    setLabelColor(resolvedColor);
-    setLabelModalMode('edit');
-    setEditingLabelId(normalizedId);
-    setIsLabelModalVisible(true);
-    console.log("Label modal (edit) açılıyor...", normalizedId);
-  };
-
   const handleLabelCreateButtonClick = () => {
-    openLabelModalForCreate();
+    setLabelModalMode('create');
+    setEditingLabelData(null);
+    setIsLabelModalVisible(true);
+  };
+
+  const handleLabelModalSuccess = (labelOption: MultiSelectOption) => {
+    // Update label options
+    setLabelSelectOptions(prev => mergeOptions(prev, [labelOption]));
+
+    // Add to selected labels if it's a new label
+    if (labelModalMode === 'create') {
+      const newId = String(labelOption.value);
+      const updatedLabels = Array.from(new Set([...selectedLabels, newId]));
+      setSelectedLabels(updatedLabels);
+      form.setFieldValue("labels", updatedLabels);
+    }
+
+    setIsLabelModalVisible(false);
+    setEditingLabelData(null);
   };
 
   const handleLabelModalCancel = () => {
     setIsLabelModalVisible(false);
-    labelForm.resetFields();
-    setLabelColor("#1890ff");
-    setLabelModalMode('create');
-    setEditingLabelId(null);
-    console.log("Label modal iptal edildi");
-  };
-
-  const handleLabelModalSubmit = async (labelValues: any) => {
-    setLabelLoading(true);
-
-    try {
-      console.log("Label kaydetme isteği (mode:", labelModalMode, "):", labelValues);
-
-      const payload = {
-        name: labelValues.labelName,
-        description: labelValues.labelDescription,
-        color: labelColor,
-      };
-
-      let response: any = null;
-
-      if (labelModalMode === 'edit' && editingLabelId) {
-        response = await updateLabel(editingLabelId, payload);
-        showNotification.success(
-          "Etiket Güncellendi",
-          " Etiket başarıyla güncellendi!"
-        );
-      } else {
-        response = await createLabel(payload);
-        showNotification.success(
-          "Etiket Oluşturuldu",
-          " Etiket başarıyla oluşturuldu!"
-        );
-      }
-
-      if (!response) {
-        throw new Error("Label yanıtı alınamadı");
-      }
-
-      const labelEntity = extractLabelEntity(response);
-      const resolvedId =
-        labelEntity?.id ?? labelEntity?.Id ?? editingLabelId ?? null;
-
-      if (!resolvedId) {
-        console.warn("Label yanıtında ID bulunamadı:", response);
-      }
-
-      const normalizedOption =
-        normalizeLabelOption({
-          ...labelEntity,
-          id: labelEntity?.id ?? labelEntity?.Id ?? resolvedId,
-          color: labelEntity?.color ?? labelColor,
-          description:
-            labelEntity?.description ?? labelValues.labelDescription ?? "",
-          name: labelEntity?.name ?? labelValues.labelName,
-        }) ||
-        normalizeLabelOption({
-          id: resolvedId,
-          name: labelValues.labelName,
-          description: labelValues.labelDescription,
-          color: labelColor,
-        });
-
-      if (normalizedOption) {
-        setLabelSelectOptions(prev =>
-          mergeOptions(prev, [normalizedOption])
-        );
-      }
-
-      if (labelModalMode === 'create' && resolvedId) {
-        const newId = String(resolvedId);
-        const updatedLabels = Array.from(
-          new Set([...selectedLabels, newId])
-        );
-        setSelectedLabels(updatedLabels);
-        form.setFieldValue("labels", updatedLabels);
-      } else {
-        form.setFieldValue("labels", selectedLabels);
-      }
-
-      setIsLabelModalVisible(false);
-      labelForm.resetFields();
-      setLabelColor("#1890ff");
-      setLabelModalMode('create');
-      setEditingLabelId(null);
-    } catch (error: any) {
-      console.error("Label kaydetme hatası:", error);
-    } finally {
-      setLabelLoading(false);
-    }
-  };
-
-  const handleColorChange = (color: any) => {
-    const hexColor = color.toHexString();
-    setLabelColor(hexColor);
-    console.log("Renk değişti:", hexColor);
+    setEditingLabelData(null);
   };
 
   const handleParentProjectsChange = (values: string[]) => {
@@ -739,16 +575,7 @@ export default function CreateProjectModal({
   };
 
   const onChangeNumber: InputNumberProps["onChange"] = value => {
-    console.log("Saat değişti:", value);
     form.setFieldValue("plannedHours", value);
-  };
-
-  const onChangeDate: DatePickerProps["onChange"] = (date, dateString) => {
-    console.log("Tarih değişti:", date, dateString);
-  };
-
-  const onChangeSelect = (value: string, option: any) => {
-    console.log("Select değişti:", value, option);
   };
 
   const handleSubmit = async (values: any) => {
@@ -769,6 +596,8 @@ export default function CreateProjectModal({
             : null,
           plannedHours: values.plannedHours || null,
           startedAt: values.startedAt ? values.startedAt.valueOf() : null,
+          labelIds: selectedLabels,
+          parentProjectIds: selectedParentProjects,
           endAt: values.endAt ? values.endAt.valueOf() : null,
           status: values.status,
           priority: values.priority,
@@ -811,9 +640,6 @@ export default function CreateProjectModal({
               !(Array.isArray(value) && value.length === 0)
           )
         );
-
-        console.log("API'ye gönderilecek proje verisi:", cleanedData);
-
         await createProject(cleanedData);
         showNotification.success("Proje Oluşturuldu", " Proje başarıyla oluşturuldu!");
       }
@@ -823,7 +649,6 @@ export default function CreateProjectModal({
       onClose();
     } catch (error: any) {
       console.error(`Proje ${isEditMode ? 'güncelleme' : 'oluşturma'} hatası:`, error);
-      // API client zaten hata mesajını gösteriyor, burada sadece logluyoruz
     } finally {
       setIsSubmitting(false);
     }
@@ -873,10 +698,6 @@ export default function CreateProjectModal({
           form={form}
           layout="vertical"
           onFinish={isViewMode ? undefined : handleSubmit}
-          onValuesChange={(changedValues, allValues) => {
-            console.log("Değer değişti:", changedValues);
-            console.log("Tüm değerler:", allValues);
-          }}
           className="mt-4"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
@@ -937,7 +758,6 @@ export default function CreateProjectModal({
               className="mb-3"
             >
               <DatePicker
-                onChange={onChangeDate}
                 placeholder="Başlangıç tarihi"
                 size="middle"
                 style={{
@@ -1002,7 +822,6 @@ export default function CreateProjectModal({
               <Select
                 placeholder="Durum seçin"
                 allowClear
-                onChange={onChangeSelect}
                 size="middle"
                 style={{
                   width: "100%",
@@ -1022,7 +841,6 @@ export default function CreateProjectModal({
               <Select
                 placeholder="Öncelik seçin"
                 allowClear
-                onChange={onChangeSelect}
                 size="middle"
                 style={{
                   width: "100%",
@@ -1164,105 +982,13 @@ export default function CreateProjectModal({
         </Form>
       </Modal>
 
-      <Modal
-        title={labelModalMode === 'edit' ? "Etiketi Düzenle" : "Yeni Etiket Oluştur"}
-        open={isLabelModalVisible}
+            <CreateLabelModal
+        visible={isLabelModalVisible}
+        mode={labelModalMode}
+        initialData={editingLabelData}
+        onSuccess={handleLabelModalSuccess}
         onCancel={handleLabelModalCancel}
-        footer={null}
-        width={600}
-        destroyOnClose={true}
-      >
-        <Form
-          form={labelForm}
-          layout="vertical"
-          onFinish={handleLabelModalSubmit}
-          className="mt-4"
-        >
-          <div className="space-y-4">
-            <Form.Item
-              label="Etiket Adı"
-              name="labelName"
-              rules={[
-                { required: true, message: "Etiket adı gereklidir!" },
-                { min: 2, message: "En az 2 karakter olmalıdır!" },
-              ]}
-            >
-              <Input
-                placeholder="Örn: Frontend, Backend, Bug Fix..."
-                size="middle"
-                autoFocus
-              />
-            </Form.Item>
-
-            <Form.Item label="Etiket Açıklaması" name="labelDescription">
-              <Input.TextArea
-                placeholder="Etiketin detaylı açıklaması (opsiyonel)"
-                rows={3}
-                size="middle"
-              />
-            </Form.Item>
-
-            <Form.Item label="Etiket Rengi">
-              <div className="flex items-center gap-3">
-                <ColorPicker
-                  value={labelColor}
-                  onChange={handleColorChange}
-                  size="middle"
-                  showText
-                  format="hex"
-                  presets={[
-                    {
-                      label: "Recommended",
-                      colors: [
-                        "#1890ff",
-                        "#52c41a",
-                        "#faad14",
-                        "#f5222d",
-                        "#722ed1",
-                        "#13c2c2",
-                        "#fa541c",
-                        "#a0d911",
-                      ],
-                    },
-                  ]}
-                />
-                <div
-                  className="w-10 h-10 rounded border-2 border-gray-300"
-                  style={{ backgroundColor: labelColor }}
-                  title={`Seçilen renk: ${labelColor}`}
-                />
-                <span className="text-sm text-gray-500">{labelColor}</span>
-              </div>
-            </Form.Item>
-
-            <Form.Item className="mb-0 pt-4">
-              <div className="flex justify-end gap-3">
-                <Button onClick={handleLabelModalCancel} size="middle">
-                  İptal
-                </Button>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  loading={labelLoading}
-                  size="middle"
-                  style={{
-                    backgroundColor: "#52c41a",
-                    borderColor: "#52c41a",
-                  }}
-                >
-                  {labelLoading
-                    ? labelModalMode === 'edit'
-                      ? "Güncelleniyor..."
-                      : "Oluşturuluyor..."
-                    : labelModalMode === 'edit'
-                      ? "Etiket Güncelle"
-                      : "Etiket Oluştur"}
-                </Button>
-              </div>
-            </Form.Item>
-          </div>
-        </Form>
-      </Modal>
+      />
     </>
   );
 }

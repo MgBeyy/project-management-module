@@ -9,8 +9,8 @@ export interface UpdateProjectData {
   endAt?: number | null;
   status: number;
   priority: string;
-  parentProjectIds?: number[];
-  labelIds?: number[];
+  parentProjectIds?: string[];
+  labelIds?: string[];
 }
 
 export async function updateProject(projectId: number, data: UpdateProjectData) {
