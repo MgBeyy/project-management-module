@@ -14,37 +14,41 @@ const apiClient = axios.create({
 //   return config;
 // });
 apiClient.interceptors.response.use(
-  response => {
-    // Success mesajlarını gösterme, sadece response'u döndür
+  (response) => {
+    console.log("✅ API Interceptor Response yakalandı:", response);
     return response;
   },
-  error => {
+  (error) => {
     console.log("🚨 API Interceptor Error yakalandı:", error);
-    
+
     if (!error.response) {
       // Network hatası
       console.log("📡 Network error - notification gösteriliyor");
-      showNotification.error("Bağlantı Hatası", "İnternet bağlantınızı kontrol edin");
+      showNotification.error(
+        "Bağlantı Hatası",
+        "İnternet bağlantınızı kontrol edin"
+      );
     } else {
-      const type = error.response.data?.type;
-      if (!type) {
-        const status = error.response.status;
-        const errorMessage = error.response.data?.message || error.response.data?.title;
-        
-        console.log(`🔴 HTTP ${status} error - notification gösteriliyor:`, errorMessage);
-        
-        // 400'lü hatalar: Backend mesajını göster
-        if (status >= 400 && status < 500) {
-          showNotification.error("Hata", errorMessage || "İstek işlenirken bir hata oluştu");
-        }
-        // 500'lü hatalar: Genel mesaj göster
-        else if (status >= 500) {
-          showNotification.error("Sunucu Hatası", "Beklenmedik bir hata oluştu");
-        }
-        // Diğer durumlar
-        else {
-          showNotification.error("Hata", errorMessage || "Beklenmedik bir hata oluştu");
-        }
+      const status = error.response.status;
+      const errorMessage =
+        error.response.data?.message || error.response.data?.title;
+
+      if (status >= 400 && status < 500) {
+        showNotification.error(
+          "Hata",
+          errorMessage || "İstek işlenirken bir hata oluştu"
+        );
+      }
+      // 500'lü hatalar: Genel mesaj göster
+      else if (status >= 500) {
+        showNotification.error("Sunucu Hatası", "Beklenmedik bir hata oluştu");
+      }
+      // Diğer durumlar
+      else {
+        showNotification.error(
+          "Hata",
+          errorMessage || "Beklenmedik bir hata oluştu"
+        );
       }
     }
     return Promise.reject(error);
