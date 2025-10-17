@@ -149,6 +149,12 @@ export default function CreateProjectModal({
   const [labelSelectOptions, setLabelSelectOptions] = useState<MultiSelectOption[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // User assignment state
+  const [selectedUsers, setSelectedUsers] = useState<{ userId: string; role: string }[]>([]);
+  const [userOptions, setUserOptions] = useState<MultiSelectOption[]>([]);
+  const [userLoading, setUserLoading] = useState(false);
+  const [userSearchValue, setUserSearchValue] = useState("");
+
   // Label modal state
   const [isLabelModalVisible, setIsLabelModalVisible] = useState(false);
   const [labelModalMode, setLabelModalMode] = useState<'create' | 'edit'>('create');
@@ -159,10 +165,10 @@ export default function CreateProjectModal({
 
   const viewModeFieldStyle: CSSProperties | undefined = isViewMode
     ? {
-        backgroundColor: "#f7f9fc",
-        color: "#1f1f1f",
-        borderColor: "#d9d9d9",
-      }
+      backgroundColor: "#f7f9fc",
+      color: "#1f1f1f",
+      borderColor: "#d9d9d9",
+    }
     : undefined;
 
   const areOptionsEqual = (
@@ -219,7 +225,6 @@ export default function CreateProjectModal({
     if (options.length === 0) {
       return;
     }
-
     setParentProjectOptions(prev => {
       const merged = mergeOptions(prev, options);
       return areOptionsEqual(prev, merged) ? prev : merged;
@@ -301,6 +306,9 @@ export default function CreateProjectModal({
     setSelectedLabels([]);
     setParentProjectOptions([]);
     setLabelSelectOptions([]);
+    setSelectedUsers([]);
+    setUserOptions([]);
+    setUserSearchValue("");
     setLabelModalMode('create');
     setEditingLabelData(null);
     setIsLabelModalVisible(false);
@@ -319,7 +327,7 @@ export default function CreateProjectModal({
     const handleEditClick = (event: MouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
       event.stopPropagation();
-      
+
       const labelData = {
         id: String(value),
         name: option?.name || option?.label || '',
@@ -382,10 +390,10 @@ export default function CreateProjectModal({
       const derivedLabelIds =
         projectData.LabelIds && projectData.LabelIds.length > 0
           ? projectData.LabelIds
-              .map(id =>
-                id !== null && id !== undefined ? String(id) : null
-              )
-              .filter((id): id is string => Boolean(id))
+            .map(id =>
+              id !== null && id !== undefined ? String(id) : null
+            )
+            .filter((id): id is string => Boolean(id))
           : [];
 
       const derivedParentProjectIds = (projectData.ParentProjectIds || [])
@@ -433,6 +441,14 @@ export default function CreateProjectModal({
         labels: derivedLabelIds,
       });
 
+      // Load user assignments
+      // const userAssignments = projectData.UserAssignments || [];
+      // const formattedUsers = userAssignments.map((assignment: any) => ({
+      //   userId: assignment.UserId || assignment.userId,
+      //   role: assignment.Role || assignment.role || 'Developer',
+      // }));
+      // setSelectedUsers(formattedUsers);
+
       setCustomerValue(projectData.ClientId || "");
       setSelectedParentProjects(derivedParentProjectIds);
       setSelectedLabels(derivedLabelIds);
@@ -466,9 +482,6 @@ export default function CreateProjectModal({
     setCustomerLoading(true);
 
     try {
-      const constructedUrl = `/Client?Search=${encodeURIComponent(
-        searchText
-      )}`;
       const res = await getClientsForSelect(searchText, "/Client");
       const apiResult = res.data?.result?.data || res.data?.data || res.data;
 
@@ -513,6 +526,96 @@ export default function CreateProjectModal({
     } finally {
       setCustomerLoading(false);
     }
+  };
+
+  const handleUserSearch = async (searchText: string) => {
+    if (!searchText || searchText.trim().length === 0) {
+      // Boş arama için tüm listeyi yükle
+      setUserLoading(true);
+      try {
+        const response = await getMultiSelectSearch("", "/User");
+        const apiResult = extractArrayFromResponse(response.data);
+
+        const formattedOptions: MultiSelectOption[] = apiResult.map((item: any) => {
+          const id = item.id?.toString() || Math.random().toString();
+          const name = item.name || item.title || `${item.firstName || ""} ${item.lastName || ""}`.trim() || `User ${id}`;
+
+          return {
+            value: id,
+            label: name,
+            key: id,
+            ...item,
+          };
+        });
+
+        setUserOptions(formattedOptions);
+      } catch (error) {
+        console.error("Kullanıcı listesi yükleme hatası:", error);
+        setUserOptions([]);
+      } finally {
+        setUserLoading(false);
+      }
+      return;
+    }
+
+    setUserLoading(true);
+
+    try {
+      const response = await getMultiSelectSearch(searchText, "/User");
+      const apiResult = extractArrayFromResponse(response.data);
+
+      const formattedOptions: MultiSelectOption[] = apiResult.map((item: any) => {
+        const id = item.id?.toString() || Math.random().toString();
+        const name = item.name || item.title || `${item.firstName || ""} ${item.lastName || ""}`.trim() || `User ${id}`;
+
+        return {
+          value: id,
+          label: name,
+          key: id,
+          ...item,
+        };
+      });
+
+      setUserOptions(formattedOptions);
+    } catch (error) {
+      console.error("Kullanıcı arama hatası:", error);
+      setUserOptions([]);
+    } finally {
+      setUserLoading(false);
+    }
+  };
+
+  const handleAddUser = (userId: string) => {
+    if (isViewMode) return;
+
+    const userOption = userOptions.find(option => option.value === userId);
+    if (!userOption) return;
+
+    // Kullanıcı zaten ekli mi kontrol et
+    if (selectedUsers.some(user => user.userId === userId)) {
+      return;
+    }
+
+    const newUser = {
+      userId,
+      role: 'Developer', // Default role
+    };
+
+    setSelectedUsers(prev => [...prev, newUser]);
+  };
+
+  const handleRemoveUser = (userId: string) => {
+    if (isViewMode) return;
+    setSelectedUsers(prev => prev.filter(user => user.userId !== userId));
+  };
+
+  const handleUserRoleChange = (userId: string, role: string) => {
+    if (isViewMode) return;
+    setSelectedUsers(prev =>
+      prev.map(user =>
+        user.userId === userId ? { ...user, role } : user
+      )
+    );
   };
 
   const handleLabelCreateButtonClick = () => {
@@ -629,6 +732,10 @@ export default function CreateProjectModal({
           ClientId: values.customer || undefined,
           ParentProjectIds: selectedParentProjects || [],
           LabelIds: selectedLabels || [],
+          UserAssignments: selectedUsers.map(user => ({
+            UserId: user.userId,
+            Role: user.role,
+          })),
         };
 
         const cleanedData = Object.fromEntries(
@@ -672,14 +779,22 @@ export default function CreateProjectModal({
     { value: ProjectPriority.DUSUK, label: "Düşük" },
   ];
 
+  const userRoleOptions = [
+    { value: "ProjectManager", label: "Proje Yöneticisi" },
+    { value: "Developer", label: "Geliştirici" },
+    { value: "Designer", label: "Tasarımcı" },
+    { value: "Tester", label: "Test Uzmanı" },
+    { value: "Analyst", label: "Analist" },
+  ];
+
   return (
     <>
       <Modal
         title={
-          isViewMode 
-            ? `Proje Detayları: ${projectData?.Code}` 
-            : isEditMode 
-              ? `Proje Güncelle: ${projectData?.Code}` 
+          isViewMode
+            ? `Proje Detayları: ${projectData?.Code}`
+            : isEditMode
+              ? `Proje Güncelle: ${projectData?.Code}`
               : "Yeni Proje Oluştur"
         }
         open={visible}
@@ -707,9 +822,9 @@ export default function CreateProjectModal({
               rules={[{ required: !isEditMode, message: "Proje kodu zorunludur!" }]}
               className="mb-3"
             >
-              <Input 
-                placeholder="Örn: PRJ-001" 
-                size="middle" 
+              <Input
+                placeholder="Örn: PRJ-001"
+                size="middle"
                 disabled={!!isEditMode || !!isViewMode}
                 style={viewModeFieldStyle}
               />
@@ -943,6 +1058,87 @@ export default function CreateProjectModal({
             </Form.Item>
           </div>
 
+          <Form.Item label="Proje Ekibi" className="mb-3">
+            <div className="space-y-3">
+              {!isViewMode && (
+                <AutoComplete
+                  value={userSearchValue}
+                  options={userOptions}
+                  onSearch={handleUserSearch}
+                  onSelect={(value) => {
+                    handleAddUser(value);
+                    setUserSearchValue("");
+                  }}
+                  onChange={setUserSearchValue}
+                  onFocus={() => handleUserSearch("")}
+                  placeholder="Kullanıcı ara ve ekle..."
+                  notFoundContent={
+                    userLoading ? (
+                      <div className="flex justify-center items-center py-2">
+                        <Spin size="small" />
+                        <span className="ml-2">Kullanıcılar aranıyor...</span>
+                      </div>
+                    ) : (
+                      "Kullanıcı bulunamadı"
+                    )
+                  }
+                  allowClear
+                  size="middle"
+                  style={{
+                    width: "100%",
+                  }}
+                  filterOption={false}
+                  showSearch={true}
+                />
+              )}
+
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {selectedUsers.map((user) => {
+                  const userOption = userOptions.find(option => option.value === user.userId);
+                  const userName = userOption?.label || `User ${user.userId}`;
+
+                  return (
+                    <div
+                      key={user.userId}
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border"
+                    >
+                      <div className="flex-1">
+                        <span className="font-medium text-gray-900">{userName}</span>
+                      </div>
+
+                      <Select
+                        value={user.role}
+                        className="flex-1"
+                        onChange={(value) => handleUserRoleChange(user.userId, value)}
+                        options={userRoleOptions}
+                        size="small"
+                        style={{ minWidth: 140 }}
+                        disabled={isViewMode}
+                        placeholder="Rol seçin"
+                      />
+
+                      {!isViewMode && (
+                        <Button
+                          type="text"
+                          danger
+                          icon={<AiOutlinePlus style={{ transform: 'rotate(45deg)' }} />}
+                          onClick={() => handleRemoveUser(user.userId)}
+                          size="small"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+
+                {selectedUsers.length === 0 && (
+                  <div className="text-center py-6 text-gray-500">
+                    Henüz ekip üyesi eklenmemiş
+                  </div>
+                )}
+              </div>
+            </div>
+          </Form.Item>
+
           <Form.Item className="mb-0 mt-6">
             <div className="flex justify-end w-full gap-3">
               <Button
@@ -970,8 +1166,8 @@ export default function CreateProjectModal({
                     className="min-w-[100px]"
                     loading={isSubmitting}
                   >
-                    {isSubmitting 
-                      ? (isEditMode ? "Güncelleniyor..." : "Oluşturuluyor...") 
+                    {isSubmitting
+                      ? (isEditMode ? "Güncelleniyor..." : "Oluşturuluyor...")
                       : (isEditMode ? "Proje Güncelle" : "Proje Oluştur")
                     }
                   </Button>
@@ -979,10 +1175,14 @@ export default function CreateProjectModal({
               )}
             </div>
           </Form.Item>
+          <div>
+            <Form.Item>
+
+            </Form.Item>
+          </div>
         </Form>
       </Modal>
-
-            <CreateLabelModal
+      <CreateLabelModal
         visible={isLabelModalVisible}
         mode={labelModalMode}
         initialData={editingLabelData}
