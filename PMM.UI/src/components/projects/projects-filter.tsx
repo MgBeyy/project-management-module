@@ -9,21 +9,10 @@ export default function ProjectsFilter() {
   const { setFilters, resetFilters } = useProjectsStore();
 
   const onChangeNumber: InputNumberProps["onChange"] = value => {
-    console.log("Saat değişti:", value);
     form.setFieldValue("PlannedHours", value);
   };
 
-  const onChangeDate: DatePickerProps["onChange"] = (date, dateString) => {
-    console.log("Tarih değişti:", date, dateString);
-  };
-
-  const onChangeSelect = (value: string, option: any) => {
-    console.log("Select değişti:", value, option);
-  };
-
   const handleSubmit = (values: any) => {
-    console.log("✅ Form değerleri (raw):", values);
-
     const serializedPayload = {
       Code: values.code || undefined,
       Title: values.title || undefined,
@@ -51,14 +40,12 @@ export default function ProjectsFilter() {
       )
     );
 
-    console.log("📤 Zustand'a gönderilen temizlenmiş payload:", cleanedPayload);
     setFilters(cleanedPayload);
   };
 
   const handleReset = () => {
     form.resetFields();
     resetFilters();
-    console.log("Form ve Zustand temizlendi");
   };
   const statusOptions = [
     { value: ProjectStatus.ACTIVE, label: "Aktif" },
@@ -106,7 +93,6 @@ export default function ProjectsFilter() {
           className="mb-3"
         >
           <DatePicker
-            onChange={onChangeDate}
             placeholder="Başlangıç tarihi"
             size="middle"
             style={{ width: "100%" }}
@@ -162,7 +148,6 @@ export default function ProjectsFilter() {
           <Select
             placeholder="Durum seçin"
             allowClear
-            onChange={onChangeSelect}
             size="middle"
             style={{ width: "100%" }}
             options={statusOptions}
@@ -173,7 +158,6 @@ export default function ProjectsFilter() {
           <Select
             placeholder="Öncelik seçin"
             allowClear
-            onChange={onChangeSelect}
             size="middle"
             style={{ width: "100%" }}
             options={priorityOptions}

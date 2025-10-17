@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Select, Spin } from "antd";
 import type { SelectProps } from "antd";
 import type { CSSProperties } from "react";
@@ -53,29 +53,90 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
   const [loading, setLoading] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
-  useEffect(() => {
-    if (!initialOptions) {
+  const loadAllOptions = async () => {
+    if (disabled) {
       return;
     }
 
-    setOptions(prev => {
-      if (initialOptions.length === 0) {
-        if (prev.length === 0) {
-          return prev;
-        }
-        if (onOptionsChange) {
-          onOptionsChange([]);
-        }
-        return [];
+    setLoading(true);
+
+    try {
+      console.log("🔍 Tüm seçenekler yükleniyor:", apiUrl);
+
+      const response = await getMultiSelectSearch("", apiUrl);
+
+      console.log("✅ Tüm seçenekler API yanıtı:", response.data);
+
+      const apiResult =
+        response.data?.result?.data || response.data?.data || response.data;
+
+      console.log("🔍 Parsed data:", apiResult);
+
+      if (!Array.isArray(apiResult)) {
+        console.error("❌ API yanıtı array formatında değil:", apiResult);
+        setOptions(initialOptions ? [...initialOptions] : []);
+        return;
       }
 
-      const merged = mergeOptionArrays(prev, initialOptions);
-      if (onOptionsChange) {
-        onOptionsChange(merged);
+      const formattedOptions: MultiSelectOption[] = apiResult.map((item: any) => {
+        const id = item.id?.toString() || Math.random().toString();
+        let value = id;
+        let label = "";
+
+        if (apiUrl.includes("/Label")) {
+          label = item.name || item.title || item.label || `Label ${id}`;
+        } else if (apiUrl.includes("/Project")) {
+          if (item.code && item.title) {
+            label = `${item.code} - ${item.title}`;
+          } else {
+            label = item.title || item.name || `Project ${id}`;
+          }
+        } else if (apiUrl.includes("/Client")) {
+          label =
+            item.name ||
+            item.companyName ||
+            `${item.firstName || ""} ${item.lastName || ""}`.trim() ||
+            `Client ${id}`;
+        } else {
+          label =
+            item.name ||
+            item.title ||
+            item.label ||
+            item.displayName ||
+            `Item ${id}`;
+        }
+
+        return {
+          value: value,
+          label: label,
+          key: id,
+          ...item,
+        };
+      });
+
+      console.log("✅ Tüm formatted options:", formattedOptions);
+      setOptions(prev => {
+        const merged = mergeOptionArrays(prev, formattedOptions);
+        if (onOptionsChange) {
+          onOptionsChange(merged);
+        }
+        return merged;
+      });
+    } catch (error: any) {
+      console.error("❌ Tüm seçenekler yükleme hatası:", error);
+
+      if (error.code === "ERR_NETWORK") {
+        console.error("🔥 Network hatası: Backend çalışmıyor olabilir!");
+        console.error("🔧 Çözüm: Backend'i başlatın veya URL'yi kontrol edin");
+      } else if (error.code === "ERR_EMPTY_RESPONSE") {
+        console.error("📭 Boş yanıt: API endpoint'i yanıt vermiyor");
       }
-      return merged;
-    });
-  }, [initialOptions, onOptionsChange]);
+
+      setOptions(initialOptions ? [...initialOptions] : []);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearch = async (searchText: string) => {
     if (disabled) {
@@ -84,8 +145,9 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
 
     setSearchValue(searchText);
 
-    if (!searchText || searchText.trim().length < 2) {
-      setOptions(initialOptions ? [...initialOptions] : []);
+    if (!searchText || searchText.trim().length === 0) {
+      // Boş arama için tüm listeyi yükle
+      await loadAllOptions();
       return;
     }
 
@@ -178,8 +240,11 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
     onChange?.(selectedValues);
   };
 
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
+  const handleOpenChange = async (open: boolean) => {
+    if (open && !disabled) {
+      // Dropdown açıldığında tüm listeyi yükle
+      await loadAllOptions();
+    } else if (!open) {
       setSearchValue("");
     }
   };
@@ -202,13 +267,13 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
         <Spin size="small" />
         <span className="ml-2 text-gray-500">Aranıyor...</span>
       </div>
-    ) : searchValue && searchValue.length >= 2 ? (
+    ) : searchValue ? (
       <div className="flex justify-center items-center py-4 text-gray-500">
-        Üst proje bulunamadı
+        Sonuç bulunamadı
       </div>
     ) : (
       <div className="flex justify-center items-center py-4 text-gray-400">
-        En az 2 karakter yazın
+        Liste yükleniyor...
       </div>
     ),
     options: options,
