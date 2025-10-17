@@ -4,6 +4,7 @@ namespace PMM.Domain.Enums
     {
         Todo = 1,
         InProgress = 2,
-        Done = 3
+        Done = 3,
+        Inactive = 4
     }
 }

@@ -23,6 +23,7 @@ namespace PMM.Core.Services
         private readonly ILabelRepository _labelRepository;
         private readonly IClientRepository _clientRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IProjectAssignmentRepository _projectAssignmentRepository;
 
         public ProjectService(IProjectRepository projectRepository,
             IProjectRelationRepository projectRelationRepository,
@@ -31,6 +32,7 @@ namespace PMM.Core.Services
             IClientRepository clientRepository,
             ILogger<ProjectService> logger,
             IUserRepository userRepository,
+            IProjectAssignmentRepository projectAssignmentRepository,
             IPrincipal principal)
             : base(principal, logger, userRepository)
         {
@@ -41,6 +43,7 @@ namespace PMM.Core.Services
             _labelRepository = labelRepository;
             _clientRepository = clientRepository;
             _userRepository = userRepository;
+            _projectAssignmentRepository = projectAssignmentRepository;
         }
 
         public async Task<ProjectDto> AddProjectAsync(CreateProjectForm form)
@@ -93,6 +96,20 @@ namespace PMM.Core.Services
                     _ = await _labelRepository.GetByIdAsync(labelId) ?? throw new NotFoundException($"ID {labelId} ile etiket bulunamadı!");
             }
 
+            if (form.AssignedUsers != null && form.AssignedUsers.Count != 0)
+            {
+                foreach (var assignedUser in form.AssignedUsers)
+                {
+                    _ = await _userRepository.GetByIdAsync(assignedUser.UserId) ?? throw new NotFoundException($"ID {assignedUser.UserId} ile kullanıcı bulunamadı!");
+                    
+                    if (assignedUser.EndAt is not null && assignedUser.StartedAt is not null)
+                    {
+                        if (assignedUser.EndAt < assignedUser.StartedAt)
+                            throw new BusinessException($"Kullanıcı {assignedUser.UserId} için projeden ayrılma tarihi başlama tarihinden önce olamaz.");
+                    }
+                }
+            }
+
             var project = ProjectMapper.Map(form);
             project.CreatedAt = DateTime.UtcNow;
             project.CreatedById = LoggedInUser.Id;
@@ -116,7 +133,6 @@ namespace PMM.Core.Services
                 await _projectRelationRepository.SaveChangesAsync();
             }
 
-            // Label relations oluşturma
             if (form.LabelIds != null && form.LabelIds.Count != 0)
             {
                 foreach (var labelId in form.LabelIds)
@@ -131,6 +147,26 @@ namespace PMM.Core.Services
                     _projectLabelRepository.Create(projectLabel);
                 }
                 await _projectLabelRepository.SaveChangesAsync();
+            }
+
+            if (form.AssignedUsers != null && form.AssignedUsers.Count != 0)
+            {
+                foreach (var assignedUser in form.AssignedUsers)
+                {
+                    var projectAssignment = new ProjectAssignment
+                    {
+                        ProjectId = project.Id,
+                        UserId = assignedUser.UserId,
+                        Role = assignedUser.Role,
+                        StartedAt = assignedUser.StartedAt,
+                        EndAt = assignedUser.EndAt,
+                        ExpectedHours = assignedUser.ExpectedHours,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedById = LoggedInUser.Id
+                    };
+                    _projectAssignmentRepository.Create(projectAssignment);
+                }
+                await _projectAssignmentRepository.SaveChangesAsync();
             }
 
             var createdProject = await _projectRepository.Query(p => p.Id == project.Id)
@@ -185,6 +221,20 @@ namespace PMM.Core.Services
                     _ = await _labelRepository.GetByIdAsync(labelId) ?? throw new NotFoundException($"ID {labelId} ile etiket bulunamadı!");
             }
 
+            if (form.AssignedUsers != null && form.AssignedUsers.Count != 0)
+            {
+                foreach (var assignedUser in form.AssignedUsers)
+                {
+                    _ = await _userRepository.GetByIdAsync(assignedUser.UserId) ?? throw new NotFoundException($"ID {assignedUser.UserId} ile kullanıcı bulunamadı!");
+                    
+                    if (assignedUser.EndAt is not null && assignedUser.StartedAt is not null)
+                    {
+                        if (assignedUser.EndAt < assignedUser.StartedAt)
+                            throw new BusinessException($"Kullanıcı {assignedUser.UserId} için projeden ayrılma tarihi başlama tarihinden önce olamaz.");
+                    }
+                }
+            }
+
             project = ProjectMapper.Map(form, project);
             project.UpdatedAt = DateTime.UtcNow;
             project.UpdatedById = LoggedInUser.Id;
@@ -235,6 +285,70 @@ namespace PMM.Core.Services
                     _projectLabelRepository.Create(projectLabel);
                 }
                 await _projectLabelRepository.SaveChangesAsync();
+            }
+
+            var existingAssignments = await _projectAssignmentRepository.GetByProjectIdAsync(projectId);
+
+            if (form.AssignedUsers != null)
+            {
+                var currentUserIds = existingAssignments.Select(a => a.UserId).ToHashSet();
+                var newUserIds = form.AssignedUsers.Select(a => a.UserId).ToHashSet();
+
+                var assignmentsToDelete = existingAssignments.Where(a => !newUserIds.Contains(a.UserId)).ToList();
+                foreach (var assignment in assignmentsToDelete)
+                {
+                    _projectAssignmentRepository.Delete(assignment);
+                }
+
+                foreach (var assignedUser in form.AssignedUsers)
+                {
+                    var existingAssignment = existingAssignments.FirstOrDefault(a => a.UserId == assignedUser.UserId);
+                    
+                    if (existingAssignment != null)
+                    {
+                        // Mevcut atamayı güncelle
+                        var hasChanges = existingAssignment.Role != assignedUser.Role ||
+                                       existingAssignment.StartedAt != assignedUser.StartedAt ||
+                                       existingAssignment.EndAt != assignedUser.EndAt ||
+                                       existingAssignment.ExpectedHours != assignedUser.ExpectedHours;
+
+                        if (hasChanges)
+                        {
+                            existingAssignment.Role = assignedUser.Role;
+                            existingAssignment.StartedAt = assignedUser.StartedAt;
+                            existingAssignment.EndAt = assignedUser.EndAt;
+                            existingAssignment.ExpectedHours = assignedUser.ExpectedHours;
+                            existingAssignment.UpdatedAt = DateTime.UtcNow;
+                            existingAssignment.UpdatedById = LoggedInUser.Id;
+                            _projectAssignmentRepository.Update(existingAssignment);
+                        }
+                    }
+                    else
+                    {
+                        var newAssignment = new ProjectAssignment
+                        {
+                            ProjectId = project.Id,
+                            UserId = assignedUser.UserId,
+                            Role = assignedUser.Role,
+                            StartedAt = assignedUser.StartedAt,
+                            EndAt = assignedUser.EndAt,
+                            ExpectedHours = assignedUser.ExpectedHours,
+                            CreatedAt = DateTime.UtcNow,
+                            CreatedById = LoggedInUser.Id
+                        };
+                        _projectAssignmentRepository.Create(newAssignment);
+                    }
+                }
+                
+                await _projectAssignmentRepository.SaveChangesAsync();
+            }
+            else
+            {
+                foreach (var assignment in existingAssignments)
+                {
+                    _projectAssignmentRepository.Delete(assignment);
+                }
+                await _projectAssignmentRepository.SaveChangesAsync();
             }
 
             var updatedProject = await _projectRepository.Query(p => p.Id == project.Id)
@@ -357,6 +471,8 @@ namespace PMM.Core.Services
                     .ThenInclude(pr => pr.ParentProject)
                 .Include(p => p.ProjectLabels)
                     .ThenInclude(pl => pl.Label)
+                .Include(p => p.Assignments)
+                    .ThenInclude(a => a.User)
                 .FirstOrDefaultAsync();
 
             if (project == null)
@@ -374,6 +490,11 @@ namespace PMM.Core.Services
             detailedProjectDto.Client = project.ClientId.HasValue
                 ? ClientMapper.Map(await _clientRepository.GetByIdAsync(project.ClientId.Value))
                 : null;
+
+            if (project.Assignments != null && project.Assignments.Any())
+            {
+                detailedProjectDto.AssignedUsers = ProjectAssignmentMapper.MapWithUser(project.Assignments.ToList());
+            }
 
             var createdBy = await _userRepository.GetByIdAsync(project.CreatedById);
             detailedProjectDto.CreatedByUser = createdBy != null ? IdNameMapper.Map(createdBy.Id, createdBy.Name) : null;
