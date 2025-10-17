@@ -101,7 +101,7 @@ namespace PMM.Core.Services
                 foreach (var assignedUser in form.AssignedUsers)
                 {
                     _ = await _userRepository.GetByIdAsync(assignedUser.UserId) ?? throw new NotFoundException($"ID {assignedUser.UserId} ile kullanıcı bulunamadı!");
-                    
+
                     if (assignedUser.EndAt is not null && assignedUser.StartedAt is not null)
                     {
                         if (assignedUser.EndAt < assignedUser.StartedAt)
@@ -226,7 +226,7 @@ namespace PMM.Core.Services
                 foreach (var assignedUser in form.AssignedUsers)
                 {
                     _ = await _userRepository.GetByIdAsync(assignedUser.UserId) ?? throw new NotFoundException($"ID {assignedUser.UserId} ile kullanıcı bulunamadı!");
-                    
+
                     if (assignedUser.EndAt is not null && assignedUser.StartedAt is not null)
                     {
                         if (assignedUser.EndAt < assignedUser.StartedAt)
@@ -303,7 +303,7 @@ namespace PMM.Core.Services
                 foreach (var assignedUser in form.AssignedUsers)
                 {
                     var existingAssignment = existingAssignments.FirstOrDefault(a => a.UserId == assignedUser.UserId);
-                    
+
                     if (existingAssignment != null)
                     {
                         // Mevcut atamayı güncelle
@@ -339,7 +339,7 @@ namespace PMM.Core.Services
                         _projectAssignmentRepository.Create(newAssignment);
                     }
                 }
-                
+
                 await _projectAssignmentRepository.SaveChangesAsync();
             }
             else
@@ -425,6 +425,19 @@ namespace PMM.Core.Services
 
             if (form.ClientId.HasValue)
                 query = query.Where(e => e.ClientId == form.ClientId);
+
+            if (!string.IsNullOrWhiteSpace(form.LabelIds))
+            {
+                var labelIds = form.LabelIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                          .Where(x => int.TryParse(x.Trim(), out _))
+                                          .Select(x => int.Parse(x.Trim()))
+                                          .ToList();
+                
+                if (labelIds.Any())
+                {
+                    query = query.Where(e => e.ProjectLabels.Any(pl => labelIds.Contains(pl.LabelId)));
+                }
+            }
 
             query = OrderByHelper.OrderByDynamic(query, form.SortBy, form.SortDesc);
 

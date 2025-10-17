@@ -30,5 +30,6 @@ namespace PMM.Domain.Forms
         public EProjectPriority? Priority { get; set; }
         public int? ParentProjectId { get; set; }
         public int? ClientId { get; set; }
+        public string? LabelIds { get; set; }
     }
 }
