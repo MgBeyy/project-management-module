@@ -10,7 +10,6 @@ namespace PMM.Domain.Forms
         public string Code { get; set; }
         [Required]
         public string Title { get; set; }
-        [Required]
         public DateOnly? PlannedStartDate { get; set; }
         public DateOnly? PlannedDeadline { get; set; }
         [Range(0, int.MaxValue, ErrorMessage = "Planlanan toplam saat negatif bir değer alamaz!")]
