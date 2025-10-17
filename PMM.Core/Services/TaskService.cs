@@ -53,6 +53,11 @@ namespace PMM.Core.Services
             if (!validation.IsValid)
                 throw new BusinessException(validation.Errors);
 
+            // Code benzersizlik kontrolü
+            var existingTask = await _taskRepository.GetByCodeAsync(form.Code);
+            if (existingTask is not null)
+                throw new BusinessException("Bu kod ile kayıtlı bir görev bulunmaktadır.");
+
             _ = await _projectRepository.GetByIdAsync(form.ProjectId) ?? throw new NotFoundException("İlgili Proje Bulunamadı! Önce bir proje oluşturun");
             if (form.ParentTaskId.HasValue)
                 _ = await _taskRepository.GetByIdAsync(form.ParentTaskId) ?? throw new NotFoundException("İlgili üst görev Bulunamadı!");
@@ -164,11 +169,14 @@ namespace PMM.Core.Services
             {
                 query = query.Where(t =>
                     t.Title.ToLower().Contains(form.Search.Trim().ToLower()) ||
+                    t.Code.ToLower().Contains(form.Search.Trim().ToLower()) ||
                     (t.Description != null && t.Description.ToLower().Contains(form.Search.Trim().ToLower()))
                 );
             }
             if (form.Id.HasValue)
                 query = query.Where(t => t.Id == form.Id.Value);
+            if (!string.IsNullOrWhiteSpace(form.Code))
+                query = query.Where(t => t.Code.ToLower().Contains(form.Code.Trim().ToLower()));
             if (form.ProjectId.HasValue)
                 query = query.Where(t => t.ProjectId == form.ProjectId.Value);
             if (form.ParentTaskId.HasValue)

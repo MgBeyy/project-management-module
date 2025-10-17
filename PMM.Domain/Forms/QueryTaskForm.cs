@@ -10,6 +10,7 @@ namespace PMM.Domain.Forms
         public bool SortDesc { get; set; } = false;
 
         public int? Id { get; set; }
+        public string? Code { get; set; }
         public int? ProjectId { get; set; }
         public int? ParentTaskId { get; set; }
         public string? Title { get; set; }
