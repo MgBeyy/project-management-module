@@ -24,5 +24,7 @@ namespace PMM.Domain.Forms
         public List<int>? ParentProjectIds { get; set; }
 
         public List<int>? LabelIds { get; set; }
+
+        public List<ProjectAssignmentItemForm>? AssignedUsers { get; set; }
     }
 }

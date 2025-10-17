@@ -26,5 +26,7 @@ namespace PMM.Domain.Forms
         public int? ClientId { get; set; }
 
         public List<int>? LabelIds { get; set; }
+
+        public List<ProjectAssignmentItemForm>? AssignedUsers { get; set; }
     }
 }

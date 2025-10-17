@@ -23,6 +23,8 @@ namespace PMM.Domain.DTOs
 
         public List<LabelDto>? Labels { get; set; }
 
+        public List<ProjectAssignmentWithUserDto>? AssignedUsers { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public int? CreatedById { get; set; }
         public IdNameDto? CreatedByUser { get; set; }
