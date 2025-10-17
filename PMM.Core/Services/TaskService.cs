@@ -216,6 +216,19 @@ namespace PMM.Core.Services
             if (form.UpdatedById.HasValue)
                 query = query.Where(t => t.UpdatedById == form.UpdatedById);
 
+            if (!string.IsNullOrWhiteSpace(form.LabelIds))
+            {
+                var labelIds = form.LabelIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                          .Where(x => int.TryParse(x.Trim(), out _))
+                                          .Select(x => int.Parse(x.Trim()))
+                                          .ToList();
+                
+                if (labelIds.Any())
+                {
+                    query = query.Where(t => t.TaskLabels.Any(tl => labelIds.Contains(tl.LabelId)));
+                }
+            }
+
             query = OrderByHelper.OrderByDynamic(query, form.SortBy, form.SortDesc);
 
             int page = form.Page ?? 1;
