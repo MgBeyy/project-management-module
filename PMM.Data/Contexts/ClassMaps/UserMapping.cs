@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using PMM.Data.Entities;
+using PMM.Domain.Entities;
 
 namespace PMM.Data.Contexts.ClassMaps
 {
@@ -12,7 +12,14 @@ namespace PMM.Data.Contexts.ClassMaps
             builder.HasKey(u => u.Id);
             builder.Property(u => u.Id).ValueGeneratedOnAdd();
             builder.Property(u => u.Name).IsRequired().HasMaxLength(256);
+            builder.Property(u => u.Email).IsRequired().HasMaxLength(256);
             builder.HasIndex(u => u.Email).IsUnique();
+
+            builder.Property(e => e.IsDeleted).IsRequired().HasDefaultValue(false);
+            builder.HasOne(e => e.DeletedByUser).WithMany().HasForeignKey(e => e.DeletedById).OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasQueryFilter(e => !e.IsDeleted);
         }
     }
 }
+

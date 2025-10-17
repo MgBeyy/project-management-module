@@ -1,4 +1,4 @@
-﻿using PMM.Core.DTOs;
+﻿using PMM.Domain.DTOs;
 
 namespace PMM.Core.Mappers
 {

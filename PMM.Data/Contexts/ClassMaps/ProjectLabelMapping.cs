@@ -1,16 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using PMM.Data.Entities;
+using PMM.Domain.Entities;
 
 namespace PMM.Data.Contexts.ClassMaps
 {
-    public class ProjectLabelMapping : IEntityTypeConfiguration<ProjectLabel>
+    public class ProjectLabelMapping : _BaseEntityTypeConfiguration<ProjectLabel>
     {
-        public void Configure(EntityTypeBuilder<ProjectLabel> builder)
+        public override void Configure(EntityTypeBuilder<ProjectLabel> builder)
         {
+            base.Configure(builder);
+
             builder.ToTable("ProjectLabels");
-            builder.HasKey(pl => pl.Id);
-            builder.Property(pl => pl.Id).ValueGeneratedOnAdd();
 
             builder.Property(pl => pl.ProjectId).IsRequired();
             builder.Property(pl => pl.LabelId).IsRequired();
@@ -27,20 +27,6 @@ namespace PMM.Data.Contexts.ClassMaps
 
             builder.HasIndex(pl => new { pl.ProjectId, pl.LabelId })
                    .IsUnique();
-
-            builder.Property(pl => pl.CreatedAt).IsRequired();
-            builder.Property(pl => pl.CreatedById).IsRequired();
-            builder.HasOne(pl => pl.CreatedByUser)
-                   .WithMany()
-                   .HasForeignKey(pl => pl.CreatedById)
-                   .OnDelete(DeleteBehavior.Restrict);
-
-            builder.Property(pl => pl.UpdatedAt).IsRequired(false);
-            builder.Property(pl => pl.UpdatedById).IsRequired(false);
-            builder.HasOne(pl => pl.UpdatedByUser)
-                   .WithMany()
-                   .HasForeignKey(pl => pl.UpdatedById)
-                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

@@ -1,6 +1,6 @@
-﻿using PMM.Core.DTOs;
-using PMM.Core.Forms;
-using PMM.Data.Entities;
+﻿using PMM.Domain.DTOs;
+using PMM.Domain.Entities;
+using PMM.Domain.Forms;
 
 namespace PMM.Core.Mappers
 {
@@ -10,7 +10,7 @@ namespace PMM.Core.Mappers
         {
             return new Client
             {
-                Name = form.name
+                Name = form.Name
             };
         }
         public static ClientDto Map(Client client)

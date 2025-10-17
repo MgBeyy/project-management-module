@@ -1,6 +1,6 @@
-using PMM.Core.DTOs;
-using PMM.Core.Forms;
-using PMM.Data.Entities;
+using PMM.Domain.DTOs;
+using PMM.Domain.Entities;
+using PMM.Domain.Forms;
 
 namespace PMM.Core.Mappers
 {
@@ -15,7 +15,6 @@ namespace PMM.Core.Mappers
                 Description = form.Description,
                 Title = form.Title,
                 Status = form.Status,
-                Weight = form.Weight.Value,
                 PlannedHours = form.PlannedHours,
                 ActualHours = form.ActualHours
             };
@@ -31,7 +30,6 @@ namespace PMM.Core.Mappers
                 ParentTaskId = task.ParentTaskId,
                 Title = task.Title,
                 Description = task.Description,
-                Weight = task.Weight,
                 Status = task.Status,
                 PlannedHours = task.PlannedHours,
                 ActualHours = task.ActualHours,
@@ -54,7 +52,6 @@ namespace PMM.Core.Mappers
         {
             task.Title = form.Title;
             task.Description = form.Description;
-            task.Weight = form.Weight;
             task.Status = form.Status;
             task.PlannedHours = form.PlannedHours;
             task.ActualHours = form.ActualHours;

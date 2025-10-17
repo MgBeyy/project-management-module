@@ -1,22 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using PMM.Core.DTOs;
 using PMM.Core.Exceptions;
-using PMM.Core.Forms;
 using PMM.Core.Mappers;
 using PMM.Core.Validators;
-using PMM.Data.Repositories;
+using PMM.Domain.DTOs;
+using PMM.Domain.Forms;
+using PMM.Domain.Interfaces.Repositories;
+using PMM.Domain.Interfaces.Services;
 using System.Security.Principal;
 
 namespace PMM.Core.Services
 {
-    public interface ITaskAssignmentService
-    {
-        Task<TaskAssignmentDto> AddTaskAssignmentAsync(CreateTaskAssignmentForm form);
-        Task<TaskAssignmentDto> GetTaskAssignmentAsync(int taskAssignmentId);
-        Task<List<TaskAssignmentDto>> GetAllTaskAssignments();
-        Task DeleteTaskAssignmentAsync(int taskAssignmentId);
-    }
     public class TaskAssignmentService : _BaseService, ITaskAssignmentService
     {
         private readonly ILogger<TaskAssignmentService> _logger;

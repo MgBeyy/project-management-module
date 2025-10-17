@@ -1,16 +1,16 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using PMM.Data.Entities;
+using PMM.Domain.Entities;
 
 namespace PMM.Data.Contexts.ClassMaps
 {
-    public class ProjectAssignmentMapping : IEntityTypeConfiguration<ProjectAssignment>
+    public class ProjectAssignmentMapping : _BaseEntityTypeConfiguration<ProjectAssignment>
     {
-        public void Configure(EntityTypeBuilder<ProjectAssignment> builder)
+        public override void Configure(EntityTypeBuilder<ProjectAssignment> builder)
         {
+            base.Configure(builder);
+
             builder.ToTable("ProjectAssignments");
-            builder.HasKey(pa => pa.Id);
-            builder.Property(pa => pa.Id).ValueGeneratedOnAdd();
             builder.Property(pa => pa.StartedAt).IsRequired(false).HasColumnType("date");
             builder.Property(pa => pa.EndAt).IsRequired(false).HasColumnType("date");
             builder.Property(pa => pa.ExpectedHours).IsRequired(false);
@@ -20,19 +20,8 @@ namespace PMM.Data.Contexts.ClassMaps
             builder.Property(pa => pa.ProjectId).IsRequired();
             builder.HasOne(pa => pa.Project).WithMany(p => p.Assignments).HasForeignKey(pa => pa.ProjectId);
 
-
             builder.Property(pa => pa.UserId).IsRequired();
             builder.HasOne(pa => pa.User).WithMany(p => p.ProjectAssignments).HasForeignKey(pa => pa.UserId);
-
-
-            builder.Property(p => p.CreatedAt).IsRequired();
-            builder.Property(p => p.CreatedById).IsRequired();
-            builder.HasOne(p => p.CreatedByUser).WithMany().HasForeignKey(p => p.CreatedById);
-
-            builder.Property(p => p.UpdatedAt).IsRequired(false);
-            builder.Property(p => p.UpdatedById).IsRequired(false);
-            builder.HasOne(p => p.UpdatedByUser).WithMany().HasForeignKey(p => p.UpdatedById);
-
         }
     }
 }

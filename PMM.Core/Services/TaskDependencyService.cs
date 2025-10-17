@@ -1,25 +1,16 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using PMM.Core.DTOs;
 using PMM.Core.Exceptions;
-using PMM.Core.Forms;
 using PMM.Core.Mappers;
 using PMM.Core.Validators;
-using PMM.Data.Entities;
-using PMM.Data.Repositories;
+using PMM.Domain.DTOs;
+using PMM.Domain.Entities;
+using PMM.Domain.Forms;
+using PMM.Domain.Interfaces.Repositories;
+using PMM.Domain.Interfaces.Services;
 using System.Security.Principal;
 
 namespace PMM.Core.Services
 {
-    public interface ITaskDependencyService
-    {
-        Task<TaskDependencyDto> CreateDependencyAsync(CreateTaskDependencyForm form);
-        Task<TaskDependenciesDto> GetTaskDependenciesAsync(int taskId);
-        Task<TaskDependenciesDto> ManageTaskDependenciesAsync(ManageTaskDependenciesForm form);
-        Task RemoveDependencyAsync(int blockingTaskId, int blockedTaskId);
-        Task RemoveDependencyByIdAsync(int dependencyId);
-    }
-
     public class TaskDependencyService : _BaseService, ITaskDependencyService
     {
         private readonly ITaskDependencyRepository _taskDependencyRepository;
@@ -51,10 +42,10 @@ namespace PMM.Core.Services
             if (form.BlockingTaskId == form.BlockedTaskId)
                 throw new BusinessException("Görev kendisini bloklayamaz!");
 
-            var blockingTask = await _taskRepository.GetByIdAsync(form.BlockingTaskId) 
+            var blockingTask = await _taskRepository.GetByIdAsync(form.BlockingTaskId)
                 ?? throw new NotFoundException("Bloklayan görev bulunamadı!");
 
-            var blockedTask = await _taskRepository.GetByIdAsync(form.BlockedTaskId) 
+            var blockedTask = await _taskRepository.GetByIdAsync(form.BlockedTaskId)
                 ?? throw new NotFoundException("Bloklanan görev bulunamadı!");
 
             var existingDependency = await _taskDependencyRepository.GetByTaskIdsAsync(form.BlockingTaskId, form.BlockedTaskId);

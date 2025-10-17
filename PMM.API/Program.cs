@@ -33,7 +33,6 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new NullableCustomDateTimeConverter());
     });
 
-
 // Custom application setup using chained extension methods
 builder
     .ConfigureLogging()          // Serilog configuration
@@ -68,7 +67,6 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "An error occurred while migrating or seeding the database.");
     }
 }
-
 
 //CORS
 app.UseCors("AllowFrontend");

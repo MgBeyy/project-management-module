@@ -1,7 +1,7 @@
-﻿using PMM.Core.DTOs;
+﻿using PMM.Domain.DTOs;
 using System.Security.Claims;
 
-namespace Employee.Portal.Core.Security
+namespace PMM.Core.Security
 {
     public class AppClaimsTransformation
     {
@@ -22,7 +22,7 @@ namespace Employee.Portal.Core.Security
             AppPrincipal newUser = new AppPrincipal(email);
             newUser.Id = GetClaimInt(principal, ClaimTypes.Sid);
             newUser.Email = email;
-            newUser.Name = GetClaim(principal, ClaimTypes.Name); // Name eklendi
+            newUser.Name = GetClaim(principal, ClaimTypes.Name);
 
             return newUser;
         }
