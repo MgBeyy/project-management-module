@@ -1,9 +1,9 @@
   export const formatDateTime = (dateString: string | number | null) => {
-    if (!dateString || dateString === "-") return "-";
+    if (!dateString || dateString === "-") return null;
     try {
       const date = typeof dateString === 'number' ? new Date(dateString) : new Date(dateString);
       
-      if (isNaN(date.getTime())) return "-";
+      if (isNaN(date.getTime())) return null;
       
       return date.toLocaleString("tr-TR", {
         year: "numeric",
@@ -13,16 +13,16 @@
         minute: "2-digit",
       });
     } catch {
-      return dateString.toString();
+      return null;
     }
   };
 
   export const formatDate = (dateValue: string | number | null) => {
-    if (!dateValue || dateValue === "-") return "-";
+    if (!dateValue || dateValue === "-") return null;
     try {
       const date = typeof dateValue === 'number' ? new Date(dateValue) : new Date(dateValue);
       
-      if (isNaN(date.getTime())) return "-";
+      if (isNaN(date.getTime())) return null;
       
       return date.toLocaleDateString("tr-TR", {
         year: "numeric",
@@ -30,7 +30,7 @@
         day: "2-digit",
       });
     } catch {
-      return dateValue.toString();
+      return null;
     }
   };
 

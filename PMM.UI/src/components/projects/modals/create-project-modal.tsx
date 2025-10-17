@@ -22,6 +22,7 @@ import { showNotification } from "@/utils/notification";
 import getMultiSelectSearch from "@/services/projects/get-multi-select-search";
 import { updateProject, UpdateProjectData } from "@/services/projects/update-project";
 import { ProjectPriority } from "@/services/projects/get-projects";
+import { getProjectByCode, type ProjectDetails } from "@/services/projects/get-project-by-code";
 import type { ProjectModalProps } from "@/types/projects";
 import CreateLabelModal from "./create-label-modal";
 
@@ -150,7 +151,7 @@ export default function CreateProjectModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // User assignment state
-  const [selectedUsers, setSelectedUsers] = useState<{ userId: string; role: string }[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<{ userId: string; role: string, name: string }[]>([]);
   const [userOptions, setUserOptions] = useState<MultiSelectOption[]>([]);
   const [userLoading, setUserLoading] = useState(false);
   const [userSearchValue, setUserSearchValue] = useState("");
@@ -159,6 +160,10 @@ export default function CreateProjectModal({
   const [isLabelModalVisible, setIsLabelModalVisible] = useState(false);
   const [labelModalMode, setLabelModalMode] = useState<'create' | 'edit'>('create');
   const [editingLabelData, setEditingLabelData] = useState<any>(null);
+
+  // Project details state
+  const [fullProjectDetails, setFullProjectDetails] = useState<ProjectDetails | null>(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
   const isEditMode = mode === 'edit' && !!projectData;
   const isViewMode = mode === 'view' && !!projectData;
@@ -385,22 +390,40 @@ export default function CreateProjectModal({
     }
 
     if ((isEditMode || isViewMode) && projectData) {
+      // Use full project details if available, otherwise fallback to projectData
+      const dataToUse = fullProjectDetails || projectData;
+
       const normalizedLabelOptions: MultiSelectOption[] = [];
 
-      const derivedLabelIds =
-        projectData.LabelIds && projectData.LabelIds.length > 0
-          ? projectData.LabelIds
-            .map(id =>
-              id !== null && id !== undefined ? String(id) : null
-            )
-            .filter((id): id is string => Boolean(id))
-          : [];
+      let derivedLabelIds: string[] = [];
+      let derivedParentProjectIds: string[] = [];
 
-      const derivedParentProjectIds = (projectData.ParentProjectIds || [])
-        .map(parentId =>
-          parentId !== null && parentId !== undefined ? String(parentId) : null
-        )
-        .filter((id): id is string => Boolean(id));
+      if (fullProjectDetails) {
+        // ProjectDetails has Labels array
+        derivedLabelIds = fullProjectDetails.Labels
+          ? fullProjectDetails.Labels.map(label => String(label.id))
+          : [];
+        derivedParentProjectIds = (fullProjectDetails.ParentProjectIds || [])
+          .map(parentId =>
+            parentId !== null && parentId !== undefined ? String(parentId) : null
+          )
+          .filter((id): id is string => Boolean(id));
+      } else {
+        // projectData has LabelIds array
+        derivedLabelIds =
+          projectData.LabelIds && projectData.LabelIds.length > 0
+            ? projectData.LabelIds
+                .map(id =>
+                  id !== null && id !== undefined ? String(id) : null
+                )
+                .filter((id): id is string => Boolean(id))
+            : [];
+        derivedParentProjectIds = (projectData.ParentProjectIds || [])
+          .map(parentId =>
+            parentId !== null && parentId !== undefined ? String(parentId) : null
+          )
+          .filter((id): id is string => Boolean(id));
+      }
 
       const fallbackLabelOptions = derivedLabelIds
         .filter(
@@ -421,27 +444,47 @@ export default function CreateProjectModal({
       );
 
       form.setFieldsValue({
-        code: projectData.Code,
-        title: projectData.Title,
-        plannedStartDate: projectData.rawPlannedStartDate
-          ? dayjs(projectData.rawPlannedStartDate)
-          : null,
-        plannedEndDate: projectData.rawPlannedDeadline
-          ? dayjs(projectData.rawPlannedDeadline)
-          : null,
-        plannedHours: projectData.PlannedHours,
-        startedAt: projectData.rawStartedAt
-          ? dayjs(projectData.rawStartedAt)
-          : null,
-        endAt: projectData.rawEndAt ? dayjs(projectData.rawEndAt) : null,
-        status: projectData.rawStatus ?? 0,
-        priority: projectData.Priority,
-        customer: projectData.ClientId || "",
+        code: fullProjectDetails?.Code || projectData.Code,
+        title: fullProjectDetails?.Title || projectData.Title,
+        plannedStartDate: fullProjectDetails?.PlannedStartDate && fullProjectDetails.PlannedStartDate !== null
+          ? dayjs(fullProjectDetails.PlannedStartDate)
+          : projectData.rawPlannedStartDate
+            ? dayjs(projectData.rawPlannedStartDate)
+            : null,
+        plannedEndDate: fullProjectDetails?.PlannedDeadLine && fullProjectDetails.PlannedDeadLine !== null
+          ? dayjs(fullProjectDetails.PlannedDeadLine)
+          : projectData.rawPlannedDeadline
+            ? dayjs(projectData.rawPlannedDeadline)
+            : null,
+        plannedHours: fullProjectDetails?.PlannedHours ?? projectData.PlannedHours,
+        startedAt: fullProjectDetails?.StartedAt && fullProjectDetails.StartedAt !== null
+          ? dayjs(fullProjectDetails.StartedAt)
+          : projectData.rawStartedAt
+            ? dayjs(projectData.rawStartedAt)
+            : null,
+        endAt: fullProjectDetails?.EndAt && fullProjectDetails.EndAt !== null
+          ? dayjs(fullProjectDetails.EndAt)
+          : projectData.rawEndAt
+            ? dayjs(projectData.rawEndAt)
+            : null,
+        status: fullProjectDetails?.Status
+          ? statusStringToNumber(fullProjectDetails.Status)
+          : projectData.rawStatus ?? 0,
+        priority: fullProjectDetails?.Priority || projectData.Priority,
+        customer: (fullProjectDetails?.ClientId ?? projectData.ClientId) || "",
         parentProjects: derivedParentProjectIds,
         labels: derivedLabelIds,
       });
 
-      // Load user assignments
+      if (fullProjectDetails?.AssignedUsers && Array.isArray(fullProjectDetails.AssignedUsers)) {
+        setSelectedUsers(fullProjectDetails.AssignedUsers.map((user: any) => ({
+          userId: String(user.userId || user.id),
+          name: String(user.user.name || user.id),
+          role: user.role || 'Member',
+        })));
+      } else {
+        setSelectedUsers([]);
+      }      // Load user assignments
       // const userAssignments = projectData.UserAssignments || [];
       // const formattedUsers = userAssignments.map((assignment: any) => ({
       //   userId: assignment.UserId || assignment.userId,
@@ -471,7 +514,32 @@ export default function CreateProjectModal({
       // Create mode için formu temizle
       handleReset();
     }
-  }, [visible, isEditMode, isViewMode, projectData, handleReset]);
+  }, [visible, isEditMode, isViewMode, projectData, fullProjectDetails, handleReset]);
+
+  // Fetch full project details for edit/view modes
+  useEffect(() => {
+    if (!visible || !isEditMode && !isViewMode || !projectData?.Code) {
+      setFullProjectDetails(null);
+      setIsLoadingDetails(false);
+      return;
+    }
+
+    const fetchProjectDetails = async () => {
+      setIsLoadingDetails(true);
+      try {
+        const details = await getProjectByCode(projectData.Id?.toString()!);
+        setFullProjectDetails(details);
+      } catch (error) {
+        console.error("Proje detayları çekilirken hata:", error);
+        showNotification.error("Hata", "Proje detayları yüklenirken bir hata oluştu.");
+        setFullProjectDetails(null);
+      } finally {
+        setIsLoadingDetails(false);
+      }
+    };
+
+    fetchProjectDetails();
+  }, [visible, isEditMode, isViewMode, projectData?.Code]);
 
   const handleCustomerSearch = async (searchText: string) => {
     if (!searchText || searchText.trim().length < 2) {
@@ -598,7 +666,8 @@ export default function CreateProjectModal({
 
     const newUser = {
       userId,
-      role: 'Developer', // Default role
+      name: typeof userOption.label === 'string' ? userOption.label : String(userOption.label),
+      role: 'Member', 
     };
 
     setSelectedUsers(prev => [...prev, newUser]);
@@ -685,26 +754,29 @@ export default function CreateProjectModal({
     console.log(`Proje ${isEditMode ? 'güncelleme' : 'oluşturma'} form değerleri:`, values);
 
     setIsSubmitting(true);
-
+    console.log("Seçili etiketler:", values.plannedStartDate);
     try {
       if (isEditMode && projectData?.Id) {
-        // Update mode
-        const updateData: UpdateProjectData = {
-          title: values.title,
-          plannedStartDate: values.plannedStartDate
-            ? values.plannedStartDate.valueOf()
-            : null,
-          plannedDeadline: values.plannedEndDate
-            ? values.plannedEndDate.valueOf()
-            : null,
-          plannedHours: values.plannedHours || null,
-          startedAt: values.startedAt ? values.startedAt.valueOf() : null,
-          labelIds: selectedLabels,
-          parentProjectIds: selectedParentProjects,
-          endAt: values.endAt ? values.endAt.valueOf() : null,
-          status: values.status,
-          priority: values.priority,
-        };
+      const updateData: UpdateProjectData = {
+        title: values.title,
+        plannedStartDate: values.plannedStartDate
+          ? values.plannedStartDate.valueOf()
+          : null,
+        plannedDeadline: values.plannedEndDate
+          ? values.plannedEndDate.valueOf()
+          : null,
+        plannedHours: values.plannedHours || null,
+        startedAt: values.startedAt ? values.startedAt.valueOf() : null,
+        labelIds: selectedLabels,
+        parentProjectIds: selectedParentProjects,
+        endAt: values.endAt ? values.endAt.valueOf() : null,
+        status: values.status,
+        priority: values.priority,
+        assignedUsers: selectedUsers.map(user => ({
+          UserId: parseInt(user.userId, 10),
+          Role: user.role,
+        })),
+      };
 
         await updateProject(projectData.Id, updateData);
         showNotification.success("Proje Güncellendi", " Proje başarıyla güncellendi!");
@@ -732,8 +804,8 @@ export default function CreateProjectModal({
           ClientId: values.customer || undefined,
           ParentProjectIds: selectedParentProjects || [],
           LabelIds: selectedLabels || [],
-          UserAssignments: selectedUsers.map(user => ({
-            UserId: user.userId,
+          AssignedUsers: selectedUsers.map(user => ({
+            UserId: parseInt(user.userId, 10),
             Role: user.role,
           })),
         };
@@ -766,6 +838,16 @@ export default function CreateProjectModal({
     onClose();
   };
 
+  const statusStringToNumber = (status: string): number => {
+    switch (status) {
+      case "Planned": return 0;
+      case "Active": return 1;
+      case "Completed": return 2;
+      case "Passive": return 3;
+      default: return 0;
+    }
+  };
+
   const statusOptions = [
     { value: 0, label: "Planlandı" },
     { value: 1, label: "Aktif" },
@@ -780,11 +862,9 @@ export default function CreateProjectModal({
   ];
 
   const userRoleOptions = [
-    { value: "ProjectManager", label: "Proje Yöneticisi" },
-    { value: "Developer", label: "Geliştirici" },
-    { value: "Designer", label: "Tasarımcı" },
-    { value: "Tester", label: "Test Uzmanı" },
-    { value: "Analyst", label: "Analist" },
+    { value: "Manager", label: "Yöneticisi" },
+    { value: "Member", label: "Üye" },
+    { value: "Reviewer", label: "Gözlemci" }
   ];
 
   return (
@@ -809,12 +889,17 @@ export default function CreateProjectModal({
           },
         }}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={isViewMode ? undefined : handleSubmit}
-          className="mt-4"
-        >
+        {isLoadingDetails ? (
+          <div className="flex justify-center items-center h-64">
+            <Spin size="large" tip="Proje detayları yükleniyor..." />
+          </div>
+        ) : (
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={isViewMode ? undefined : handleSubmit}
+            className="mt-4"
+          >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
             <Form.Item
               label="Proje Kodu"
@@ -1095,7 +1180,7 @@ export default function CreateProjectModal({
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {selectedUsers.map((user) => {
                   const userOption = userOptions.find(option => option.value === user.userId);
-                  const userName = userOption?.label || `User ${user.userId}`;
+                  const userName = userOption?.label || user.name || `User ${user.userId}`;
 
                   return (
                     <div
@@ -1181,6 +1266,7 @@ export default function CreateProjectModal({
             </Form.Item>
           </div>
         </Form>
+        )}
       </Modal>
       <CreateLabelModal
         visible={isLabelModalVisible}

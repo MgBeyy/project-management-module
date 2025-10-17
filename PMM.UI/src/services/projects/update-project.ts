@@ -10,6 +10,7 @@ export interface UpdateProjectData {
   status: number;
   priority: string;
   parentProjectIds?: string[];
+  assignedUsers?: { UserId: number; Role: string }[];
   labelIds?: string[];
 }
 

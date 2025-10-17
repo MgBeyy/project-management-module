@@ -27,6 +27,7 @@ export interface ProjectDetails {
   ParentProjectIds: number[];
   ClientId: number | null;
   Labels: Label[];
+  AssignedUsers: any[]; // Add assigned users
   CreatedById: number;
   CreatedAt: string;
   UpdatedById: number | null;
@@ -48,6 +49,7 @@ function normalize(item: any): ProjectDetails {
     ParentProjectIds: item?.parentProjectIds ?? [],
     ClientId: item?.clientId ?? null,
     Labels: item?.labels ?? [],
+    AssignedUsers: item?.assignedUsers ?? [],
     CreatedById: item?.createdById ?? 0,
     CreatedAt: formatDateTime(item?.createdAt),
     UpdatedById: item?.updatedById ?? null,
@@ -59,7 +61,7 @@ function normalize(item: any): ProjectDetails {
 export async function getProjectByCode(code: string): Promise<ProjectDetails | null> {
   // Attempt 1: RESTful by code: /Project/{code}
   try {
-    const res = await apiClient.get(`Project/${encodeURIComponent(code)}`);
+    const res = await apiClient.get(`Project/detailed/${encodeURIComponent(code)}`);
     const raw = res.data?.result ?? res.data;
     if (raw) {
       return normalize(raw);

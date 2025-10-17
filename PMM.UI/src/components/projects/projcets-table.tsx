@@ -10,7 +10,7 @@ import {
   useProjectsStore,
 } from "@/store/zustand/projects-store";
 import { GetProjects } from "@/services/projects/get-projects";
-import { formatDate, formatDateTime, mapStatusToString } from "@/utils/retype";
+import { formatDate, mapStatusToString } from "@/utils/retype";
 import Spinner from "../spinner";
 
 type SortableColumnKey = ProjectSortKey;
@@ -162,8 +162,8 @@ export default function CustomTable() {
             PlannedStartDate: formatDate(item?.plannedStartDate),
             PlannedDeadLine: formatDate(item?.plannedDeadline || item?.plannedDeadLine),
             PlannedHours: typeof item?.plannedHours === "number" ? item.plannedHours : (typeof item?.plannedHours === "number" ? item.plannedHours : 0),
-            StartedAt: formatDateTime(item?.startedAt),
-            EndAt: formatDateTime(item?.endAt),
+            StartedAt: formatDate(item?.startedAt),
+            EndAt: formatDate(item?.endAt),
             Status: mapStatusToString(item?.status),
             Priority: item?.priority || "Düşük",
             // Store raw values for editing
