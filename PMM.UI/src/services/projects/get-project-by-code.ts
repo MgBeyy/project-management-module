@@ -17,8 +17,8 @@ export interface ProjectDetails {
   Id: number | null;
   Code: string;
   Title: string;
-  PlannedStartDate: string;
-  PlannedDeadLine: string;
+  PlannedStartDate: string | null;
+  PlannedDeadLine: string | null;
   PlannedHours: number | null;
   StartedAt: string | null;
   EndAt: string | null;
@@ -29,7 +29,7 @@ export interface ProjectDetails {
   Labels: Label[];
   AssignedUsers: any[]; // Add assigned users
   CreatedById: number;
-  CreatedAt: string;
+  CreatedAt: string | null;
   UpdatedById: number | null;
   UpdatedAt: string | null;
 }
