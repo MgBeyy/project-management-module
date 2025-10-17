@@ -1,6 +1,6 @@
-import TasksCrudModal from "@/features/tasks/components/tasks-crud-modal";
-import TasksFilter from "@/features/tasks/components/tasks-filter";
-import TasksCustomTable from "@/features/tasks/components/tasks-table";
+import TasksCrudModal from "@/components/tasks/tasks-crud-modal";
+import TasksFilter from "@/components/tasks/tasks-filter";
+import TasksCustomTable from "@/components/tasks/tasks-table";
 
 export default function Tasks() {
   return (
@@ -8,11 +8,8 @@ export default function Tasks() {
       <h1 style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "16px" }}>
         Görevler
       </h1>
-
       <TasksFilter />
-
       <TasksCrudModal />
-
       <TasksCustomTable />
     </div>
   );

@@ -1,4 +1,4 @@
-import ActivitiesCalendar from "@/components/activities/activities-calendar";
+import ActivitiesCalendar from "./activities-calendar";
 
 export default function Activities() {
   return (
@@ -6,6 +6,7 @@ export default function Activities() {
       <h1 style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "16px" }}>
         Etkinlikler
       </h1>
+
       <ActivitiesCalendar />
     </div>
   );
