@@ -20,13 +20,15 @@ namespace PMM.Core.Services
         private readonly IUserRepository _userRepository;
         private readonly IProjectRepository _projectRepository;
         private readonly IProjectRelationRepository _projectRelationRepository;
+        private readonly ITaskAssignmentRepository _taskAssignmentRepository;
 
         public ActivityService(IPrincipal principal, ILogger<ActivityService> logger,
             IActivityRepository activityRepository,
             ITaskRepository taskRepository,
             IUserRepository userRepository,
             IProjectRepository projectRepository,
-            IProjectRelationRepository projectRelationRepository
+            IProjectRelationRepository projectRelationRepository,
+            ITaskAssignmentRepository taskAssignmentRepository
             ) : base(principal, logger, userRepository)
         {
             _logger = logger;
@@ -35,6 +37,7 @@ namespace PMM.Core.Services
             _userRepository = userRepository;
             _projectRepository = projectRepository;
             _projectRelationRepository = projectRelationRepository;
+            _taskAssignmentRepository = taskAssignmentRepository;
         }
 
         public async Task<ActivityDto> AddActivityAsync(CreateActivityForm form)
@@ -51,6 +54,10 @@ namespace PMM.Core.Services
 
             var task = await _taskRepository.GetByIdAsync(form.TaskId) ?? throw new NotFoundException("Görev Bulunamadı!");
             _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("Kullanıcı Bulunamadı!");
+
+            var isUserAssigned = await _taskAssignmentRepository.IsUserAssignedToTaskAsync(form.UserId, form.TaskId);
+            if (!isUserAssigned)
+                throw new BusinessException("Bu kullanıcı belirtilen göreve atanmamıştır. Sadece göreve atanmış kullanıcılar aktivite ekleyebilir.");
 
             var activity = ActivityMapper.Map(form);
             activity.CreatedAt = DateTime.UtcNow;
