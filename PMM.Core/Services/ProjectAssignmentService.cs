@@ -36,7 +36,7 @@ namespace PMM.Core.Services
 
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                throw new BusinessException(validation.ErrorMessage);
 
             _ = await _projectRepository.GetByIdAsync(form.ProjectId) ?? throw new NotFoundException("Proje Bulunamadı!");
             _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("Kullanıcı Bulunamadı!");
@@ -62,7 +62,7 @@ namespace PMM.Core.Services
 
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                throw new BusinessException(validation.ErrorMessage);
 
             var projectAssignment = await _projectAssignmentRepository.GetByIdAsync(projectAssignmentId) ?? throw new NotFoundException("Proje Ataması Bulunamadı!!");
 

@@ -44,7 +44,7 @@ namespace PMM.Core.Services
 
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                throw new BusinessException(validation.ErrorMessage);
 
             if (form.EndTime <= form.StartTime)
                 throw new BusinessException("Bitiş zamanı başlangıç zamanından sonra olmalıdır!");
@@ -173,7 +173,7 @@ namespace PMM.Core.Services
 
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                throw new BusinessException(validation.ErrorMessage);
 
             if (form.EndTime <= form.StartTime)
                 throw new BusinessException("Bitiş zamanı başlangıç zamanından sonra olmalıdır!");

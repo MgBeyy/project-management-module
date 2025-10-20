@@ -51,7 +51,7 @@ namespace PMM.Core.Services
 
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                throw new BusinessException(validation.ErrorMessage);
 
             // Code benzersizlik kontrolü
             var existingTask = await _taskRepository.GetByCodeAsync(form.Code);
@@ -110,7 +110,7 @@ namespace PMM.Core.Services
 
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                throw new BusinessException(validation.ErrorMessage);
 
             var task = await _taskRepository.GetByIdAsync(taskId);
             if (task == null)
@@ -222,7 +222,7 @@ namespace PMM.Core.Services
                                           .Where(x => int.TryParse(x.Trim(), out _))
                                           .Select(x => int.Parse(x.Trim()))
                                           .ToList();
-                
+
                 if (labelIds.Any())
                 {
                     query = query.Where(t => t.TaskLabels.Any(tl => labelIds.Contains(tl.LabelId)));
@@ -278,7 +278,7 @@ namespace PMM.Core.Services
 
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                throw new BusinessException(validation.ErrorMessage);
 
             var tasks = new List<TaskEntity>();
             foreach (var taskId in form.TaskIds)

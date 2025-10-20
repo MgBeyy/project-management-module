@@ -53,7 +53,7 @@ namespace PMM.Core.Services
 
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                throw new BusinessException(validation.ErrorMessage);
 
             var existing = await _projectRepository.GetByCodeAsync(form.Code);
             if (existing is not null)
@@ -185,7 +185,7 @@ namespace PMM.Core.Services
 
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                throw new BusinessException(validation.ErrorMessage);
 
             var project = await _projectRepository.GetByIdAsync(projectId) ?? throw new NotFoundException("Proje Bulunamadı!");
 
@@ -432,7 +432,7 @@ namespace PMM.Core.Services
                                           .Where(x => int.TryParse(x.Trim(), out _))
                                           .Select(x => int.Parse(x.Trim()))
                                           .ToList();
-                
+
                 if (labelIds.Any())
                 {
                     query = query.Where(e => e.ProjectLabels.Any(pl => labelIds.Contains(pl.LabelId)));

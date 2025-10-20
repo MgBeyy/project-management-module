@@ -35,7 +35,7 @@ namespace PMM.Core.Services
 
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                throw new BusinessException(validation.ErrorMessage);
 
             var label = LabelMapper.Map(form);
             label.CreatedAt = DateTime.UtcNow;
@@ -53,7 +53,7 @@ namespace PMM.Core.Services
 
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                throw new BusinessException(validation.ErrorMessage);
 
             var label = await _labelRepository.GetByIdAsync(labelId);
             if (label == null)

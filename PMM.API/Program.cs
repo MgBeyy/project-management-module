@@ -12,8 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers(options =>
 {
+    //options.Filters.Add<ValidationFilter>();
     options.ModelBinderProviders.Insert(0, new DateOnlyModelBinderProvider());
     options.ModelBinderProviders.Insert(0, new DateTimeModelBinderProvider());
+}).ConfigureApiBehaviorOptions(options =>
+{
+    //options.SuppressModelStateInvalidFilter = true;
 });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
