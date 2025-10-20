@@ -24,6 +24,7 @@ namespace PMM.Core.Services
         private readonly IClientRepository _clientRepository;
         private readonly IUserRepository _userRepository;
         private readonly IProjectAssignmentRepository _projectAssignmentRepository;
+        private readonly ITaskRepository _taskRepository;
 
         public ProjectService(IProjectRepository projectRepository,
             IProjectRelationRepository projectRelationRepository,
@@ -33,6 +34,7 @@ namespace PMM.Core.Services
             ILogger<ProjectService> logger,
             IUserRepository userRepository,
             IProjectAssignmentRepository projectAssignmentRepository,
+            ITaskRepository taskRepository,
             IPrincipal principal)
             : base(principal, logger, userRepository)
         {
@@ -44,6 +46,7 @@ namespace PMM.Core.Services
             _clientRepository = clientRepository;
             _userRepository = userRepository;
             _projectAssignmentRepository = projectAssignmentRepository;
+            _taskRepository = taskRepository;
         }
 
         public async Task<ProjectDto> AddProjectAsync(CreateProjectForm form)
@@ -188,6 +191,12 @@ namespace PMM.Core.Services
                 throw new BusinessException(validation.ErrorMessage);
 
             var project = await _projectRepository.GetByIdAsync(projectId) ?? throw new NotFoundException("Proje Bulunamadı!");
+
+            // Proje tamamlanma validasyonu
+            if (project.Status != form.Status && form.Status == EProjectStatus.Completed)
+            {
+                await ValidateProjectCompletionAsync(projectId);
+            }
 
             if (form.PlannedDeadline is not null && form.PlannedStartDate is not null)
             {
@@ -548,5 +557,64 @@ namespace PMM.Core.Services
             _projectRepository.Delete(project);
             await _projectRepository.SaveChangesAsync();
         }
+
+        #region Helper Methods
+
+        private async Task ValidateProjectCompletionAsync(int projectId)
+        {
+            var incompleteItems = new List<string>();
+
+            var childRelations = await _projectRelationRepository.GetByParentProjectIdAsync(projectId);
+            foreach (var relation in childRelations)
+            {
+                var childProject = await _projectRepository.GetByIdAsync(relation.ChildProjectId);
+                if (childProject != null && childProject.Status != EProjectStatus.Completed && childProject.Status != EProjectStatus.Inactive)
+                {
+                    incompleteItems.Add($"Alt Proje: '{childProject.Title}' (Kod: {childProject.Code}) - Durum: {GetProjectStatusText(childProject.Status)}");
+                }
+            }
+
+            var projectTasks = await _taskRepository.GetByProjectIdAsync(projectId);
+            foreach (var task in projectTasks)
+            {
+                if (task.Status != ETaskStatus.Done && task.Status != ETaskStatus.Inactive)
+                {
+                    incompleteItems.Add($"Görev: '{task.Title}' (Kod: {task.Code}) - Durum: {GetTaskStatusText(task.Status)}");
+                }
+            }
+
+            if (incompleteItems.Any())
+            {
+                var errorMessage = "Proje tamamlanamaz çünkü aşağıdaki alt projeler ve görevler henüz tamamlanmamış veya iptal edilmemiş:\n" +
+                                   string.Join("\n", incompleteItems);
+                throw new BusinessException(errorMessage);
+            }
+        }
+
+        private static string GetProjectStatusText(EProjectStatus status)
+        {
+            return status switch
+            {
+                EProjectStatus.Active => "Aktif",
+                EProjectStatus.Inactive => "Pasif",
+                EProjectStatus.Completed => "Tamamlandı",
+                EProjectStatus.Planned => "Planlandı",
+                _ => status.ToString()
+            };
+        }
+
+        private static string GetTaskStatusText(ETaskStatus status)
+        {
+            return status switch
+            {
+                ETaskStatus.Todo => "Yapılacak",
+                ETaskStatus.InProgress => "Devam Ediyor",
+                ETaskStatus.Done => "Tamamlandı",
+                ETaskStatus.Inactive => "Pasif",
+                _ => status.ToString()
+            };
+        }
+
+        #endregion
     }
 }

@@ -43,5 +43,10 @@ namespace PMM.Data.Repositories
         {
             return await _dbSet.FirstOrDefaultAsync(t => t.Code == code);
         }
+
+        public async Task<List<TaskEntity>> GetByProjectIdAsync(int projectId)
+        {
+            return await Query(t => t.ProjectId == projectId).ToListAsync();
+        }
     }
 }
