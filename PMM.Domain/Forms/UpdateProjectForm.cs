@@ -8,7 +8,6 @@ namespace PMM.Domain.Forms
     {
         [Required]
         public string Title { get; set; }
-        [Required]
         public DateOnly? PlannedStartDate { get; set; }
         public DateOnly? PlannedDeadline { get; set; }
         [Range(0, int.MaxValue, ErrorMessage = "Planlanan toplam saat negatif bir değer alamaz!")]
@@ -16,8 +15,7 @@ namespace PMM.Domain.Forms
         public DateOnly? StartedAt { get; set; }
         public DateOnly? EndAt { get; set; }
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        [Required]
-        public EProjectStatus? Status { get; set; }
+        public EProjectStatus? Status { get; set; } = EProjectStatus.Active;
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public EProjectPriority Priority { get; set; } = EProjectPriority.Regular;
 
