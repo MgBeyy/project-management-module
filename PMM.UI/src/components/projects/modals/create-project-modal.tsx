@@ -327,7 +327,7 @@ export default function CreateProjectModal({
     setSelectedParentProjects([]);
     setSelectedLabels([]);
     setParentProjectOptions([]);
-    setLabelSelectOptions([]);
+    setLabelSelectOptions(prev => (prev.length === 0 ? prev : []));
     setSelectedUsers([]);
     setUserOptions([]);
     setUserSearchValue("");
@@ -554,11 +554,21 @@ export default function CreateProjectModal({
           });
         }
       }
-    } else if (!isEditMode && !isViewMode) {
-      // Create mode için formu temizle
-      handleReset();
     }
-  }, [visible, isEditMode, isViewMode, projectData, fullProjectDetails, labelSelectOptions, handleReset]);
+  }, [visible, isEditMode, isViewMode, projectData, fullProjectDetails, labelSelectOptions]);
+
+  // Reset form when opening create mode
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+
+    if (isEditMode || isViewMode) {
+      return;
+    }
+
+    handleReset();
+  }, [visible, isEditMode, isViewMode, handleReset]);
 
   // Fetch full project details for edit/view modes
   useEffect(() => {
@@ -1322,3 +1332,4 @@ export default function CreateProjectModal({
     </>
   );
 }
+
