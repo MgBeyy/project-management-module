@@ -2,6 +2,10 @@ import { Button } from "antd";
 import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 import type { Dayjs } from "dayjs";
 import dayjs from "dayjs";
+import "dayjs/locale/tr";
+import isoWeek from "dayjs/plugin/isoWeek";
+dayjs.extend(isoWeek);
+dayjs.locale("tr");
 import { useEffect, useState } from "react";
 import { GetActivities } from "../../services/activities/get-activities";
 import { useActivitiesStore } from "@/store/zustand/activities-store";
@@ -21,7 +25,7 @@ export default function ActivitiesCalendar() {
   const { activities, setActivities, isLoading, setIsLoading, refreshTrigger } =
     useActivitiesStore();
   const [currentWeekStart, setCurrentWeekStart] = useState<Dayjs>(
-    dayjs().startOf("week")
+    dayjs().startOf("isoWeek")
   );
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
@@ -89,14 +93,14 @@ export default function ActivitiesCalendar() {
   };
 
   const goToToday = () => {
-    setCurrentWeekStart(dayjs().startOf("week"));
+  setCurrentWeekStart(dayjs().startOf("isoWeek"));
   };
 
   const getWeekDays = () => {
     const days = [];
     for (let i = 0; i < 7; i++) {
       days.push(currentWeekStart.add(i, "day"));
-    }
+    }    
     return days;
   };
 
@@ -357,7 +361,7 @@ export default function ActivitiesCalendar() {
           <Button icon={<LeftOutlined />} onClick={goToPreviousWeek} />
           <Button icon={<RightOutlined />} onClick={goToNextWeek} />
           <h2 style={{ fontSize: "20px", fontWeight: "bold", margin: 0 }}>
-            {currentWeekStart.format("MMMM YYYY")}
+            {currentWeekStart.locale("tr").format("MMMM YYYY")}
           </h2>
         </div>
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
@@ -417,7 +421,7 @@ export default function ActivitiesCalendar() {
               }}
             >
               <div style={{ fontWeight: "bold", fontSize: "14px" }}>
-                {day.format("ddd")}
+                {day.locale("tr").format("dddd")}
               </div>
               <div
                 style={{
@@ -433,7 +437,7 @@ export default function ActivitiesCalendar() {
         </div>
 
         {/* Time Slots */}
-        <div style={{ maxHeight: "600px", overflowY: "auto", userSelect: "none" }}>
+        <div style={{ maxHeight: "calc(100vh - 400px)", overflowY: "auto", userSelect: "none" }}>
           {hours.map((hour) => (
             <div key={hour}>
               {minutes.map((minute, index) => (
@@ -453,7 +457,7 @@ export default function ActivitiesCalendar() {
                     style={{
                       padding: "4px 8px",
                       textAlign: "center",
-                      fontSize: "11px",
+                      fontSize: "13px",
                       color: "#666",
                       backgroundColor: "#fafafa",
                       borderBottom:
