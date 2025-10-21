@@ -323,16 +323,8 @@ export default function CustomTable() {
         showTitle: false,
       },
       render: (text: string) => {
-        const color =
-          text === "Tamamlandı"
-            ? "#52c41a"
-            : text === "Devam Ediyor"
-              ? "#1890ff"
-              : text === "Beklemede"
-                ? "#faad14"
-                : "#666";
         return (
-          <span title={text} style={{ color }}>
+          <span title={text} style={{ fontWeight: "bold" }}>
             {text}
           </span>
         );

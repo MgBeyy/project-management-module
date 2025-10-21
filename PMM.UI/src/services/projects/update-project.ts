@@ -7,7 +7,7 @@ export interface UpdateProjectData {
   plannedHours?: number | null;
   startedAt?: number | null;
   endAt?: number | null;
-  status: number;
+  status: string;
   priority: string;
   parentProjectIds?: string[];
   assignedUsers?: { UserId: number; Role: string }[];

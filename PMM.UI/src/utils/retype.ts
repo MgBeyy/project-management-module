@@ -72,7 +72,20 @@ export const formatDate = (dateValue: string | number | null) => {
 };
 
   export const mapStatusToString = (status: number | string): string => {
-    if (typeof status === 'string') return status;
+    if (typeof status === 'string'){
+      switch (status) {
+        case "Planned":
+          return "Planlandı";
+        case "Active":
+          return "Aktif";
+        case "Completed":
+          return "Tamamlandı";
+        case "Inactive":
+          return "Beklemede";
+        default:
+          return "Belirtilmemiş";
+      }
+    }
     
     const statusMap: Record<number, string> = {
       0: "Planlandı",

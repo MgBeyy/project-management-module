@@ -179,7 +179,7 @@ export default function CreateProjectModal({
   const [editingLabelData, setEditingLabelData] = useState<any>(null);
 
   // Project details state
-  const [fullProjectDetails, setFullProjectDetails] = useState<ProjectDetails | null>(null);
+  const [fullProjectDetails, setFullProjectDetails] = useState<any | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
   const isEditMode = mode === 'edit' && !!projectData;
@@ -419,11 +419,19 @@ export default function CreateProjectModal({
 
       if (fullProjectDetails) {
         // ProjectDetails has Labels array
+        interface Label {
+          id: string | number;
+          [key: string]: any;
+        }
+
         derivedLabelIds = fullProjectDetails.Labels
-          ? fullProjectDetails.Labels.map(label => String(label.id))
+          ? (fullProjectDetails.Labels as Label[]).map((label: Label) => String(label.id))
           : [];
-        derivedParentProjectIds = (fullProjectDetails.ParentProjectIds || [])
-          .map(parentId =>
+
+
+        const parentProjectIds: (string | number | null | undefined)[] = (fullProjectDetails.ParentProjectIds || []);
+        derivedParentProjectIds = parentProjectIds
+          .map((parentId: string | number | null | undefined): string | null =>
             parentId !== null && parentId !== undefined ? String(parentId) : null
           )
           .filter((id): id is string => Boolean(id));
@@ -545,8 +553,21 @@ export default function CreateProjectModal({
 
       if (derivedParentProjectIds.length > 0) {
         if (fullProjectDetails?.ParentProjects?.length) {
-          const parentOptions = fullProjectDetails.ParentProjects
-            .map(normalizeProjectOption)
+            interface ParentProject {
+            id?: string | number;
+            Id?: string | number;
+            projectId?: string | number;
+            value?: string | number;
+            key?: string | number;
+            code?: string;
+            title?: string;
+            name?: string;
+            label?: string;
+            [key: string]: any;
+            }
+
+            const parentOptions: MultiSelectOption[] = (fullProjectDetails.ParentProjects as ParentProject[])
+            .map((project: ParentProject) => normalizeProjectOption(project))
             .filter((option): option is MultiSelectOption => Boolean(option));
           if (parentOptions.length > 0) {
             handleParentOptionsSync(parentOptions);
@@ -829,7 +850,7 @@ export default function CreateProjectModal({
         labelIds: selectedLabels,
         parentProjectIds: selectedParentProjects,
         endAt: values.endAt ? values.endAt.valueOf() : null,
-        status: values.status,
+        status: statusNumberToString(values.status),
         priority: values.priority,
         assignedUsers: selectedUsers.map(user => ({
           UserId: parseInt(user.userId, 10),
@@ -841,6 +862,8 @@ export default function CreateProjectModal({
         showNotification.success("Proje Güncellendi", " Proje başarıyla güncellendi!");
       } else {
         // Create mode
+        console.log(values);
+        
         const createData = {
           Code: values.code || undefined,
           Title: values.title || undefined,
@@ -857,7 +880,7 @@ export default function CreateProjectModal({
             : undefined,
           EndAt: values.endAt ? values.endAt.valueOf() : undefined,
 
-          Status: values.status || undefined,
+          Status: statusNumberToString(values.status) || undefined,
           Priority: values.priority || undefined,
 
           ClientId: values.customer || undefined,
@@ -904,6 +927,16 @@ export default function CreateProjectModal({
       case "Completed": return 2;
       case "Passive": return 3;
       default: return 0;
+    }
+  };
+
+    const statusNumberToString = (status: number): string => {
+    switch (status) {
+      case 0: return "Planned";
+      case 1: return "Active";
+      case 2: return "Completed";
+      case 3: return "Passive";
+      default: return "Planned";
     }
   };
 
