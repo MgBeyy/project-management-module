@@ -1,4 +1,4 @@
-import {
+﻿import {
   Button,
   DatePicker,
   Form,
@@ -12,7 +12,7 @@ import {
   Upload,
   Image,
 } from "antd";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { CSSProperties, MouseEvent, KeyboardEvent } from "react";
 import {
   AiOutlinePlus,
@@ -170,6 +170,7 @@ const normalizeProjectOption = (project: any): MultiSelectOption | null => {
     project?.id ??
     project?.Id ??
     project?.projectId ??
+    project?.ProjectId ??
     project?.value ??
     project?.key;
 
@@ -179,17 +180,143 @@ const normalizeProjectOption = (project: any): MultiSelectOption | null => {
 
   const stringId = String(id);
 
+  const resolvedCode =
+    project?.code ??
+    project?.Code ??
+    project?.projectCode ??
+    project?.ProjectCode ??
+    project?.project_code ??
+    project?.Project_code;
+
+  const resolvedTitle =
+    project?.title ??
+    project?.Title ??
+    project?.name ??
+    project?.Name ??
+    project?.label ??
+    project?.Label;
+
   const resolvedLabel =
-    (project?.code && project?.title)
-      ? `${project.code} - ${project.title}`
-      : project?.title || project?.name || project?.label || `Project ${stringId}`;
+    resolvedCode && resolvedTitle
+      ? `${resolvedCode} - ${resolvedTitle}`
+      : resolvedTitle ?? resolvedCode ?? `Project ${stringId}`;
 
   return {
     value: stringId,
     label: resolvedLabel,
     key: stringId,
+    code: resolvedCode ?? project?.code ?? project?.Code,
+    title: resolvedTitle ?? project?.title ?? project?.Title,
     ...project,
   };
+};
+
+const resolveProjectId = (project: any): string | null => {
+  const rawId =
+    project?.id ??
+    project?.Id ??
+    project?.projectId ??
+    project?.ProjectId ??
+    project?.value ??
+    project?.key;
+
+  if (rawId === null || rawId === undefined) {
+    return null;
+  }
+
+  return String(rawId);
+};
+
+const extractIdsFromArray = (rawIds: any): string[] => {
+  if (!Array.isArray(rawIds)) {
+    return [];
+  }
+
+  const unique = new Set<string>();
+
+  rawIds.forEach((value: string | number | null | undefined) => {
+    if (value === null || value === undefined) {
+      return;
+    }
+    unique.add(String(value));
+  });
+
+  return Array.from(unique);
+};
+
+const extractIdsFromProjects = (projects: any): string[] => {
+  if (!Array.isArray(projects)) {
+    return [];
+  }
+
+  const unique = new Set<string>();
+
+  projects.forEach(project => {
+    const id = resolveProjectId(project);
+    if (id) {
+      unique.add(id);
+    }
+  });
+
+  return Array.from(unique);
+};
+
+const resolveParentProjectsArray = (source: any): any[] => {
+  if (!source) {
+    return [];
+  }
+
+  const candidates = [
+    source?.ParentProjects,
+    source?.parentProjects,
+    source?.ParentProjectList,
+    source?.parentProjectList,
+  ];
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate) && candidate.length > 0) {
+      return candidate;
+    }
+  }
+
+  return [];
+};
+
+const resolveParentProjectIds = (source: any): string[] => {
+  if (!source) {
+    return [];
+  }
+
+  const candidates = [
+    source?.ParentProjectIds,
+    source?.parentProjectIds,
+    source?.parent_project_ids,
+  ];
+
+  for (const candidate of candidates) {
+    const ids = extractIdsFromArray(candidate);
+    if (ids.length > 0) {
+      return ids;
+    }
+  }
+
+  const projectArray = resolveParentProjectsArray(source);
+  if (projectArray.length > 0) {
+    return extractIdsFromProjects(projectArray);
+  }
+
+  return [];
+};
+
+const resolveParentProjectOptions = (source: any): MultiSelectOption[] => {
+  const projects = resolveParentProjectsArray(source);
+  if (projects.length === 0) {
+    return [];
+  }
+
+  return projects
+    .map(normalizeProjectOption)
+    .filter((option): option is MultiSelectOption => Boolean(option));
 };
 
 const extractArrayFromResponse = (payload: any): any[] => {
@@ -274,6 +401,50 @@ export default function CreateProjectModal({
     }
     : undefined;
   const formItemNoMarginStyle: CSSProperties = { marginBottom: 0 };
+
+  const parentProjectViewText = useMemo(() => {
+    const detailProjects = resolveParentProjectsArray(fullProjectDetails);
+    const fallbackProjects = resolveParentProjectsArray(projectData);
+    const projects =
+      detailProjects.length > 0 ? detailProjects : fallbackProjects;
+
+    if (projects.length > 0) {
+      const labels = projects
+        .map(normalizeProjectOption)
+        .filter((option): option is MultiSelectOption => Boolean(option))
+        .map(option => {
+          const codeValue = (option as any)?.code;
+          const titleValue = (option as any)?.title;
+
+          if (codeValue && titleValue) {
+            return `${codeValue} - ${titleValue}`;
+          }
+
+          if (typeof option.label === "string") {
+            return option.label;
+          }
+
+          return option.value ? String(option.value) : null;
+        })
+        .filter((label): label is string => Boolean(label));
+
+      if (labels.length > 0) {
+        return Array.from(new Set(labels)).join(", ");
+      }
+    }
+
+    const detailIds = resolveParentProjectIds(fullProjectDetails);
+    if (detailIds.length > 0) {
+      return detailIds.join(", ");
+    }
+
+    const fallbackIds = resolveParentProjectIds(projectData);
+    if (fallbackIds.length > 0) {
+      return fallbackIds.join(", ");
+    }
+
+    return "Yok";
+  }, [fullProjectDetails, projectData]);
 
   const areOptionsEqual = (
     first: MultiSelectOption[],
@@ -560,14 +731,6 @@ export default function CreateProjectModal({
         derivedLabelIds = fullProjectDetails.Labels
           ? (fullProjectDetails.Labels as Label[]).map((label: Label) => String(label.id))
           : [];
-
-
-        const parentProjectIds: (string | number | null | undefined)[] = (fullProjectDetails.ParentProjectIds || []);
-        derivedParentProjectIds = parentProjectIds
-          .map((parentId: string | number | null | undefined): string | null =>
-            parentId !== null && parentId !== undefined ? String(parentId) : null
-          )
-          .filter((id): id is string => Boolean(id));
       } else {
         // projectData has LabelIds array
         derivedLabelIds =
@@ -578,12 +741,17 @@ export default function CreateProjectModal({
               )
               .filter((id): id is string => Boolean(id))
             : [];
-        derivedParentProjectIds = (projectData.ParentProjectIds || [])
-          .map(parentId =>
-            parentId !== null && parentId !== undefined ? String(parentId) : null
-          )
-          .filter((id): id is string => Boolean(id));
       }
+
+      const detailParentIds = resolveParentProjectIds(fullProjectDetails);
+      const fallbackParentIds = resolveParentProjectIds(projectData);
+
+      derivedParentProjectIds =
+        detailParentIds.length > 0 ? detailParentIds : fallbackParentIds;
+
+      const detailParentOptions = resolveParentProjectOptions(fullProjectDetails);
+      const projectParentOptions = resolveParentProjectOptions(projectData);
+      const resolvedParentOptions = mergeOptions(detailParentOptions, projectParentOptions);
 
       const normalizedLabelAccumulator: MultiSelectOption[] = [];
 
@@ -684,33 +852,17 @@ export default function CreateProjectModal({
       setLabelModalMode('create');
       setEditingLabelData(null);
 
-      if (derivedParentProjectIds.length > 0) {
-        if (fullProjectDetails?.ParentProjects?.length) {
-          interface ParentProject {
-            id?: string | number;
-            Id?: string | number;
-            projectId?: string | number;
-            value?: string | number;
-            key?: string | number;
-            code?: string;
-            title?: string;
-            name?: string;
-            label?: string;
-            [key: string]: any;
-          }
+      if (resolvedParentOptions.length > 0) {
+        handleParentOptionsSync(resolvedParentOptions);
+      } else if (derivedParentProjectIds.length > 0) {
+        const normalizedParentOptions = derivedParentProjectIds.map(id => ({
+          value: id,
+          label: `Proje ${id}`,
+          key: id,
+        })) as MultiSelectOption[];
 
-          const parentOptions: MultiSelectOption[] = (fullProjectDetails.ParentProjects as ParentProject[])
-            .map((project: ParentProject) => normalizeProjectOption(project))
-            .filter((option): option is MultiSelectOption => Boolean(option));
-          if (parentOptions.length > 0) {
-            handleParentOptionsSync(parentOptions);
-          }
-        } else {
-          const normalizedParentOptions = derivedParentProjectIds
-            .map(id => ({ value: id, label: `Proje ${id}`, key: id })) as MultiSelectOption[];
-          if (normalizedParentOptions.length > 0) {
-            handleParentOptionsSync(normalizedParentOptions);
-          }
+        if (normalizedParentOptions.length > 0) {
+          handleParentOptionsSync(normalizedParentOptions);
         }
       }
     }
@@ -1288,6 +1440,8 @@ export default function CreateProjectModal({
               <Form.Item label="Müşteri" name="customer" style={formItemNoMarginStyle}>
                 <AutoComplete
                   value={customerValue}
+                  disabled={!!isViewMode}
+                  style={viewModeFieldStyle}
                   options={customerOptions}
                   onSearch={handleCustomerSearch}
                   onChange={handleCustomerChange}
@@ -1307,21 +1461,23 @@ export default function CreateProjectModal({
                   }
                   allowClear
                   size="middle"
-                  style={{
-                    width: "100%",
-                    ...(viewModeFieldStyle || {}),
-                  }}
                   filterOption={false}
                   showSearch={true}
-                  disabled={!!isViewMode}
                 />
               </Form.Item>
 
               {isViewMode ? (
                 <Form.Item label="Üst Projeler" style={formItemNoMarginStyle}>
-                  <div style={viewModeFieldStyle}>
-                    {fullProjectDetails?.ParentProjects?.map((p: { id: string; code: string; title: string }) => `${p.code} - ${p.title}`).join(', ') || 'Yok'}
-                  </div>
+                  <Input
+                    value={parentProjectViewText}
+                    readOnly
+                    disabled
+                    size="middle"
+                    style={{
+                      width: "100%",
+                      ...(viewModeFieldStyle || {}),
+                    }}
+                  />
                 </Form.Item>
               ) : (
                 <Form.Item
