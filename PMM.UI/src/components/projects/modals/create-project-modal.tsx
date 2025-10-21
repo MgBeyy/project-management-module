@@ -9,10 +9,22 @@ import {
   Spin,
   Modal,
   Tag,
+  Upload,
+  Image,
 } from "antd";
 import { useState, useEffect, useCallback } from "react";
-import type { CSSProperties, MouseEvent } from "react";
-import { AiOutlinePlus, AiOutlineEdit } from "react-icons/ai";
+import type { CSSProperties, MouseEvent, KeyboardEvent } from "react";
+import {
+  AiOutlinePlus,
+  AiOutlineEdit,
+  AiOutlineCloudUpload,
+  AiOutlineFile,
+  AiOutlineFilePdf,
+  AiOutlineFileWord,
+  AiOutlineFileExcel,
+  AiOutlineFileZip,
+  AiOutlineFileText,
+} from "react-icons/ai";
 import type { InputNumberProps, SelectProps } from "antd";
 import MultiSelectSearch, { MultiSelectOption } from "../multi-select-search";
 import { getClientsForSelect } from "@/services/projects/get-clients-for-select";
@@ -25,7 +37,72 @@ import { getProjectById } from "../../../services/projects/get-project-by-code";
 import type { ProjectModalProps } from "@/types/projects";
 import CreateLabelModal from "./create-label-modal";
 import { parseDate } from "@/utils/retype";
+import { getProjectFiles } from "@/services/files/get-project-files";
+import { uploadProjectFile } from "@/services/files/upload-project-file";
+import { downloadProjectFile } from "@/services/files/download-project-file";
+import type { ProjectFileDto } from "@/types";
+import { saveAs } from "file-saver";
 
+const IMAGE_EXTENSIONS = new Set([
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "bmp",
+  "webp",
+  "svg",
+  "tiff",
+  "ico",
+]);
+
+const extractExtension = (value?: string | null): string | null => {
+  if (!value || typeof value !== "string") {
+    return null;
+  }
+
+  const sanitized = value.split(/[?#]/)[0];
+  const match = /\.([a-zA-Z0-9]+)$/.exec(sanitized);
+  return match ? match[1].toLowerCase() : null;
+};
+
+const resolveFileExtension = (file: ProjectFileDto): string | null => {
+  return (
+    extractExtension(file.file) ??
+    extractExtension(file.title) ??
+    null
+  );
+};
+
+const isImageFile = (file: ProjectFileDto): boolean => {
+  const ext = resolveFileExtension(file);
+  return Boolean(ext && IMAGE_EXTENSIONS.has(ext));
+};
+
+const getFileIconByExtension = (extension: string | null) => {
+  const baseClass = "h-8 w-8";
+
+  switch (extension) {
+    case "pdf":
+      return <AiOutlineFilePdf className={baseClass} />;
+    case "doc":
+    case "docx":
+      return <AiOutlineFileWord className={baseClass} />;
+    case "xls":
+    case "xlsx":
+    case "csv":
+      return <AiOutlineFileExcel className={baseClass} />;
+    case "zip":
+    case "rar":
+    case "7z":
+      return <AiOutlineFileZip className={baseClass} />;
+    case "txt":
+    case "md":
+    case "json":
+      return <AiOutlineFileText className={baseClass} />;
+    default:
+      return <AiOutlineFile className={baseClass} />;
+  }
+};
 const mergeOptions = (
   existing: MultiSelectOption[],
   incoming: MultiSelectOption[]
@@ -181,9 +258,13 @@ export default function CreateProjectModal({
   // Project details state
   const [fullProjectDetails, setFullProjectDetails] = useState<any | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [projectFiles, setProjectFiles] = useState<ProjectFileDto[]>([]);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
 
   const isEditMode = mode === 'edit' && !!projectData;
   const isViewMode = mode === 'view' && !!projectData;
+  const resolvedProjectId = fullProjectDetails?.Id ?? projectData?.Id ?? null;
 
   const viewModeFieldStyle: CSSProperties | undefined = isViewMode
     ? {
@@ -192,6 +273,7 @@ export default function CreateProjectModal({
       borderColor: "#d9d9d9",
     }
     : undefined;
+  const formItemNoMarginStyle: CSSProperties = { marginBottom: 0 };
 
   const areOptionsEqual = (
     first: MultiSelectOption[],
@@ -319,6 +401,20 @@ export default function CreateProjectModal({
     }
   }, [handleLabelOptionsSync]);
 
+  const loadProjectFiles = useCallback(async (projectId: number) => {
+    setIsLoadingFiles(true);
+    try {
+      const { files } = await getProjectFiles({ projectId, pageSize: 100 });
+      setProjectFiles(files);
+    } catch (error) {
+      console.error("Proje dosyaları yüklenirken hata:", error);
+      showNotification.error("Dosyalar yüklenemedi", "Proje dosyaları yüklenirken bir hata oluştu.");
+      setProjectFiles([]);
+    } finally {
+      setIsLoadingFiles(false);
+    }
+  }, []);
+
   const handleReset = useCallback(() => {
     form.resetFields();
     setCustomerValue("");
@@ -334,12 +430,49 @@ export default function CreateProjectModal({
     setLabelModalMode('create');
     setEditingLabelData(null);
     setIsLabelModalVisible(false);
+    setProjectFiles([]);
+    setIsLoadingFiles(false);
+    setIsUploadingFile(false);
     console.log("Form temizlendi");
   }, [form]);
 
+  const handleFileUpload = useCallback(async (file: File) => {
+    if (!resolvedProjectId) {
+      showNotification.error("Proje bulunamadı", "Dosya yüklemek için önce projeyi seçin.");
+      return;
+    }
+
+    setIsUploadingFile(true);
+    try {
+      const uploaded = await uploadProjectFile({
+        projectId: resolvedProjectId,
+        file,
+        title: file.name,
+      });
+      showNotification.success("Dosya yüklendi", `"${uploaded.title}" başarıyla yüklendi.`);
+      await loadProjectFiles(resolvedProjectId);
+    } catch (error) {
+      console.error("Dosya yükleme hatası:", error);
+      showNotification.error("Dosya yüklenemedi", "Dosya yüklenirken bir hata oluştu.");
+    } finally {
+      setIsUploadingFile(false);
+    }
+  }, [resolvedProjectId, loadProjectFiles]);
+
+  const handleFileDownload = useCallback(async (file: ProjectFileDto) => {
+    try {
+      const { blob, fileName } = await downloadProjectFile(file.id);
+      const resolvedName = fileName || file.title || `project-file-${file.id}`;
+      saveAs(blob, resolvedName);
+    } catch (error) {
+      console.error("Dosya indirme hatası:", error);
+      showNotification.error("Dosya indirilemedi", "Dosya indirilirken bir hata oluştu.");
+    }
+  }, []);
+
   const labelTagRender: SelectProps["tagRender"] = tagProps => {
     const { label, value, closable, onClose } = tagProps;
-    
+
     const option = (tagProps as any)?.option;
 
     const handleMouseDown = (event: MouseEvent<HTMLSpanElement>) => {
@@ -397,9 +530,9 @@ export default function CreateProjectModal({
 
   // Form'u edit veya view mode'da doldur
   useEffect(() => {
-            console.log(projectData);
+    console.log(projectData);
 
-    
+
     if (!visible) {
       return;
     }
@@ -440,10 +573,10 @@ export default function CreateProjectModal({
         derivedLabelIds =
           projectData.LabelIds && projectData.LabelIds.length > 0
             ? projectData.LabelIds
-                .map(id =>
-                  id !== null && id !== undefined ? String(id) : null
-                )
-                .filter((id): id is string => Boolean(id))
+              .map(id =>
+                id !== null && id !== undefined ? String(id) : null
+              )
+              .filter((id): id is string => Boolean(id))
             : [];
         derivedParentProjectIds = (projectData.ParentProjectIds || [])
           .map(parentId =>
@@ -553,7 +686,7 @@ export default function CreateProjectModal({
 
       if (derivedParentProjectIds.length > 0) {
         if (fullProjectDetails?.ParentProjects?.length) {
-            interface ParentProject {
+          interface ParentProject {
             id?: string | number;
             Id?: string | number;
             projectId?: string | number;
@@ -564,9 +697,9 @@ export default function CreateProjectModal({
             name?: string;
             label?: string;
             [key: string]: any;
-            }
+          }
 
-            const parentOptions: MultiSelectOption[] = (fullProjectDetails.ParentProjects as ParentProject[])
+          const parentOptions: MultiSelectOption[] = (fullProjectDetails.ParentProjects as ParentProject[])
             .map((project: ParentProject) => normalizeProjectOption(project))
             .filter((option): option is MultiSelectOption => Boolean(option));
           if (parentOptions.length > 0) {
@@ -620,6 +753,16 @@ export default function CreateProjectModal({
 
     fetchProjectDetails();
   }, [visible, isEditMode, isViewMode, projectData?.Id]);
+
+  useEffect(() => {
+    if (!visible || !resolvedProjectId || (!isEditMode && !isViewMode)) {
+      setProjectFiles([]);
+      setIsLoadingFiles(false);
+      return;
+    }
+
+    loadProjectFiles(resolvedProjectId);
+  }, [visible, resolvedProjectId, isEditMode, isViewMode, loadProjectFiles]);
 
   const handleCustomerSearch = async (searchText: string) => {
     if (!searchText || searchText.trim().length < 2) {
@@ -747,7 +890,7 @@ export default function CreateProjectModal({
     const newUser = {
       userId,
       name: typeof userOption.label === 'string' ? userOption.label : String(userOption.label),
-      role: 'Member', 
+      role: 'Member',
     };
 
     setSelectedUsers(prev => [...prev, newUser]);
@@ -836,34 +979,34 @@ export default function CreateProjectModal({
 
     setIsSubmitting(true);
     try {
-      if (isEditMode && projectData?.Id) {        
-      const updateData: UpdateProjectData = {
-        title: values.title,
-        plannedStartDate: values.plannedStartDate
-          ? values.plannedStartDate.valueOf()
-          : null,
-        plannedDeadline: values.plannedEndDate
-          ? values.plannedEndDate.valueOf()
-          : null,
-        plannedHours: values.plannedHours || null,
-        startedAt: values.startedAt ? values.startedAt.valueOf() : null,
-        labelIds: selectedLabels,
-        parentProjectIds: selectedParentProjects,
-        endAt: values.endAt ? values.endAt.valueOf() : null,
-        status: statusNumberToString(values.status),
-        priority: values.priority,
-        assignedUsers: selectedUsers.map(user => ({
-          UserId: parseInt(user.userId, 10),
-          Role: user.role,
-        })),
-      };
+      if (isEditMode && projectData?.Id) {
+        const updateData: UpdateProjectData = {
+          title: values.title,
+          plannedStartDate: values.plannedStartDate
+            ? values.plannedStartDate.valueOf()
+            : null,
+          plannedDeadline: values.plannedEndDate
+            ? values.plannedEndDate.valueOf()
+            : null,
+          plannedHours: values.plannedHours || null,
+          startedAt: values.startedAt ? values.startedAt.valueOf() : null,
+          labelIds: selectedLabels,
+          parentProjectIds: selectedParentProjects,
+          endAt: values.endAt ? values.endAt.valueOf() : null,
+          status: statusNumberToString(values.status),
+          priority: values.priority,
+          assignedUsers: selectedUsers.map(user => ({
+            UserId: parseInt(user.userId, 10),
+            Role: user.role,
+          })),
+        };
 
         await updateProject(projectData.Id, updateData);
         showNotification.success("Proje Güncellendi", " Proje başarıyla güncellendi!");
       } else {
         // Create mode
         console.log(values);
-        
+
         const createData = {
           Code: values.code || undefined,
           Title: values.title || undefined,
@@ -930,7 +1073,7 @@ export default function CreateProjectModal({
     }
   };
 
-    const statusNumberToString = (status: number): string => {
+  const statusNumberToString = (status: number): string => {
     switch (status) {
       case 0: return "Planned";
       case 1: return "Active";
@@ -990,380 +1133,473 @@ export default function CreateProjectModal({
             form={form}
             layout="vertical"
             onFinish={isViewMode ? undefined : handleSubmit}
-            className="mt-4"
           >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
-            <Form.Item
-              label="Proje Kodu"
-              name="code"
-              rules={[{ required: !isEditMode, message: "Proje kodu zorunludur!" }]}
-              className="mb-3"
-            >
-              <Input
-                placeholder="Örn: PRJ-001"
-                size="middle"
-                disabled={!!isEditMode || !!isViewMode}
-                style={viewModeFieldStyle}
-              />
-            </Form.Item>
-
-            <Form.Item
-              label="Proje Başlığı"
-              name="title"
-              rules={[{ required: true, message: "Proje başlığı zorunludur!" }]}
-              className="mb-3"
-            >
-              <Input
-                placeholder="Proje başlığını girin"
-                size="middle"
-                disabled={!!isViewMode}
-                style={viewModeFieldStyle}
-              />
-            </Form.Item>
-
-            <Form.Item
-              label="Planlanan Saat"
-              name="plannedHours"
-              rules={[{ required: false, message: "Planlanan saat zorunludur!" }]}
-              className="mb-3"
-            >
-              <InputNumber
-                min={0}
-                max={10000}
-                placeholder="Saat"
-                onChange={onChangeNumber}
-                size="middle"
-                style={{
-                  width: "100%",
-                  ...(viewModeFieldStyle || {}),
-                }}
-                disabled={!!isViewMode}
-              />
-            </Form.Item>
-
-            <Form.Item
-              label="Planlanan Başlangıç"
-              name="plannedStartDate"
-              rules={[
-                { required: false, message: "Başlangıç tarihi zorunludur!" },
-              ]}
-              className="mb-3"
-            >
-              <DatePicker
-                placeholder="Başlangıç tarihi"
-                size="middle"
-                style={{
-                  width: "100%",
-                  ...(viewModeFieldStyle || {}),
-                }}
-                format="DD-MM-YYYY"
-                disabled={!!isViewMode}
-              />
-            </Form.Item>
-
-            <Form.Item
-              label="Planlanan Bitiş"
-              name="plannedEndDate"
-              rules={[{ required: false, message: "Bitiş tarihi zorunludur!" }]}
-              className="mb-3"
-            >
-              <DatePicker
-                placeholder="Bitiş tarihi"
-                size="middle"
-                style={{
-                  width: "100%",
-                  ...(viewModeFieldStyle || {}),
-                }}
-                format="DD-MM-YYYY"
-                disabled={!!isViewMode}
-              />
-            </Form.Item>
-
-            <Form.Item label="Başlangıç Zamanı" name="startedAt" className="mb-3">
-              <DatePicker
-                placeholder="Başlangıç zamanı"
-                size="middle"
-                style={{
-                  width: "100%",
-                  ...(viewModeFieldStyle || {}),
-                }}
-                format="DD-MM-YYYY"
-                disabled={!!isViewMode}
-              />
-            </Form.Item>
-
-            <Form.Item label="Bitiş Zamanı" name="endAt" className="mb-3">
-              <DatePicker
-                placeholder="Bitiş zamanı"
-                size="middle"
-                style={{
-                  width: "100%",
-                  ...(viewModeFieldStyle || {}),
-                }}
-                format="DD-MM-YYYY"
-                disabled={!!isViewMode}
-              />
-            </Form.Item>
-
-            <Form.Item
-              label="Proje Durumu"
-              name="status"
-              rules={[{ required: false, message: "Proje durumu zorunludur!" }]}
-              className="mb-3"
-            >
-              <Select
-                placeholder="Durum seçin"
-                allowClear
-                size="middle"
-                style={{
-                  width: "100%",
-                  ...(viewModeFieldStyle || {}),
-                }}
-                options={statusOptions}
-                disabled={!!isViewMode}
-              />
-            </Form.Item>
-
-            <Form.Item
-              label="Proje Önceliği"
-              name="priority"
-              rules={[{ required: false, message: "Proje önceliği zorunludur!" }]}
-              className="mb-3"
-            >
-              <Select
-                placeholder="Öncelik seçin"
-                allowClear
-                size="middle"
-                style={{
-                  width: "100%",
-                  ...(viewModeFieldStyle || {}),
-                }}
-                options={priorityOptions}
-                disabled={!!isViewMode}
-              />
-            </Form.Item>
-
-            <Form.Item label="Müşteri" name="customer" className="mb-3">
-              <AutoComplete
-                value={customerValue}
-                options={customerOptions}
-                onSearch={handleCustomerSearch}
-                onChange={handleCustomerChange}
-                onSelect={handleCustomerSelect}
-                placeholder="Müşteri ara... (min 2 karakter)"
-                notFoundContent={
-                  customerLoading ? (
-                    <div className="flex justify-center items-center py-2">
-                      <Spin size="small" />
-                      <span className="ml-2">Müşteriler aranıyor...</span>
-                    </div>
-                  ) : customerValue && customerValue.length >= 2 ? (
-                    "Müşteri bulunamadı"
-                  ) : (
-                    "En az 2 karakter yazın"
-                  )
-                }
-                allowClear
-                size="middle"
-                style={{
-                  width: "100%",
-                  ...(viewModeFieldStyle || {}),
-                }}
-                filterOption={false}
-                showSearch={true}
-                disabled={!!isViewMode}
-              />
-            </Form.Item>
-
-{isViewMode ? (
-  <Form.Item label="Üst Projeler" className="mb-3">
-    <div style={viewModeFieldStyle}>
-      {fullProjectDetails?.ParentProjects?.map((p: { id: string; code: string; title: string }) => `${p.code} - ${p.title}`).join(', ') || 'Yok'}
-    </div>
-  </Form.Item>
-) : (
-  <Form.Item
-    label="Üst Projeler"
-    name="parentProjects"
-    className="mb-3"
-  >
-    <MultiSelectSearch
-      placeholder="Üst proje ara ve seç..."
-      onChange={handleParentProjectsChange}
-      value={selectedParentProjects}
-      apiUrl="/Project"
-      size="middle"
-      className="w-full"
-      disabled={isViewMode}
-      style={{
-        width: "100%",
-        ...(viewModeFieldStyle || {}),
-      }}
-      initialOptions={parentProjectOptions}
-      onOptionsChange={handleParentOptionsSync}
-    />
-  </Form.Item>
-)}            <Form.Item label="Etiketler" name="labels" className="mb-3">
-              <div className="space-y-2 flex flex-row gap-2">
-                <MultiSelectSearch
-                  placeholder="Etiket ara ve seç..."
-                  onChange={handleLabelsChange}
-                  value={selectedLabels}
-                  apiUrl="/Label"
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-2 gap-y-1">
+              <Form.Item
+                label="Proje Kodu"
+                name="code"
+                rules={[{ required: !isEditMode, message: "Proje kodu zorunludur!" }]}
+                style={formItemNoMarginStyle}
+              >
+                <Input
+                  placeholder="Örn: PRJ-001"
                   size="middle"
-                  className="w-full flex-1"
-                  disabled={isViewMode}
+                  disabled={!!isEditMode || !!isViewMode}
+                  style={viewModeFieldStyle}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Proje Başlığı"
+                name="title"
+                rules={[{ required: true, message: "Proje başlığı zorunludur!" }]}
+                style={formItemNoMarginStyle}
+              >
+                <Input
+                  placeholder="Proje başlığını girin"
+                  size="middle"
+                  disabled={!!isViewMode}
+                  style={viewModeFieldStyle}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Planlanan Saat"
+                name="plannedHours"
+                rules={[{ required: false, message: "Planlanan saat zorunludur!" }]}
+                style={formItemNoMarginStyle}
+              >
+                <InputNumber
+                  min={0}
+                  max={10000}
+                  placeholder="Saat"
+                  onChange={onChangeNumber}
+                  size="middle"
                   style={{
                     width: "100%",
                     ...(viewModeFieldStyle || {}),
                   }}
-                  initialOptions={labelSelectOptions}
-                  tagRender={labelTagRender}
-                  onOptionsChange={handleLabelOptionsSync}
+                  disabled={!!isViewMode}
                 />
+              </Form.Item>
 
-                {!isViewMode && (
-                  <Button
-                    type="dashed"
-                    icon={<AiOutlinePlus />}
-                    onClick={handleLabelCreateButtonClick}
-                    size="middle"
-                    className="w-full h-[32px] flex items-center justify-center gap-1"
-                    style={{
-                      borderStyle: "dashed",
-                      color: "#52c41a",
-                      borderColor: "#52c41a",
-                    }}
-                  >
-                  </Button>
-                )}
-              </div>
-            </Form.Item>
-          </div>
-
-          <Form.Item label="Proje Ekibi" className="mb-3">
-            <div className="space-y-3">
-              {!isViewMode && (
-                <AutoComplete
-                  value={userSearchValue}
-                  options={userOptions}
-                  onSearch={handleUserSearch}
-                  onSelect={(value) => {
-                    handleAddUser(value);
-                    setUserSearchValue("");
+              <Form.Item
+                label="Planlanan Başlangıç"
+                name="plannedStartDate"
+                rules={[
+                  { required: false, message: "Başlangıç tarihi zorunludur!" },
+                ]}
+                style={formItemNoMarginStyle}
+              >
+                <DatePicker
+                  placeholder="Başlangıç tarihi"
+                  size="middle"
+                  style={{
+                    width: "100%",
+                    ...(viewModeFieldStyle || {}),
                   }}
-                  onChange={setUserSearchValue}
-                  onFocus={() => handleUserSearch("")}
-                  placeholder="Kullanıcı ara ve ekle..."
+                  format="DD-MM-YYYY"
+                  disabled={!!isViewMode}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Planlanan Bitiş"
+                name="plannedEndDate"
+                rules={[{ required: false, message: "Bitiş tarihi zorunludur!" }]}
+                style={formItemNoMarginStyle}
+              >
+                <DatePicker
+                  placeholder="Bitiş tarihi"
+                  size="middle"
+                  style={{
+                    width: "100%",
+                    ...(viewModeFieldStyle || {}),
+                  }}
+                  format="DD-MM-YYYY"
+                  disabled={!!isViewMode}
+                />
+              </Form.Item>
+
+              <Form.Item label="Başlangıç Zamanı" name="startedAt" style={formItemNoMarginStyle}>
+                <DatePicker
+                  placeholder="Başlangıç zamanı"
+                  size="middle"
+                  style={{
+                    width: "100%",
+                    ...(viewModeFieldStyle || {}),
+                  }}
+                  format="DD-MM-YYYY"
+                  disabled={!!isViewMode}
+                />
+              </Form.Item>
+
+              <Form.Item label="Bitiş Zamanı" name="endAt" style={formItemNoMarginStyle}>
+                <DatePicker
+                  placeholder="Bitiş zamanı"
+                  size="middle"
+                  style={{
+                    width: "100%",
+                    ...(viewModeFieldStyle || {}),
+                  }}
+                  format="DD-MM-YYYY"
+                  disabled={!!isViewMode}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Proje Durumu"
+                name="status"
+                rules={[{ required: false, message: "Proje durumu zorunludur!" }]}
+                style={formItemNoMarginStyle}
+              >
+                <Select
+                  placeholder="Durum seçin"
+                  allowClear
+                  size="middle"
+                  style={{
+                    width: "100%",
+                    ...(viewModeFieldStyle || {}),
+                  }}
+                  options={statusOptions}
+                  disabled={!!isViewMode}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Proje Önceliği"
+                name="priority"
+                rules={[{ required: false, message: "Proje önceliği zorunludur!" }]}
+                style={formItemNoMarginStyle}
+              >
+                <Select
+                  placeholder="Öncelik seçin"
+                  allowClear
+                  size="middle"
+                  style={{
+                    width: "100%",
+                    ...(viewModeFieldStyle || {}),
+                  }}
+                  options={priorityOptions}
+                  disabled={!!isViewMode}
+                />
+              </Form.Item>
+
+              <Form.Item label="Müşteri" name="customer" style={formItemNoMarginStyle}>
+                <AutoComplete
+                  value={customerValue}
+                  options={customerOptions}
+                  onSearch={handleCustomerSearch}
+                  onChange={handleCustomerChange}
+                  onSelect={handleCustomerSelect}
+                  placeholder="Müşteri ara... (min 2 karakter)"
                   notFoundContent={
-                    userLoading ? (
+                    customerLoading ? (
                       <div className="flex justify-center items-center py-2">
                         <Spin size="small" />
-                        <span className="ml-2">Kullanıcılar aranıyor...</span>
+                        <span className="ml-2">Müşteriler aranıyor...</span>
                       </div>
+                    ) : customerValue && customerValue.length >= 2 ? (
+                      "Müşteri bulunamadı"
                     ) : (
-                      "Kullanıcı bulunamadı"
+                      "En az 2 karakter yazın"
                     )
                   }
                   allowClear
                   size="middle"
                   style={{
                     width: "100%",
+                    ...(viewModeFieldStyle || {}),
                   }}
                   filterOption={false}
                   showSearch={true}
+                  disabled={!!isViewMode}
                 />
-              )}
+              </Form.Item>
 
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {selectedUsers.map((user) => {
-                  const userOption = userOptions.find(option => option.value === user.userId);
-                  const userName = userOption?.label || user.name || `User ${user.userId}`;
-
-                  return (
-                    <div
-                      key={user.userId}
-                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border"
-                    >
-                      <div className="flex-1">
-                        <span className="font-medium text-gray-900">{userName}</span>
-                      </div>
-
-                      <Select
-                        value={user.role}
-                        className="flex-1"
-                        onChange={(value) => handleUserRoleChange(user.userId, value)}
-                        options={userRoleOptions}
-                        size="small"
-                        style={{ minWidth: 140 }}
-                        disabled={isViewMode}
-                        placeholder="Rol seçin"
-                      />
-
-                      {!isViewMode && (
-                        <Button
-                          type="text"
-                          danger
-                          icon={<AiOutlinePlus style={{ transform: 'rotate(45deg)' }} />}
-                          onClick={() => handleRemoveUser(user.userId)}
-                          size="small"
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-
-                {selectedUsers.length === 0 && (
-                  <div className="text-center py-6 text-gray-500">
-                    Henüz ekip üyesi eklenmemiş
+              {isViewMode ? (
+                <Form.Item label="Üst Projeler" style={formItemNoMarginStyle}>
+                  <div style={viewModeFieldStyle}>
+                    {fullProjectDetails?.ParentProjects?.map((p: { id: string; code: string; title: string }) => `${p.code} - ${p.title}`).join(', ') || 'Yok'}
                   </div>
-                )}
-              </div>
-            </div>
-          </Form.Item>
+                </Form.Item>
+              ) : (
+                <Form.Item
+                  label="Üst Projeler"
+                  name="parentProjects"
+                  style={formItemNoMarginStyle}
+                >
+                  <MultiSelectSearch
+                    placeholder="Üst proje ara ve seç..."
+                    onChange={handleParentProjectsChange}
+                    value={selectedParentProjects}
+                    apiUrl="/Project"
+                    size="middle"
+                    className="w-full"
+                    disabled={isViewMode}
+                    style={{
+                      width: "100%",
+                      ...(viewModeFieldStyle || {}),
+                    }}
+                    initialOptions={parentProjectOptions}
+                    onOptionsChange={handleParentOptionsSync}
+                  />
+                </Form.Item>
+              )}
+              <Form.Item label="Etiketler" name="labels" style={formItemNoMarginStyle}>
+                <div className="space-y-2 flex flex-row gap-2">
+                  <MultiSelectSearch
+                    placeholder="Etiket ara ve seç..."
+                    onChange={handleLabelsChange}
+                    value={selectedLabels}
+                    apiUrl="/Label"
+                    size="middle"
+                    className="w-full flex-1"
+                    disabled={isViewMode}
+                    style={{
+                      width: "100%",
+                      ...(viewModeFieldStyle || {}),
+                    }}
+                    initialOptions={labelSelectOptions}
+                    tagRender={labelTagRender}
+                    onOptionsChange={handleLabelOptionsSync}
+                  />
 
-          <Form.Item className="mb-0 mt-6">
-            <div className="flex justify-end w-full gap-3">
-              <Button
-                onClick={handleModalClose}
-                size="middle"
-                className="min-w-[100px]"
-              >
-                {isViewMode ? "Kapat" : "İptal"}
-              </Button>
-              {!isViewMode && (
-                <>
-                  {!isEditMode && (
+                  {!isViewMode && (
                     <Button
-                      onClick={handleReset}
+                      type="dashed"
+                      icon={<AiOutlinePlus />}
+                      onClick={handleLabelCreateButtonClick}
                       size="middle"
-                      className="min-w-[100px]"
+                      className="w-full h-[32px] flex items-center justify-center gap-1"
+                      style={{
+                        borderStyle: "dashed",
+                        color: "#52c41a",
+                        borderColor: "#52c41a",
+                      }}
                     >
-                      Temizle
                     </Button>
                   )}
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    size="middle"
-                    className="min-w-[100px]"
-                    loading={isSubmitting}
-                  >
-                    {isSubmitting
-                      ? (isEditMode ? "Güncelleniyor..." : "Oluşturuluyor...")
-                      : (isEditMode ? "Proje Güncelle" : "Proje Oluştur")
-                    }
-                  </Button>
-                </>
-              )}
+                </div>
+              </Form.Item>
             </div>
-          </Form.Item>
-          <div>
-            <Form.Item>
 
+            <Form.Item label="Proje Ekibi" style={formItemNoMarginStyle}>
+              <div className="space-y-3">
+                {!isViewMode && (
+                  <AutoComplete
+                    value={userSearchValue}
+                    options={userOptions}
+                    onSearch={handleUserSearch}
+                    onSelect={(value) => {
+                      handleAddUser(value);
+                      setUserSearchValue("");
+                    }}
+                    onChange={setUserSearchValue}
+                    onFocus={() => handleUserSearch("")}
+                    placeholder="Kullanıcı ara ve ekle..."
+                    notFoundContent={
+                      userLoading ? (
+                        <div className="flex justify-center items-center py-2">
+                          <Spin size="small" />
+                          <span className="ml-2">Kullanıcılar aranıyor...</span>
+                        </div>
+                      ) : (
+                        "Kullanıcı bulunamadı"
+                      )
+                    }
+                    allowClear
+                    size="middle"
+                    style={{
+                      width: "100%",
+                    }}
+                    filterOption={false}
+                    showSearch={true}
+                  />
+                )}
+
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {selectedUsers.map((user) => {
+                    const userOption = userOptions.find(option => option.value === user.userId);
+                    const userName = userOption?.label || user.name || `User ${user.userId}`;
+
+                    return (
+                      <div
+                        key={user.userId}
+                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border"
+                      >
+                        <div className="flex-1">
+                          <span className="font-medium text-gray-900">{userName}</span>
+                        </div>
+
+                        <Select
+                          value={user.role}
+                          className="flex-1"
+                          onChange={(value) => handleUserRoleChange(user.userId, value)}
+                          options={userRoleOptions}
+                          size="small"
+                          style={{ minWidth: 140 }}
+                          disabled={isViewMode}
+                          placeholder="Rol seçin"
+                        />
+
+                        {!isViewMode && (
+                          <Button
+                            type="text"
+                            danger
+                            icon={<AiOutlinePlus style={{ transform: 'rotate(45deg)' }} />}
+                            onClick={() => handleRemoveUser(user.userId)}
+                            size="small"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {selectedUsers.length === 0 && (
+                    <div className="text-center py-2 text-gray-500">
+                      Henüz ekip üyesi eklenmemiş
+                    </div>
+                  )}
+                </div>
+              </div>
             </Form.Item>
-          </div>
-        </Form>
+
+            {(isEditMode || isViewMode) && (
+              <Form.Item label="Proje Dosyaları" style={formItemNoMarginStyle}>
+                <div className="space-y-3">
+                  {isEditMode && (
+                    <Upload
+                      multiple={false}
+                      showUploadList={false}
+                      beforeUpload={(file) => {
+                        handleFileUpload(file as File);
+                        return false;
+                      }}
+                      disabled={isUploadingFile}
+                    >
+                      <Button
+                        type="primary"
+                        icon={<AiOutlineCloudUpload />}
+                        loading={isUploadingFile}
+                      >
+                        {isUploadingFile ? "Yükleniyor..." : "Dosya Yükle"}
+                      </Button>
+                    </Upload>
+                  )}
+
+                  {isLoadingFiles ? (
+                    <div className="flex items-center justify-center py-6">
+                      <Spin size="small" />
+                      <span className="ml-2">Dosyalar yükleniyor...</span>
+                    </div>
+                  ) : projectFiles.length === 0 ? (
+                    <div className="text-sm text-gray-500 bg-gray-50 border rounded-lg px-3 py-4">
+                      Henüz yüklenmiş dosya bulunmuyor.
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-3">
+                      {projectFiles.map((file) => {
+                        const extension = resolveFileExtension(file);
+                        const displayName = file.title || `Dosya #${file.id}`;
+                        const imagePreview = isImageFile(file);
+
+                        const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            handleFileDownload(file);
+                          }
+                        };
+
+                        return (
+                          <div
+                            key={file.id}
+                            role="button"
+                            tabIndex={0}
+                            className="flex w-32 cursor-pointer flex-col gap-2 rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition hover:border-blue-500 hover:shadow-md focus:border-blue-500 focus:shadow-md focus:outline-none"
+                            onClick={() => handleFileDownload(file)}
+                            onKeyDown={handleKeyDown}
+                          >
+                            <div className="flex items-center justify-center">
+                              {imagePreview ? (
+                                <Image
+                                  src={file.file}
+                                  alt={displayName}
+                                  width={64}
+                                  height={64}
+                                  className="h-16 w-16 rounded-md object-cover"
+                                  preview={false}
+                                />
+                              ) : (
+                                <span className="flex h-16 w-16 items-center justify-center rounded-md bg-blue-50 text-blue-500">
+                                  {getFileIconByExtension(extension)}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <span
+                                className="truncate text-sm font-medium text-gray-900"
+                                title={displayName}
+                              >
+                                {displayName}
+                              </span>
+                              {extension && (
+                                <span className="text-xs uppercase text-gray-500">
+                                  .{extension}
+                                </span>
+                              )}
+                              {file.description && (
+                                <span className="text-xs text-gray-500">
+                                  {file.description}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </Form.Item>
+            )}
+
+            <Form.Item style={formItemNoMarginStyle}>
+              <div className="flex justify-end w-full gap-3">
+                <Button
+                  onClick={handleModalClose}
+                  size="middle"
+                  className="min-w-[100px]"
+                >
+                  {isViewMode ? "Kapat" : "İptal"}
+                </Button>
+                {!isViewMode && (
+                  <>
+                    {!isEditMode && (
+                      <Button
+                        onClick={handleReset}
+                        size="middle"
+                        className="min-w-[100px]"
+                      >
+                        Temizle
+                      </Button>
+                    )}
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      size="middle"
+                      className="min-w-[100px]"
+                      loading={isSubmitting}
+                    >
+                      {isSubmitting
+                        ? (isEditMode ? "Güncelleniyor..." : "Oluşturuluyor...")
+                        : (isEditMode ? "Proje Güncelle" : "Proje Oluştur")
+                      }
+                    </Button>
+                  </>
+                )}
+              </div>
+            </Form.Item>
+          </Form>
         )}
       </Modal>
       <CreateLabelModal
@@ -1376,4 +1612,3 @@ export default function CreateProjectModal({
     </>
   );
 }
-
