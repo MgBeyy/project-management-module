@@ -7,6 +7,8 @@ import getMultiSelectSearch from "@/services/projects/get-multi-select-search";
 import { getTasksForSelect } from "@/services/tasks/get-tasks-for-select";
 import { createTask } from "@/services/tasks/create-task";
 import { TaskStatus } from "@/services/tasks/get-tasks";
+import { updateTask } from "@/services/tasks/update-task";
+import type { TaskModalProps } from "@/types/tasks";
 
 
 const { TextArea } = Input;
@@ -129,10 +131,10 @@ const normalizeTaskOption = (task: any): SelectOption | null => {
 export default function CreateTaskModal({
   visible,
   onClose,
-}: {
-  visible: boolean;
-  onClose: () => void;
-}) {
+  onSuccess,
+  taskData,
+  mode = "create",
+}: TaskModalProps) {
   const notification = useNotification();
   const [form] = Form.useForm();
   const { triggerRefresh } = useTasksStore();
@@ -144,6 +146,18 @@ export default function CreateTaskModal({
   const [parentTaskOptions, setParentTaskOptions] = useState<SelectOption[]>([]);
   const [defaultParentTaskOptions, setDefaultParentTaskOptions] = useState<SelectOption[]>([]);
   const [parentTaskLoading, setParentTaskLoading] = useState(false);
+
+  const isEditMode = mode === "edit" && !!taskData;
+  const isViewMode = mode === "view" && !!taskData;
+  const resolvedTaskId =
+    taskData && ("Id" in (taskData as any) ? (taskData as any).Id : (taskData as any)?.id);
+
+  const closeModal = useCallback(() => {
+    form.resetFields();
+    setProjectOptions(defaultProjectOptions);
+    setParentTaskOptions(defaultParentTaskOptions);
+    onClose();
+  }, [defaultParentTaskOptions, defaultProjectOptions, form, onClose]);
 
   const loadInitialSelectData = useCallback(async () => {
     setProjectLoading(true);
@@ -182,15 +196,37 @@ export default function CreateTaskModal({
     }
   }, [visible, loadInitialSelectData]);
 
-  const handleCreate = async (values: any) => {
+  const handleSubmit = async (values: any) => {
+    if (isViewMode) {
+      closeModal();
+      return;
+    }
+
+    const normalizedValues = {
+      ...values,
+      parentTaskId: values.parentTaskId ?? null,
+      plannedHours: values.plannedHours ?? null,
+      actualHours: values.actualHours ?? null,
+    };
+
     try {
-      await createTask(values);
-      notification.success("Görev Oluşturuldu", " Görev başarıyla oluşturuldu!");
+      if (isEditMode && resolvedTaskId) {
+        const { code: _omit, ...updatePayload } = normalizedValues;
+        await updateTask(Number(resolvedTaskId), updatePayload);
+        notification.success("Görev Güncellendi", "Görev başarıyla güncellendi!");
+      } else {
+        await createTask(normalizedValues);
+        notification.success("Görev Oluşturuldu", "Görev başarıyla oluşturuldu!");
+      }
+
       triggerRefresh();
-      form.resetFields();
-      onClose();
+      onSuccess?.();
+      closeModal();
     } catch (error: any) {
-      console.error("Görev oluşturma hatası:", error);
+      console.error(
+        `Görev ${isEditMode ? "güncelleme" : "oluşturma"} hatası:`,
+        error
+      );
 
       if (error.response?.data) {
         console.error("Backend hata detayı:", error.response.data);
@@ -199,14 +235,15 @@ export default function CreateTaskModal({
   };
 
   const handleCancel = () => {
-    form.resetFields();
-    setProjectOptions(defaultProjectOptions);
-    setParentTaskOptions(defaultParentTaskOptions);
-    onClose();
+    closeModal();
   };
 
   const handleProjectSearch = useCallback(
     async (searchText: string) => {
+      if (isViewMode) {
+        return;
+      }
+
       const trimmed = searchText.trim();
 
       if (!trimmed || trimmed.length < MIN_SEARCH_LENGTH) {
@@ -228,7 +265,7 @@ export default function CreateTaskModal({
         setProjectLoading(false);
       }
     },
-    [defaultProjectOptions]
+    [defaultProjectOptions, isViewMode]
   );
 
   const fetchParentTasks = useCallback(
@@ -271,14 +308,22 @@ export default function CreateTaskModal({
 
   const handleParentTaskSearch = useCallback(
     (searchText: string) => {
+      if (isViewMode) {
+        return;
+      }
+
       const projectId = form.getFieldValue("projectId") as number | undefined;
       fetchParentTasks(searchText, projectId);
     },
-    [fetchParentTasks, form]
+    [fetchParentTasks, form, isViewMode]
   );
 
   const handleProjectChange = useCallback(
     (value: number | undefined) => {
+      if (isViewMode) {
+        return;
+      }
+
       form.setFieldValue("parentTaskId", undefined);
 
       if (value === undefined || value === null) {
@@ -288,7 +333,7 @@ export default function CreateTaskModal({
 
       fetchParentTasks("", value);
     },
-    [defaultParentTaskOptions, fetchParentTasks, form]
+    [defaultParentTaskOptions, fetchParentTasks, form, isViewMode]
   );
 
   const ensureProjectOptions = useCallback(
@@ -322,30 +367,136 @@ export default function CreateTaskModal({
     ]
   );
 
+  useEffect(() => { 
+    if (!visible) {
+      return;
+    }
+
+    if ((isEditMode || isViewMode) && taskData) {
+      const currentStatus = (taskData as any)?.Status;
+      let statusValue = TaskStatus.TODO;
+      if (currentStatus === "InProgress") {
+        statusValue = TaskStatus.IN_PROGRESS;
+      } else if (currentStatus === "Done") {
+        statusValue = TaskStatus.DONE;
+      }
+
+      form.setFieldsValue({
+        code: (taskData as any)?.Code ?? "",
+        projectId: (taskData as any)?.ProjectId ?? undefined,
+        parentTaskId: (taskData as any)?.ParentTaskId ?? undefined,
+        title: (taskData as any)?.Title ?? "",
+        description: (taskData as any)?.Description ?? "",
+        status: statusValue,
+        plannedHours: (taskData as any)?.PlannedHours ?? undefined,
+        actualHours: (taskData as any)?.ActualHours ?? undefined,
+      });
+
+      if ((taskData as any)?.ProjectId) {
+        const option: SelectOption = {
+          value: Number((taskData as any).ProjectId),
+          label:
+            [
+              (taskData as any)?.ProjectCode,
+              (taskData as any)?.ProjectId
+                ? `Proje #${(taskData as any).ProjectId}`
+                : undefined,
+            ]
+              .filter(Boolean)
+              .join(" - ") || `Proje #${(taskData as any).ProjectId}`,
+          key: String((taskData as any).ProjectId),
+          raw: {
+            Id: (taskData as any).ProjectId,
+            Code: (taskData as any)?.ProjectCode,
+          },
+        };
+
+        setProjectOptions(prev => mergeOptions(prev, [option]));
+        setDefaultProjectOptions(prev => {
+          const exists = prev.some(existing => existing.value === option.value);
+          return exists ? prev : [...prev, option];
+        });
+
+        fetchParentTasks("", Number((taskData as any).ProjectId));
+      }
+
+      if ((taskData as any)?.ParentTaskId) {
+        const parentOption: SelectOption = {
+          value: Number((taskData as any).ParentTaskId),
+          label:
+            (taskData as any)?.ParentTaskCode ||
+            (taskData as any)?.ParentTaskTitle ||
+            `Görev #${(taskData as any).ParentTaskId}`,
+          key: String((taskData as any).ParentTaskId),
+          raw: {
+            Id: (taskData as any).ParentTaskId,
+            Code: (taskData as any)?.ParentTaskCode,
+            Title: (taskData as any)?.ParentTaskTitle,
+          },
+        };
+
+        setParentTaskOptions(prev => mergeOptions(prev, [parentOption]));
+        setDefaultParentTaskOptions(prev => {
+          const exists = prev.some(existing => existing.value === parentOption.value);
+          return exists ? prev : [...prev, parentOption];
+        });
+      }
+    } else if (visible) {
+      form.resetFields();
+    }
+  }, [
+    visible,
+    isEditMode,
+    isViewMode,
+    taskData,
+    form,
+    fetchParentTasks,
+  ]);
+
+  const modalTitle = isViewMode
+    ? `Görev Detayları${(taskData as any)?.code ? ` (${(taskData as any)?.code})` : ""}`
+    : isEditMode
+      ? `Görev Güncelle${(taskData as any)?.code ? ` (${(taskData as any)?.code})` : ""}`
+      : "Yeni Görev Oluştur";
+
+  const okText = isEditMode ? "Güncelle" : "Oluştur";
+  const cancelText = isViewMode ? "Kapat" : "İptal";
+
   return (
     <Modal
-      title="Yeni Görev Oluştur"
+      title={modalTitle}
       open={visible}
-      onOk={() => form.submit()}
+      onOk={isViewMode ? undefined : () => form.submit()}
       onCancel={handleCancel}
-      okText="Oluştur"
-      cancelText="İptal"
+      okText={okText}
+      cancelText={cancelText}
       width={600}
+      okButtonProps={isViewMode ? { style: { display: "none" } } : undefined}
     >
       <Form
         form={form}
         layout="vertical"
-        onFinish={handleCreate}
+        onFinish={handleSubmit}
         initialValues={{
           status: TaskStatus.TODO,
         }}
       >
+        <Form.Item
+          label="Görev Kodu"
+          name="code"
+          rules={[{ required: true, message: "Görev kodu gereklidir" }]}
+          style={{ pointerEvents: isViewMode ? 'none' : 'auto' }}
+        >
+          <Input placeholder="Görev kodu girin..." disabled={isEditMode} />
+        </Form.Item>
+
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               label="Proje"
               name="projectId"
               rules={[{ required: true, message: "Proje seçimi gereklidir" }]}
+              style={{ pointerEvents: isViewMode ? 'none' : 'auto' }}
             >
               <Select
                 showSearch
@@ -355,13 +506,13 @@ export default function CreateTaskModal({
                 onChange={handleProjectChange}
                 onDropdownVisibleChange={ensureProjectOptions}
                 filterOption={false}
-                allowClear
+                allowClear={!isViewMode}
                 loading={projectLoading}
               />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item label="Üst Görev" name="parentTaskId">
+            <Form.Item label="Üst Görev" name="parentTaskId" style={{ pointerEvents: isViewMode ? 'none' : 'auto' }}>
               <Select
                 showSearch
                 placeholder="Üst görev seçin..."
@@ -369,7 +520,7 @@ export default function CreateTaskModal({
                 onSearch={handleParentTaskSearch}
                 onDropdownVisibleChange={ensureParentTaskOptions}
                 filterOption={false}
-                allowClear
+                allowClear={!isViewMode}
                 loading={parentTaskLoading}
               />
             </Form.Item>
@@ -380,15 +531,16 @@ export default function CreateTaskModal({
           label="Başlık"
           name="title"
           rules={[{ required: true, message: "Başlık gereklidir" }]}
+          style={{ pointerEvents: isViewMode ? 'none' : 'auto' }}
         >
           <Input />
         </Form.Item>
 
-        <Form.Item label="Açıklama" name="description">
+        <Form.Item label="Açıklama" required name="description" style={{ pointerEvents: isViewMode ? 'none' : 'auto' }}>
           <TextArea rows={4} />
         </Form.Item>
 
-        <Form.Item label="Durum" name="status">
+        <Form.Item label="Durum" name="status" style={{ pointerEvents: isViewMode ? 'none' : 'auto' }}>
           <Select>
             <Select.Option value={TaskStatus.TODO}>Yapılacak</Select.Option>
             <Select.Option value={TaskStatus.IN_PROGRESS}>
@@ -398,9 +550,26 @@ export default function CreateTaskModal({
           </Select>
         </Form.Item>
 
-        <Form.Item label="Planlanan Saat" name="plannedHours">
-          <InputNumber style={{ width: "100%" }} min={0} step={0.5} />
-        </Form.Item>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item label="Planlanan Saat" name="plannedHours" style={{ pointerEvents: isViewMode ? 'none' : 'auto' }}>
+              <InputNumber
+                style={{ width: "100%" }}
+                min={0}
+                step={0.5}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item label="Gerçekleşen Saat" name="actualHours" style={{ pointerEvents: isViewMode ? 'none' : 'auto' }}>
+              <InputNumber
+                style={{ width: "100%" }}
+                min={0}
+                step={0.5}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
       </Form>
     </Modal>
   );

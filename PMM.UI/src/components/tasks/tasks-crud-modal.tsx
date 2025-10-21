@@ -1,16 +1,60 @@
 import { Button, Space } from "antd";
 import { useState } from "react";
+import { AiOutlineDelete, AiOutlineEdit, AiOutlineEye, AiOutlinePlus } from "react-icons/ai";
 import { useTasksStore } from "@/store/zustand/tasks-store";
-import DeleteConfirmModal from "./modals/delete-confirm-modal";
-import UpdateTaskModal from "./modals/update-task-modal";
+import { useNotification } from "@/hooks/useNotification";
 import CreateTaskModal from "./modals/create-task-modal";
-import { AiOutlineDelete, AiOutlineEdit, AiOutlinePlus } from "react-icons/ai";
+import DeleteConfirmModal from "./modals/delete-confirm-modal";
 
 export default function TasksCrudModal() {
-  const { selectedTask } = useTasksStore();
-  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
-  const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
+  const notification = useNotification();
+  const { selectedTask, clearSelectedTask } = useTasksStore();
+  const [taskModalVisible, setTaskModalVisible] = useState(false);
+  const [modalMode, setModalMode] = useState<"create" | "edit" | "view">("create");
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+
+  const handleCreateClick = () => {
+    setModalMode("create");
+    setTaskModalVisible(true);
+  };
+
+  const handleUpdateClick = () => {
+    if (!selectedTask || !selectedTask.Id) {
+      notification.warning("Uyarı", "Lütfen güncellemek için bir görev seçin.");
+      return;
+    }
+    setModalMode("edit");
+    setTaskModalVisible(true);
+  };
+
+  const handleViewClick = () => {
+    if (!selectedTask || !selectedTask.Id) {
+      notification.warning("Uyarı", "Lütfen görüntülemek için bir görev seçin.");
+      return;
+    }
+    setModalMode("view");
+    setTaskModalVisible(true);
+  };
+
+  const handleDeleteClick = () => {
+    if (!selectedTask || !selectedTask.Id) {
+      notification.warning("Uyarı", "Lütfen silmek için bir görev seçin.");
+      return;
+    }
+    setIsDeleteModalVisible(true);
+  };
+
+  const handleModalClose = () => {
+    setTaskModalVisible(false);
+  };
+
+  const handleDeleteModalClose = () => {
+    setIsDeleteModalVisible(false);
+  };
+
+  const handleTaskModalSuccess = () => {
+    clearSelectedTask();
+  };
 
   return (
     <div style={{ marginBottom: "16px" }}>
@@ -18,44 +62,43 @@ export default function TasksCrudModal() {
         <Button
           type="primary"
           icon={<AiOutlinePlus />}
-          size={"middle"}
-          onClick={() => setIsCreateModalVisible(true)}
+          size="middle"
+          onClick={handleCreateClick}
         />
         <Button
           type="primary"
           icon={<AiOutlineEdit />}
-          size={"middle"}
-          onClick={() => setIsUpdateModalVisible(true)}
+          size="middle"
+          onClick={handleUpdateClick}
+        />
+        <Button
+          type="primary"
+          icon={<AiOutlineEye />}
+          size="middle"
+          onClick={handleViewClick}
         />
         <Button
           type="primary"
           icon={<AiOutlineDelete />}
-          size={"middle"}
-          onClick={() => setIsDeleteModalVisible(true)}
+          size="middle"
+          onClick={handleDeleteClick}
           danger
         />
       </Space>
 
       <CreateTaskModal
-        visible={isCreateModalVisible}
-        onClose={() => setIsCreateModalVisible(false)}
+        visible={taskModalVisible}
+        onClose={handleModalClose}
+        onSuccess={handleTaskModalSuccess}
+        taskData={selectedTask as any}
+        mode={modalMode}
       />
 
-      {selectedTask && (
-        <>
-          <UpdateTaskModal
-            visible={isUpdateModalVisible}
-            onClose={() => setIsUpdateModalVisible(false)}
-            task={selectedTask}
-          />
-
-          <DeleteConfirmModal
-            visible={isDeleteModalVisible}
-            onClose={() => setIsDeleteModalVisible(false)}
-            task={selectedTask}
-          />
-        </>
-      )}
+      <DeleteConfirmModal
+        visible={isDeleteModalVisible && !!selectedTask}
+        onClose={handleDeleteModalClose}
+        task={selectedTask}
+      />
     </div>
   );
 }

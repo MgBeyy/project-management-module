@@ -5,6 +5,7 @@ import { BaseEntity, DateString } from '../common';
 export interface TaskDto extends BaseEntity {
   title: string;
   description?: string;
+  code: string;
   status: TaskStatus;
   priority: TaskPriority;
   dueDate?: DateString;

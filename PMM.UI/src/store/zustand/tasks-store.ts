@@ -3,6 +3,7 @@ import { create } from 'zustand';
 interface TaskData {
   key: number;
   Id: number | null;
+  Code: string | null;
   ProjectId: number;
   ProjectCode: string;
   ParentTaskId: number | null;

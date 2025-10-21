@@ -42,6 +42,7 @@ export default function TasksCustomTable() {
         .map((item: any, index: number) => ({
           key: index + 1,
           Id: item?.id || null,
+          Code: item?.code || null,
           ProjectId: item?.projectId || null,
           ProjectCode: item?.projectCode || null,
           ParentTaskId: item?.parentTaskId || null,
@@ -92,14 +93,14 @@ export default function TasksCustomTable() {
 
   const columns: ColumnsType<any> = [
     {
-      title: <HeaderWithTooltip title="ID" maxWidth={80} />,
-      dataIndex: "Id",
-      key: "Id",
-      width: 80,
+      title: <HeaderWithTooltip title="Görev Kodu" maxWidth={120} />,
+      dataIndex: "Code",
+      key: "Code",
+      width: 120,
       ellipsis: {
         showTitle: false,
       },
-      render: (text: number) => <span title={text?.toString()}>{text}</span>,
+      render: (text: string) => <span title={text}>{text || "-"}</span>,
     },
     {
       title: <HeaderWithTooltip title="Başlık" maxWidth={250} />,
