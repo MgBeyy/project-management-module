@@ -1,4 +1,5 @@
-﻿using PMM.Domain.Enums;
+﻿using PMM.Domain.Attributes;
+using PMM.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
@@ -17,8 +18,10 @@ namespace PMM.Domain.Forms
         public DateOnly? StartedAt { get; set; }
         public DateOnly? EndAt { get; set; }
         [JsonConverter(typeof(JsonStringEnumConverter))]
+        [ValidNullableEnum(ErrorMessage = "Geçerli bir proje durumu seçiniz.")]
         public EProjectStatus? Status { get; set; }
         [JsonConverter(typeof(JsonStringEnumConverter))]
+        [ValidEnum(ErrorMessage = "Geçerli bir proje önceliği seçiniz.")]
         public EProjectPriority Priority { get; set; } = EProjectPriority.Regular;
 
         public List<int>? ParentProjectIds { get; set; }
