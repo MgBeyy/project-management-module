@@ -347,7 +347,6 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
       </div>
     ),
     options: options,
-    maxTagCount: "responsive",
     style: { width: "100%", ...(style || {}) },
     className: `${className}`,
     tagRender: resolvedTagRender,
