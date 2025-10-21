@@ -23,6 +23,7 @@ namespace PMM.Core.Services
         private readonly ILogger<TaskService> _logger;
         private readonly IUserRepository _userRepository;
         private readonly IProjectRepository _projectRepository;
+        private readonly ITaskAssignmentRepository _taskAssignmentRepository;
 
         public TaskService(
             ITaskRepository taskRepository,
@@ -32,6 +33,7 @@ namespace PMM.Core.Services
             ILogger<TaskService> logger,
             IUserRepository userRepository,
             IProjectRepository projectRepository,
+            ITaskAssignmentRepository taskAssignmentRepository,
             IPrincipal principal)
             : base(principal, logger, userRepository)
         {
@@ -42,6 +44,7 @@ namespace PMM.Core.Services
             _logger = logger;
             _userRepository = userRepository;
             _projectRepository = projectRepository;
+            _taskAssignmentRepository = taskAssignmentRepository;
         }
 
         public async Task<TaskDto> AddTaskAsync(CreateTaskForm form)
@@ -68,6 +71,8 @@ namespace PMM.Core.Services
                     _ = await _labelRepository.GetByIdAsync(labelId) ?? throw new NotFoundException($"ID {labelId} ile etiket bulunamadı!");
             }
 
+            await ValidateAssignedUsersAsync(form.AssignedUserIds);
+
             var task = TaskMapper.Map(form);
             task.CreatedAt = DateTime.UtcNow;
             task.CreatedById = LoggedInUser.Id;
@@ -88,6 +93,22 @@ namespace PMM.Core.Services
                     _taskLabelRepository.Create(taskLabel);
                 }
                 await _taskLabelRepository.SaveChangesAsync();
+            }
+
+            if (form.AssignedUserIds != null && form.AssignedUserIds.Count != 0)
+            {
+                foreach (var userId in form.AssignedUserIds)
+                {
+                    var taskAssignment = new TaskAssignment
+                    {
+                        TaskId = task.Id,
+                        UserId = userId,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedById = LoggedInUser.Id
+                    };
+                    _taskAssignmentRepository.Create(taskAssignment);
+                }
+                await _taskAssignmentRepository.SaveChangesAsync();
             }
 
             var createdTask = await _taskRepository.GetWithLabelsAsync(task.Id);
@@ -128,6 +149,14 @@ namespace PMM.Core.Services
                     _ = await _labelRepository.GetByIdAsync(labelId) ?? throw new NotFoundException($"ID {labelId} ile etiket bulunamadı!");
             }
 
+            if (form.AssignedUserIds != null && form.AssignedUserIds.Count != 0)
+            {
+                foreach (var userId in form.AssignedUserIds)
+                {
+                    _ = await _userRepository.GetByIdAsync(userId) ?? throw new NotFoundException($"ID {userId} ile kullanıcı bulunamadı!");
+                }
+            }
+
             task = TaskMapper.Map(form, task);
             task.UpdatedAt = DateTime.UtcNow;
             task.UpdatedById = LoggedInUser.Id;
@@ -155,6 +184,45 @@ namespace PMM.Core.Services
                     _taskLabelRepository.Create(taskLabel);
                 }
                 await _taskLabelRepository.SaveChangesAsync();
+            }
+
+            var existingAssignments = await _taskAssignmentRepository.GetByTaskIdAsync(taskId);
+
+            if (form.AssignedUserIds != null)
+            {
+                var currentUserIds = existingAssignments.Select(a => a.UserId).ToHashSet();
+                var newUserIds = form.AssignedUserIds.ToHashSet();
+
+                var assignmentsToDelete = existingAssignments.Where(a => !newUserIds.Contains(a.UserId)).ToList();
+                foreach (var assignment in assignmentsToDelete)
+                {
+                    _taskAssignmentRepository.Delete(assignment);
+                }
+
+                foreach (var userId in form.AssignedUserIds)
+                {
+                    if (!currentUserIds.Contains(userId))
+                    {
+                        var newAssignment = new TaskAssignment
+                        {
+                            TaskId = task.Id,
+                            UserId = userId,
+                            CreatedAt = DateTime.UtcNow,
+                            CreatedById = LoggedInUser.Id
+                        };
+                        _taskAssignmentRepository.Create(newAssignment);
+                    }
+                }
+
+                await _taskAssignmentRepository.SaveChangesAsync();
+            }
+            else
+            {
+                foreach (var assignment in existingAssignments)
+                {
+                    _taskAssignmentRepository.Delete(assignment);
+                }
+                await _taskAssignmentRepository.SaveChangesAsync();
             }
 
             var updatedTask = await _taskRepository.GetWithLabelsAsync(task.Id);
@@ -239,6 +307,8 @@ namespace PMM.Core.Services
                 .Include(t => t.Project)
                 .Include(t => t.TaskLabels)
                     .ThenInclude(tl => tl.Label)
+                .Include(t => t.TaskAssignments)
+                    .ThenInclude(ta => ta.User)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -331,6 +401,17 @@ namespace PMM.Core.Services
         }
 
         #region Helper Methods
+
+        private async Task ValidateAssignedUsersAsync(List<int>? assignedUserIds)
+        {
+            if (assignedUserIds != null && assignedUserIds.Count != 0)
+            {
+                foreach (var userId in assignedUserIds)
+                {
+                    _ = await _userRepository.GetByIdAsync(userId) ?? throw new NotFoundException($"ID {userId} ile kullanıcı bulunamadı!");
+                }
+            }
+        }
 
         private async Task ValidateTaskStatusChangeAsync(int taskId, ETaskStatus newStatus)
         {

@@ -21,5 +21,12 @@ namespace PMM.Data.Repositories
             return await _context.Set<TaskAssignment>()
                 .FirstOrDefaultAsync(ta => ta.UserId == userId && ta.TaskId == taskId);
         }
+
+        public async Task<List<TaskAssignment>> GetByTaskIdAsync(int taskId)
+        {
+            return await _context.Set<TaskAssignment>()
+                .Where(ta => ta.TaskId == taskId)
+                .ToListAsync();
+        }
     }
 }

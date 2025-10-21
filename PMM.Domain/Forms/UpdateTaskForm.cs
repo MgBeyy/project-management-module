@@ -16,5 +16,6 @@ namespace PMM.Domain.Forms
         [Range(0, double.MaxValue, ErrorMessage = "Gerçekleşen toplam saat negatif bir değer alamaz!")]
         public decimal? ActualHours { get; set; }
         public List<int>? LabelIds { get; set; }
+        public List<int>? AssignedUserIds { get; set; }
     }
 }

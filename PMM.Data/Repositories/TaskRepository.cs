@@ -18,6 +18,8 @@ namespace PMM.Data.Repositories
                 .Include(t => t.Project)
                 .Include(t => t.TaskLabels)
                     .ThenInclude(tl => tl.Label)
+                .Include(t => t.TaskAssignments)
+                    .ThenInclude(ta => ta.User)
                 .FirstOrDefaultAsync();
         }
 
@@ -26,6 +28,8 @@ namespace PMM.Data.Repositories
             return await Query(t => t.ParentTaskId == parentTaskId)
                 .Include(t => t.TaskLabels)
                     .ThenInclude(tl => tl.Label)
+                .Include(t => t.TaskAssignments)
+                    .ThenInclude(ta => ta.User)
                 .ToListAsync();
         }
 

@@ -19,5 +19,6 @@ namespace PMM.Domain.DTOs
         public decimal? PlannedHours { get; set; }
         public decimal? ActualHours { get; set; }
         public List<LabelDto>? Labels { get; set; }
+        public List<IdNameDto>? AssignedUsers { get; set; }
     }
 }

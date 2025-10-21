@@ -38,6 +38,9 @@ namespace PMM.Core.Mappers
                 Labels = task.TaskLabels?
                     .Select(tl => LabelMapper.Map(tl.Label))
                     .ToList(),
+                AssignedUsers = task.TaskAssignments?
+                    .Select(ta => IdNameMapper.Map(ta.User.Id, ta.User.Name))
+                    .ToList(),
                 CreatedAt = task.CreatedAt,
                 CreatedById = task.CreatedById,
                 UpdatedAt = task.UpdatedAt,
