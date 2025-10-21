@@ -6,7 +6,7 @@ import "dayjs/locale/tr";
 import isoWeek from "dayjs/plugin/isoWeek";
 dayjs.extend(isoWeek);
 dayjs.locale("tr");
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { GetActivities } from "../../services/activities/get-activities";
 import { useActivitiesStore } from "@/store/zustand/activities-store";
 import CreateActivityModal from "./modals/create-activity-modal";
@@ -21,12 +21,18 @@ interface TimeSlot {
   minute: number;
 }
 
+const SLOT_HEIGHT = 21; // px height used per 15-minute slot
+
 export default function ActivitiesCalendar() {
   const { activities, setActivities, isLoading, setIsLoading, refreshTrigger } =
     useActivitiesStore();
   const [currentWeekStart, setCurrentWeekStart] = useState<Dayjs>(
     dayjs().startOf("isoWeek")
   );
+  const [currentTime, setCurrentTime] = useState(dayjs());
+  const [hasAutoScrolled, setHasAutoScrolled] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const currentTimeIndicatorRef = useRef<HTMLDivElement | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
@@ -92,6 +98,14 @@ export default function ActivitiesCalendar() {
     setCurrentWeekStart(currentWeekStart.add(1, "week"));
   };
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(dayjs());
+    }, 30000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   const goToToday = () => {
   setCurrentWeekStart(dayjs().startOf("isoWeek"));
   };
@@ -107,6 +121,45 @@ export default function ActivitiesCalendar() {
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const minutes = [0, 15, 30, 45]; // 15 dakikalık aralıklar
   const weekDays = getWeekDays();
+  const currentDayIndex = weekDays.findIndex((day) =>
+    day.isSame(currentTime, "day")
+  );
+  const isCurrentWeek = currentDayIndex !== -1;
+
+  useEffect(() => {
+    if (isLoading || hasAutoScrolled || !isCurrentWeek) {
+      return;
+    }
+
+    const indicatorEl = currentTimeIndicatorRef.current;
+    const containerEl = scrollContainerRef.current;
+
+    if (!indicatorEl || !containerEl) {
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => {
+      const indicatorRect = indicatorEl.getBoundingClientRect();
+      const containerRect = containerEl.getBoundingClientRect();
+      const indicatorOffset =
+        indicatorRect.top - containerRect.top + containerEl.scrollTop;
+      const targetScroll =
+        indicatorOffset - containerEl.clientHeight / 2;
+
+      containerEl.scrollTo({
+        top: Math.max(targetScroll, 0),
+        behavior: "auto",
+      });
+
+      setHasAutoScrolled(true);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [isLoading, hasAutoScrolled, isCurrentWeek, currentTime]);
+
+  useEffect(() => {
+    setHasAutoScrolled(false);
+  }, [currentWeekStart]);
 
   // Başlangıç zamanı bu slota denk gelen aktiviteleri getir
   // Eğer aktivite birden fazla güne yayılıyorsa, her günün başında (00:00) tekrar göster
@@ -426,8 +479,8 @@ export default function ActivitiesCalendar() {
               <div
                 style={{
                   fontSize: "24px",
-                  fontWeight: day.isSame(dayjs(), "day") ? "bold" : "normal",
-                  color: day.isSame(dayjs(), "day") ? "#1890ff" : "#000",
+                  fontWeight: day.isSame(currentTime, "day") ? "bold" : "normal",
+                  color: day.isSame(currentTime, "day") ? "#1890ff" : "#000",
                 }}
               >
                 {day.format("D")}
@@ -437,27 +490,46 @@ export default function ActivitiesCalendar() {
         </div>
 
         {/* Time Slots */}
-        <div style={{ maxHeight: "calc(100vh - 400px)", overflowY: "auto", userSelect: "none" }}>
+        <div
+          ref={scrollContainerRef}
+          style={{ maxHeight: "calc(100vh - 400px)", overflowY: "auto", userSelect: "none" }}
+        >
           {hours.map((hour) => (
             <div key={hour}>
-              {minutes.map((minute, index) => (
-                <div
-                  key={`${hour}-${minute}`}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "60px repeat(7, 1fr)",
-                    borderBottom:
-                      index === minutes.length - 1
-                        ? "1px solid #d9d9d9"
-                        : "1px solid #f5f5f5",
-                  }}
-                >
-                  {/* Hour Label - only show on first 15-min slot */}
+              {minutes.map((minute, index) => {
+                const isCurrentRow =
+                  isCurrentWeek &&
+                  currentTime.hour() === hour &&
+                  currentTime.minute() >= minute &&
+                  currentTime.minute() < minute + 15;
+                const minutesIntoSlot =
+                  currentTime.minute() - minute + currentTime.second() / 60;
+                const clampedMinutes = Math.min(
+                  Math.max(minutesIntoSlot, 0),
+                  15
+                );
+                const indicatorOffset = (clampedMinutes / 15) * SLOT_HEIGHT;
+                const indicatorLineTop = `${indicatorOffset}px`;
+                const indicatorDotTop = `${indicatorOffset}px`;
+                return (
                   <div
+                    key={`${hour}-${minute}`}
                     style={{
-                      padding: "4px 8px",
-                      textAlign: "center",
-                      fontSize: "13px",
+                      display: "grid",
+                      gridTemplateColumns: "60px repeat(7, 1fr)",
+                      borderBottom:
+                        index === minutes.length - 1
+                          ? "1px solid #d9d9d9"
+                          : "1px solid #f5f5f5",
+                      position: "relative",
+                    }}
+                  >
+                    {/* Hour Label - only show on first 15-min slot */}
+                    <div
+                      style={{
+                        padding: "0px 8px",
+                        textAlign: "center",
+                      fontSize: "12px",
                       color: "#666",
                       backgroundColor: "#fafafa",
                       borderBottom:
@@ -485,13 +557,14 @@ export default function ActivitiesCalendar() {
                       dayjs(act.StartTime).isSame(day, "day")
                     );
                     const isSelected = isSlotSelected(day, hour, minute);
-                    const isToday = day.isSame(dayjs(), "day");
+                    const isToday = day.isSame(currentTime, "day");
+                    const showIndicator = isCurrentRow && isToday;
 
                     return (
                       <div
                         key={`${day.format("YYYY-MM-DD")}-${hour}-${minute}`}
                         style={{
-                          minHeight: "40px",
+                          minHeight: "20px",
                           padding: "2px",
                           borderLeft: "1px solid #f0f0f0",
                           cursor: "pointer",
@@ -518,10 +591,41 @@ export default function ActivitiesCalendar() {
                           }
                         }}
                       >
+                        {showIndicator && (
+                          <>
+                            <div
+                              ref={currentTimeIndicatorRef}
+                              style={{
+                                position: "absolute",
+                                top: indicatorLineTop,
+                                left: "2px",
+                                right: "2px",
+                                height: "2px",
+                                backgroundColor: "#ff4d4f",
+                                zIndex: 15,
+                                pointerEvents: "none",
+                              }}
+                            />
+                            <div
+                              style={{
+                                position: "absolute",
+                                top: indicatorDotTop,
+                                left: "50%",
+                                width: "8px",
+                                height: "8px",
+                                borderRadius: "50%",
+                                backgroundColor: "#ff4d4f",
+                                transform: "translateX(-50%)",
+                                boxShadow: "0 0 0 2px #fff",
+                                zIndex: 16,
+                                pointerEvents: "none",
+                              }}
+                            />
+                          </>
+                        )}
                         {slotActivities.map((activity: any) => {
                           const duration = getActivityDuration(activity, day);
-                          const slotHeight = 40; // minHeight of each slot
-                          const activityHeight = duration * slotHeight - 4; // -4 for gap
+                          const activityHeight = duration * SLOT_HEIGHT - 4; // -4 for gap
 
                           // Kullanıcıya özel renk
                           const userColor = getUserColor(activity.UserId);
@@ -591,8 +695,9 @@ export default function ActivitiesCalendar() {
                       </div>
                     );
                   })}
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
