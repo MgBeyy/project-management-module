@@ -14,7 +14,6 @@ import { useState, useEffect, useCallback } from "react";
 import type { CSSProperties, MouseEvent } from "react";
 import { AiOutlinePlus, AiOutlineEdit } from "react-icons/ai";
 import type { InputNumberProps, SelectProps } from "antd";
-import dayjs from "dayjs";
 import MultiSelectSearch, { MultiSelectOption } from "../multi-select-search";
 import { getClientsForSelect } from "@/services/projects/get-clients-for-select";
 import { createProject } from "@/services/projects/create-project";
@@ -25,6 +24,7 @@ import { ProjectPriority } from "@/services/projects/get-projects";
 import { getProjectByCode, type ProjectDetails } from "@/services/projects/get-project-by-code";
 import type { ProjectModalProps } from "@/types/projects";
 import CreateLabelModal from "./create-label-modal";
+import { parseDate } from "@/utils/retype";
 
 const mergeOptions = (
   existing: MultiSelectOption[],
@@ -397,6 +397,9 @@ export default function CreateProjectModal({
 
   // Form'u edit veya view mode'da doldur
   useEffect(() => {
+            console.log(projectData);
+
+    
     if (!visible) {
       return;
     }
@@ -501,27 +504,11 @@ export default function CreateProjectModal({
       form.setFieldsValue({
         code: fullProjectDetails?.Code || projectData.Code,
         title: fullProjectDetails?.Title || projectData.Title,
-        plannedStartDate: fullProjectDetails?.PlannedStartDate && fullProjectDetails.PlannedStartDate !== null
-          ? dayjs(fullProjectDetails.PlannedStartDate)
-          : projectData.rawPlannedStartDate
-            ? dayjs(projectData.rawPlannedStartDate)
-            : null,
-        plannedEndDate: fullProjectDetails?.PlannedDeadLine && fullProjectDetails.PlannedDeadLine !== null
-          ? dayjs(fullProjectDetails.PlannedDeadLine)
-          : projectData.rawPlannedDeadline
-            ? dayjs(projectData.rawPlannedDeadline)
-            : null,
+        plannedStartDate: parseDate(fullProjectDetails?.PlannedStartDate) || parseDate(projectData.rawPlannedStartDate),
+        plannedEndDate: parseDate(fullProjectDetails?.PlannedDeadLine) || parseDate(projectData.rawPlannedDeadline),
         plannedHours: fullProjectDetails?.PlannedHours ?? projectData.PlannedHours,
-        startedAt: fullProjectDetails?.StartedAt && fullProjectDetails.StartedAt !== null
-          ? dayjs(fullProjectDetails.StartedAt)
-          : projectData.rawStartedAt
-            ? dayjs(projectData.rawStartedAt)
-            : null,
-        endAt: fullProjectDetails?.EndAt && fullProjectDetails.EndAt !== null
-          ? dayjs(fullProjectDetails.EndAt)
-          : projectData.rawEndAt
-            ? dayjs(projectData.rawEndAt)
-            : null,
+        startedAt: parseDate(fullProjectDetails?.StartedAt) || parseDate(projectData.rawStartedAt),
+        endAt: parseDate(fullProjectDetails?.EndAt) || parseDate(projectData.rawEndAt),
         status: fullProjectDetails?.Status
           ? statusStringToNumber(fullProjectDetails.Status)
           : projectData.rawStatus ?? 0,
@@ -812,9 +799,8 @@ export default function CreateProjectModal({
     console.log(`Proje ${isEditMode ? 'güncelleme' : 'oluşturma'} form değerleri:`, values);
 
     setIsSubmitting(true);
-    console.log("Seçili etiketler:", values.plannedStartDate);
     try {
-      if (isEditMode && projectData?.Id) {
+      if (isEditMode && projectData?.Id) {        
       const updateData: UpdateProjectData = {
         title: values.title,
         plannedStartDate: values.plannedStartDate
@@ -1022,7 +1008,7 @@ export default function CreateProjectModal({
                   width: "100%",
                   ...(viewModeFieldStyle || {}),
                 }}
-                format="YYYY-MM-DD"
+                format="DD-MM-YYYY"
                 disabled={!!isViewMode}
               />
             </Form.Item>
@@ -1040,7 +1026,7 @@ export default function CreateProjectModal({
                   width: "100%",
                   ...(viewModeFieldStyle || {}),
                 }}
-                format="YYYY-MM-DD"
+                format="DD-MM-YYYY"
                 disabled={!!isViewMode}
               />
             </Form.Item>
@@ -1053,7 +1039,7 @@ export default function CreateProjectModal({
                   width: "100%",
                   ...(viewModeFieldStyle || {}),
                 }}
-                format="YYYY-MM-DD"
+                format="DD-MM-YYYY"
                 disabled={!!isViewMode}
               />
             </Form.Item>
@@ -1066,7 +1052,7 @@ export default function CreateProjectModal({
                   width: "100%",
                   ...(viewModeFieldStyle || {}),
                 }}
-                format="YYYY-MM-DD"
+                format="DD-MM-YYYY"
                 disabled={!!isViewMode}
               />
             </Form.Item>

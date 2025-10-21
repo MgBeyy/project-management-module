@@ -96,7 +96,7 @@ export default function ProjectsFilter() {
             placeholder="Başlangıç tarihi"
             size="middle"
             style={{ width: "100%" }}
-            format="YYYY-MM-DD"
+            format="DD-MM-YYYY"
           />
         </Form.Item>
 
@@ -109,7 +109,7 @@ export default function ProjectsFilter() {
             placeholder="Bitiş tarihi"
             size="middle"
             style={{ width: "100%" }}
-            format="YYYY-MM-DD"
+            format="DD-MM-YYYY"
           />
         </Form.Item>
 
@@ -130,7 +130,7 @@ export default function ProjectsFilter() {
             placeholder="Başlangıç zamanı"
             size="middle"
             style={{ width: "100%" }}
-            format="YYYY-MM-DD HH:mm:ss"
+            format="DD-MM-YYYY HH:mm:ss"
           />
         </Form.Item>
 
@@ -140,7 +140,7 @@ export default function ProjectsFilter() {
             placeholder="Bitiş zamanı"
             size="middle"
             style={{ width: "100%" }}
-            format="YYYY-MM-DD HH:mm:ss"
+            format="DD-MM-YYYY HH:mm:ss"
           />
         </Form.Item>
 

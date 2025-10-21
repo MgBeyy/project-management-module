@@ -100,7 +100,7 @@ export default function TasksFilter() {
             placeholder="Min tarih"
             size="middle"
             style={{ width: "100%" }}
-            format="YYYY-MM-DD HH:mm:ss"
+            format="DD-MM-YYYY HH:mm:ss"
           />
         </Form.Item>
 
@@ -110,7 +110,7 @@ export default function TasksFilter() {
             placeholder="Max tarih"
             size="middle"
             style={{ width: "100%" }}
-            format="YYYY-MM-DD HH:mm:ss"
+            format="DD-MM-YYYY HH:mm:ss"
           />
         </Form.Item>
 

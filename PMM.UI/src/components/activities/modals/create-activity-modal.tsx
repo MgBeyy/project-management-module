@@ -111,7 +111,7 @@ export default function CreateActivityModal({
         >
           <DatePicker
             showTime
-            format="YYYY-MM-DD HH:mm"
+            format="DD-MM-YYYY HH:mm"
             style={{ width: "100%" }}
             placeholder="Başlangıç zamanı seçin"
           />
@@ -124,7 +124,7 @@ export default function CreateActivityModal({
         >
           <DatePicker
             showTime
-            format="YYYY-MM-DD HH:mm"
+            format="DD-MM-YYYY HH:mm"
             style={{ width: "100%" }}
             placeholder="Bitiş zamanı seçin"
           />

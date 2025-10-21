@@ -15,7 +15,6 @@ const apiClient = axios.create({
 // });
 apiClient.interceptors.response.use(
   (response) => {
-    console.log("✅ API Interceptor Response yakalandı:", response);
     return response;
   },
   (error) => {
