@@ -22,7 +22,7 @@ import { showNotification } from "@/utils/notification";
 import getMultiSelectSearch from "@/services/projects/get-multi-select-search";
 import { updateProject, UpdateProjectData } from "@/services/projects/update-project";
 import { ProjectPriority } from "@/services/projects/get-projects";
-import { getProjectByCode, type ProjectDetails } from "@/services/projects/get-project-by-code";
+import { getProjectById } from "../../../services/projects/get-project-by-code";
 import type { ProjectModalProps } from "@/types/projects";
 import CreateLabelModal from "./create-label-modal";
 
@@ -500,14 +500,19 @@ export default function CreateProjectModal({
       setEditingLabelData(null);
 
       if (derivedParentProjectIds.length > 0) {
-        const normalizedParentOptions = derivedParentProjectIds
-          .map(id => ({ value: id, label: id, key: id })) as MultiSelectOption[];
-
-        if (normalizedParentOptions.length > 0) {
-          setParentProjectOptions(prev => {
-            const merged = mergeOptions(prev, normalizedParentOptions);
-            return areOptionsEqual(prev, merged) ? prev : merged;
-          });
+        if (fullProjectDetails?.ParentProjects?.length) {
+          const parentOptions = fullProjectDetails.ParentProjects
+            .map(normalizeProjectOption)
+            .filter((option): option is MultiSelectOption => Boolean(option));
+          if (parentOptions.length > 0) {
+            handleParentOptionsSync(parentOptions);
+          }
+        } else {
+          const normalizedParentOptions = derivedParentProjectIds
+            .map(id => ({ value: id, label: `Proje ${id}`, key: id })) as MultiSelectOption[];
+          if (normalizedParentOptions.length > 0) {
+            handleParentOptionsSync(normalizedParentOptions);
+          }
         }
       }
     } else if (!isEditMode && !isViewMode) {
@@ -518,7 +523,7 @@ export default function CreateProjectModal({
 
   // Fetch full project details for edit/view modes
   useEffect(() => {
-    if (!visible || !isEditMode && !isViewMode || !projectData?.Code) {
+    if (!visible || !isEditMode && !isViewMode || !projectData?.Id) {
       setFullProjectDetails(null);
       setIsLoadingDetails(false);
       return;
@@ -527,7 +532,7 @@ export default function CreateProjectModal({
     const fetchProjectDetails = async () => {
       setIsLoadingDetails(true);
       try {
-        const details = await getProjectByCode(projectData.Id?.toString()!);
+        const details = await getProjectById(String(projectData.Id));
         setFullProjectDetails(details);
       } catch (error) {
         console.error("Proje detayları çekilirken hata:", error);
@@ -539,7 +544,7 @@ export default function CreateProjectModal({
     };
 
     fetchProjectDetails();
-  }, [visible, isEditMode, isViewMode, projectData?.Code]);
+  }, [visible, isEditMode, isViewMode, projectData?.Id]);
 
   const handleCustomerSearch = async (searchText: string) => {
     if (!searchText || searchText.trim().length < 2) {
@@ -1083,29 +1088,35 @@ export default function CreateProjectModal({
               />
             </Form.Item>
 
-            <Form.Item
-              label="Üst Projeler"
-              name="parentProjects"
-              className="mb-3"
-            >
-              <MultiSelectSearch
-                placeholder="Üst proje ara ve seç..."
-                onChange={handleParentProjectsChange}
-                value={selectedParentProjects}
-                apiUrl="/Project"
-                size="middle"
-                className="w-full"
-                disabled={isViewMode}
-                style={{
-                  width: "100%",
-                  ...(viewModeFieldStyle || {}),
-                }}
-                initialOptions={parentProjectOptions}
-                onOptionsChange={handleParentOptionsSync}
-              />
-            </Form.Item>
-
-            <Form.Item label="Etiketler" name="labels" className="mb-3">
+{isViewMode ? (
+  <Form.Item label="Üst Projeler" className="mb-3">
+    <div style={viewModeFieldStyle}>
+      {fullProjectDetails?.ParentProjects?.map((p: { id: string; code: string; title: string }) => `${p.code} - ${p.title}`).join(', ') || 'Yok'}
+    </div>
+  </Form.Item>
+) : (
+  <Form.Item
+    label="Üst Projeler"
+    name="parentProjects"
+    className="mb-3"
+  >
+    <MultiSelectSearch
+      placeholder="Üst proje ara ve seç..."
+      onChange={handleParentProjectsChange}
+      value={selectedParentProjects}
+      apiUrl="/Project"
+      size="middle"
+      className="w-full"
+      disabled={isViewMode}
+      style={{
+        width: "100%",
+        ...(viewModeFieldStyle || {}),
+      }}
+      initialOptions={parentProjectOptions}
+      onOptionsChange={handleParentOptionsSync}
+    />
+  </Form.Item>
+)}            <Form.Item label="Etiketler" name="labels" className="mb-3">
               <div className="space-y-2 flex flex-row gap-2">
                 <MultiSelectSearch
                   placeholder="Etiket ara ve seç..."

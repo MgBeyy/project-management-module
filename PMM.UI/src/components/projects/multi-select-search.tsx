@@ -53,6 +53,12 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
   const [loading, setLoading] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
+  React.useEffect(() => {
+    if (initialOptions) {
+      setOptions(prev => mergeOptionArrays(prev, initialOptions));
+    }
+  }, [initialOptions]);
+
   const loadAllOptions = async () => {
     if (disabled) {
       return;
