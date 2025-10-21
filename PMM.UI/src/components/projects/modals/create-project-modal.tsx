@@ -12,7 +12,7 @@
   Upload,
   Image,
 } from "antd";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { CSSProperties, MouseEvent, KeyboardEvent } from "react";
 import {
   AiOutlinePlus,
@@ -402,49 +402,6 @@ export default function CreateProjectModal({
     : undefined;
   const formItemNoMarginStyle: CSSProperties = { marginBottom: 0 };
 
-  const parentProjectViewText = useMemo(() => {
-    const detailProjects = resolveParentProjectsArray(fullProjectDetails);
-    const fallbackProjects = resolveParentProjectsArray(projectData);
-    const projects =
-      detailProjects.length > 0 ? detailProjects : fallbackProjects;
-
-    if (projects.length > 0) {
-      const labels = projects
-        .map(normalizeProjectOption)
-        .filter((option): option is MultiSelectOption => Boolean(option))
-        .map(option => {
-          const codeValue = (option as any)?.code;
-          const titleValue = (option as any)?.title;
-
-          if (codeValue && titleValue) {
-            return `${codeValue} - ${titleValue}`;
-          }
-
-          if (typeof option.label === "string") {
-            return option.label;
-          }
-
-          return option.value ? String(option.value) : null;
-        })
-        .filter((label): label is string => Boolean(label));
-
-      if (labels.length > 0) {
-        return Array.from(new Set(labels)).join(", ");
-      }
-    }
-
-    const detailIds = resolveParentProjectIds(fullProjectDetails);
-    if (detailIds.length > 0) {
-      return detailIds.join(", ");
-    }
-
-    const fallbackIds = resolveParentProjectIds(projectData);
-    if (fallbackIds.length > 0) {
-      return fallbackIds.join(", ");
-    }
-
-    return "Yok";
-  }, [fullProjectDetails, projectData]);
 
   const areOptionsEqual = (
     first: MultiSelectOption[],
@@ -1466,42 +1423,27 @@ export default function CreateProjectModal({
                 />
               </Form.Item>
 
-              {isViewMode ? (
-                <Form.Item label="Üst Projeler" style={formItemNoMarginStyle}>
-                  <Input
-                    value={parentProjectViewText}
-                    readOnly
-                    disabled
-                    size="middle"
-                    style={{
-                      width: "100%",
-                      ...(viewModeFieldStyle || {}),
-                    }}
-                  />
-                </Form.Item>
-              ) : (
-                <Form.Item
-                  label="Üst Projeler"
-                  name="parentProjects"
-                  style={formItemNoMarginStyle}
-                >
-                  <MultiSelectSearch
-                    placeholder="Üst proje ara ve seç..."
-                    onChange={handleParentProjectsChange}
-                    value={selectedParentProjects}
-                    apiUrl="/Project"
-                    size="middle"
-                    className="w-full"
-                    disabled={isViewMode}
-                    style={{
-                      width: "100%",
-                      ...(viewModeFieldStyle || {}),
-                    }}
-                    initialOptions={parentProjectOptions}
-                    onOptionsChange={handleParentOptionsSync}
-                  />
-                </Form.Item>
-              )}
+              <Form.Item
+                label="Üst Projeler"
+                name="parentProjects"
+                style={formItemNoMarginStyle}
+              >
+                <MultiSelectSearch
+                  placeholder="Üst proje ara ve seç..."
+                  onChange={handleParentProjectsChange}
+                  value={selectedParentProjects}
+                  apiUrl="/Project"
+                  size="middle"
+                  className="w-full"
+                  disabled={isViewMode}
+                  style={{
+                    width: "100%",
+                    ...(viewModeFieldStyle || {}),
+                  }}
+                  initialOptions={parentProjectOptions}
+                  onOptionsChange={handleParentOptionsSync}
+                />
+              </Form.Item>
               <Form.Item label="Etiketler" name="labels" style={formItemNoMarginStyle}>
                 <div className="space-y-2 flex flex-row gap-2">
                   <MultiSelectSearch
@@ -1768,3 +1710,4 @@ export default function CreateProjectModal({
     </>
   );
 }
+
