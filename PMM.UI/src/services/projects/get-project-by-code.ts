@@ -25,6 +25,7 @@ export interface ProjectDetails {
   Status: string;
   Priority: string;
   ParentProjectIds: number[];
+  ParentProjects: { id: string; code: string; title: string }[];
   ClientId: number | null;
   Labels: Label[];
   AssignedUsers: any[]; // Add assigned users
@@ -47,6 +48,7 @@ function normalize(item: any): ProjectDetails {
     Status: item?.status ?? "Belirtilmemiş",
     Priority: item?.priority ?? "Düşük",
     ParentProjectIds: item?.parentProjectIds ?? [],
+    ParentProjects: item?.parentProjects ?? [],
     ClientId: item?.clientId ?? null,
     Labels: item?.labels ?? [],
     AssignedUsers: item?.assignedUsers ?? [],
@@ -58,10 +60,10 @@ function normalize(item: any): ProjectDetails {
 }
 
 // Tries multiple endpoints to improve compatibility
-export async function getProjectByCode(code: string): Promise<ProjectDetails | null> {
-  // Attempt 1: RESTful by code: /Project/{code}
+export async function getProjectById(id: string): Promise<ProjectDetails | null> {
+  // Attempt 1: RESTful by id: /Project/{id}
   try {
-    const res = await apiClient.get(`Project/detailed/${encodeURIComponent(code)}`);
+    const res = await apiClient.get(`Project/detailed/${encodeURIComponent(id)}`);
     const raw = res.data?.result ?? res.data;
     if (raw) {
       return normalize(raw);
@@ -70,9 +72,9 @@ export async function getProjectByCode(code: string): Promise<ProjectDetails | n
     // silently fall through to next option
   }
 
-  // Attempt 2: query param: /Project?Code={code}
+  // Attempt 2: query param: /Project?Id={id}
   try {
-    const res = await apiClient.get(`Project?Code=${encodeURIComponent(code)}&page=1&pageSize=1`);
+    const res = await apiClient.get(`Project?Id=${encodeURIComponent(id)}&page=1&pageSize=1`);
     const list = res.data?.result?.data ?? res.data?.data ?? res.data;
     if (Array.isArray(list) && list.length > 0) {
       return normalize(list[0]);
