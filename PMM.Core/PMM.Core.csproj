@@ -25,4 +25,8 @@
     <PackageReference Include="NPOI" Version="2.7.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Attributes\" />
+  </ItemGroup>
+
 </Project>
