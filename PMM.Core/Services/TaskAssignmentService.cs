@@ -34,7 +34,7 @@ namespace PMM.Core.Services
                 throw new ArgumentNullException($"{typeof(CreateTaskAssignmentForm)} is empty");
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                throw new BusinessException(validation.ErrorMessage);
             _ = await _taskRepository.GetByIdAsync(form.TaskId) ?? throw new NotFoundException("Görev Bulunamadı!");
             _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("Kullanıcı Bulunamadı!");
             var ta = TaskAssignmentMapper.Map(form);

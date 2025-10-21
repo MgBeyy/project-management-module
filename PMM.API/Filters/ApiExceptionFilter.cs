@@ -15,13 +15,9 @@ namespace PMM.API.Filters
                 return;
             }
 
-            // Return 400 to indicate an error caused by the user.
             if (context.Exception is BusinessException businessException)
             {
-                if (businessException.Errors.Any())
-                    context.Result = Response(businessException.Errors, "One or more business validation errors occurred.", StatusCodes.Status400BadRequest);
-                else
-                    context.Result = Response(businessException.Message, "One or more business validation errors occurred.", StatusCodes.Status400BadRequest);
+                context.Result = Response(businessException.Message, "One or more business validation errors occurred.", StatusCodes.Status400BadRequest);
                 return;
             }
 

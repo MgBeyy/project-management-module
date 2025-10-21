@@ -37,7 +37,7 @@ namespace PMM.Core.Services
 
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                throw new BusinessException(validation.ErrorMessage);
 
             if (form.BlockingTaskId == form.BlockedTaskId)
                 throw new BusinessException("Görev kendisini bloklayamaz!");
@@ -83,7 +83,7 @@ namespace PMM.Core.Services
 
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                throw new BusinessException(validation.ErrorMessage);
 
             var task = await _taskRepository.GetByIdAsync(form.TaskId)
                 ?? throw new NotFoundException("Görev bulunamadı!");

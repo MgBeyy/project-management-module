@@ -1,29 +1,38 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text; // StringBuilder için bu using ifadesi eklenmeli
 
 namespace PMM.Core.Validators
 {
     public class FormValidatorResults
     {
         public bool IsValid { get; set; }
-        public Dictionary<string, List<string>> Errors { get; set; }
+
+        /// <summary>
+        /// Tüm doğrulama hatalarını içeren, kullanıcı tarafından okunabilir tek bir metin.
+        /// Doğrulama başarılıysa bu alan boş olacaktır.
+        /// </summary>
+        public string ErrorMessage { get; set; }
 
         public FormValidatorResults(bool isValid, List<ValidationResult> results)
         {
             IsValid = isValid;
+            ErrorMessage = string.Empty; // Başlangıçta boş olarak ayarlıyoruz
 
-            if (!isValid && results != null)
+            // Eğer doğrulama başarısızsa ve hata listesi mevcutsa
+            if (!isValid && results != null && results.Count > 0)
             {
-                Errors = new Dictionary<string, List<string>>();
+                // Çok sayıda metin birleştirme işlemi için StringBuilder kullanmak daha performanslıdır.
+                var errorBuilder = new StringBuilder();
+
                 foreach (var item in results)
                 {
-                    var message = item.ErrorMessage;
-                    foreach (var member in item.MemberNames)
-                    {
-                        if (!Errors.ContainsKey(member))
-                            Errors.Add(member, new List<string>());
-                        Errors[member].Add(message ?? string.Empty);
-                    }
+                    // Her bir hata mesajını sonuna yeni bir satır ekleyerek ekliyoruz.
+                    errorBuilder.AppendLine(item.ErrorMessage);
                 }
+
+                // Oluşturulan metni ErrorMessage özelliğine atıyoruz.
+                // Trim() metodu, metnin başındaki ve sonundaki olası boşlukları temizler.
+                ErrorMessage = errorBuilder.ToString().Trim();
             }
         }
     }

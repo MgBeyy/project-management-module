@@ -37,7 +37,7 @@ namespace PMM.Core.Services
 
                 var validation = FormValidator.Validate(form);
                 if (!validation.IsValid)
-                    throw new BusinessException(validation.Errors);
+                    throw new BusinessException(validation.ErrorMessage);
 
                 _logger.LogInformation("Creating client entity for: {Name}", form.Name);
                 var client = ClientMapper.Map(form);
@@ -73,7 +73,7 @@ namespace PMM.Core.Services
 
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                throw new BusinessException(validation.ErrorMessage);
 
             var client = await _clientRepository.GetByIdAsync(clientId);
             if (client == null)

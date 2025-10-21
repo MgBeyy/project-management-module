@@ -32,7 +32,7 @@ namespace PMM.Core.Services
 
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                throw new BusinessException(validation.ErrorMessage);
 
             var userByEmail = await _userRepository.QueryAll()
                 .FirstOrDefaultAsync(u => EF.Functions.ILike(u.Email, form.Email));
@@ -62,7 +62,7 @@ namespace PMM.Core.Services
 
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
-                throw new BusinessException(validation.Errors);
+                throw new BusinessException(validation.ErrorMessage);
 
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
