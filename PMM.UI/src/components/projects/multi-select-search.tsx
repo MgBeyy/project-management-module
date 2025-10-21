@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Select, Spin } from "antd";
 import type { SelectProps } from "antd";
 import type { CSSProperties } from "react";
@@ -53,6 +53,19 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
   const [loading, setLoading] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
+  useEffect(() => {
+    if (!initialOptions) {
+      return;
+    }
+
+    if (initialOptions.length === 0) {
+      setOptions([]);
+      return;
+    }
+
+    setOptions(prev => mergeOptionArrays(initialOptions, prev));
+  }, [initialOptions]);
+
   const loadAllOptions = async () => {
     if (disabled) {
       return;
@@ -106,10 +119,28 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
             `Item ${id}`;
         }
 
+        const resolvedColor =
+          item?.color ??
+          item?.Color ??
+          item?.hexColor ??
+          item?.HexColor ??
+          item?.hex ??
+          item?.Hex ??
+          item?.colour ??
+          item?.Colour;
+
+        const resolvedDescription =
+          item?.description ??
+          item?.Description ??
+          item?.desc ??
+          item?.Desc;
+
         return {
           value: value,
           label: label,
           key: id,
+          color: resolvedColor,
+          description: resolvedDescription,
           ...item,
         };
       });
@@ -202,10 +233,28 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
             `Item ${id}`;
         }
 
+        const resolvedColor =
+          item?.color ??
+          item?.Color ??
+          item?.hexColor ??
+          item?.HexColor ??
+          item?.hex ??
+          item?.Hex ??
+          item?.colour ??
+          item?.Colour;
+
+        const resolvedDescription =
+          item?.description ??
+          item?.Description ??
+          item?.desc ??
+          item?.Desc;
+
         return {
           value: value,
           label: label,
           key: id,
+          color: resolvedColor,
+          description: resolvedDescription,
           ...item,
         };
       });
@@ -249,6 +298,27 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
     }
   };
 
+  const resolvedTagRender = useMemo<SelectProps["tagRender"] | undefined>(() => {
+    if (!tagRender) {
+      return undefined;
+    }
+
+    return tagProps => {
+      const matchedOption =
+        options.find(option => String(option.value) === String(tagProps.value)) ||
+        (tagProps as any)?.option;
+
+      const enhancedProps = {
+        ...tagProps,
+        option: matchedOption,
+        item: matchedOption,
+        data: matchedOption,
+      } as typeof tagProps & { item: MultiSelectOption; data: MultiSelectOption };
+
+      return tagRender(enhancedProps);
+    };
+  }, [options, tagRender]);
+
   const selectProps: SelectProps = {
     mode: "multiple",
     value: value,
@@ -280,8 +350,8 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
     maxTagCount: "responsive",
     style: { width: "100%", ...(style || {}) },
     className: `${className}`,
-    tagRender,
-  };
+    tagRender: resolvedTagRender,
+  };  
 
   return (
     <div className="w-full">

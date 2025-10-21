@@ -231,6 +231,23 @@ const extractLabelEntity = (response: any) => {
   return candidate;
 };
 
+const resolveLabelColor = (label: any): string | undefined => {
+  return (
+    label?.color ??
+    label?.Color ??
+    label?.hexColor ??
+    label?.HexColor ??
+    label?.hex ??
+    label?.Hex ??
+    label?.colour ??
+    label?.Colour
+  );
+};
+
+const resolveLabelDescription = (label: any): string | undefined => {
+  return label?.description ?? label?.Description ?? label?.desc ?? label?.Desc;
+};
+
 const normalizeLabelOption = (label: any): MultiSelectOption | null => {
   if (!label) {
     return null;
@@ -255,8 +272,8 @@ const normalizeLabelOption = (label: any): MultiSelectOption | null => {
     value: stringId,
     label: resolvedName,
     key: stringId,
-    color: label?.color,
-    description: label?.description,
+    color: resolveLabelColor(label),
+    description: resolveLabelDescription(label),
     name: resolvedName,
     ...label,
   };

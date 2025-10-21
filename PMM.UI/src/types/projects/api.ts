@@ -21,6 +21,7 @@ export interface ProjectDto extends BaseEntity {
   parentProjects?: ProjectDto[];
   labelIds?: string[];
   labels?: LabelDto[];
+  Labels?: any[]
   progress?: number;
   actualHours?: number;
 

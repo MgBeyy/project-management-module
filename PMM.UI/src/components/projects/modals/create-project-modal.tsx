@@ -36,6 +36,23 @@ const mergeOptions = (
   return Array.from(map.values());
 };
 
+const resolveLabelColor = (label: any): string | undefined => {
+  return (
+    label?.color ??
+    label?.Color ??
+    label?.hexColor ??
+    label?.HexColor ??
+    label?.hex ??
+    label?.Hex ??
+    label?.colour ??
+    label?.Colour
+  );
+};
+
+const resolveLabelDescription = (label: any): string | undefined => {
+  return label?.description ?? label?.Description ?? label?.desc ?? label?.Desc;
+};
+
 const normalizeLabelOption = (label: any): MultiSelectOption | null => {
   if (!label) {
     return null;
@@ -60,8 +77,8 @@ const normalizeLabelOption = (label: any): MultiSelectOption | null => {
     value: stringId,
     label: resolvedName,
     key: stringId,
-    color: label?.color,
-    description: label?.description,
+    color: resolveLabelColor(label),
+    description: resolveLabelDescription(label),
     name: resolvedName,
     ...label,
   };
@@ -322,6 +339,7 @@ export default function CreateProjectModal({
 
   const labelTagRender: SelectProps["tagRender"] = tagProps => {
     const { label, value, closable, onClose } = tagProps;
+    
     const option = (tagProps as any)?.option;
 
     const handleMouseDown = (event: MouseEvent<HTMLSpanElement>) => {
@@ -333,11 +351,14 @@ export default function CreateProjectModal({
       event.preventDefault();
       event.stopPropagation();
 
+      // Find the label data from labelSelectOptions
+      const labelOption = labelSelectOptions.find(opt => opt.value === String(value));
+
       const labelData = {
         id: String(value),
-        name: option?.name || option?.label || '',
-        description: (option as any)?.description || '',
-        color: (option as any)?.color || '#1890ff',
+        name: labelOption?.name || labelOption?.label || '',
+        description: (labelOption as any)?.description || '',
+        color: (labelOption as any)?.color || '#1890ff',
       };
 
       setLabelModalMode('edit');
@@ -390,11 +411,6 @@ export default function CreateProjectModal({
     }
 
     if ((isEditMode || isViewMode) && projectData) {
-      // Use full project details if available, otherwise fallback to projectData
-      const dataToUse = fullProjectDetails || projectData;
-
-      const normalizedLabelOptions: MultiSelectOption[] = [];
-
       let derivedLabelIds: string[] = [];
       let derivedParentProjectIds: string[] = [];
 
@@ -425,6 +441,35 @@ export default function CreateProjectModal({
           .filter((id): id is string => Boolean(id));
       }
 
+      const normalizedLabelAccumulator: MultiSelectOption[] = [];
+
+      const pushNormalizedLabels = (labelsSource: any) => {
+        if (!Array.isArray(labelsSource)) {
+          return;
+        }
+
+        labelsSource.forEach(labelItem => {
+          const normalized = normalizeLabelOption(labelItem);
+          if (normalized) {
+            normalizedLabelAccumulator.push(normalized);
+          }
+        });
+      };
+
+      pushNormalizedLabels(fullProjectDetails?.Labels);
+      pushNormalizedLabels((fullProjectDetails as any)?.labels);
+      pushNormalizedLabels(projectData?.Labels);
+      pushNormalizedLabels((projectData as any)?.labels);
+
+      if (labelSelectOptions.length > 0 && derivedLabelIds.length > 0) {
+        const matchedExisting = labelSelectOptions.filter(option =>
+          derivedLabelIds.includes(String(option.value))
+        );
+        normalizedLabelAccumulator.push(...matchedExisting);
+      }
+
+      const normalizedLabelOptions = mergeOptions([], normalizedLabelAccumulator);
+
       const fallbackLabelOptions = derivedLabelIds
         .filter(
           id =>
@@ -432,11 +477,21 @@ export default function CreateProjectModal({
               option => String(option.value) === id
             )
         )
-        .map(id => ({
-          value: id,
-          label: id,
-          key: id,
-        })) as MultiSelectOption[];
+        .map(id => {
+          const existing =
+            normalizedLabelOptions.find(option => String(option.value) === id) ||
+            labelSelectOptions.find(option => String(option.value) === id);
+
+          if (existing) {
+            return existing;
+          }
+
+          return {
+            value: id,
+            label: id,
+            key: id,
+          } as MultiSelectOption;
+        });
 
       const combinedOptions = mergeOptions(
         normalizedLabelOptions,
@@ -495,7 +550,9 @@ export default function CreateProjectModal({
       setCustomerValue(projectData.ClientId || "");
       setSelectedParentProjects(derivedParentProjectIds);
       setSelectedLabels(derivedLabelIds);
-      setLabelSelectOptions(combinedOptions);
+      setLabelSelectOptions(prev =>
+        areOptionsEqual(prev, combinedOptions) ? prev : combinedOptions
+      );
       setLabelModalMode('create');
       setEditingLabelData(null);
 
@@ -514,7 +571,7 @@ export default function CreateProjectModal({
       // Create mode için formu temizle
       handleReset();
     }
-  }, [visible, isEditMode, isViewMode, projectData, fullProjectDetails, handleReset]);
+  }, [visible, isEditMode, isViewMode, projectData, fullProjectDetails, labelSelectOptions, handleReset]);
 
   // Fetch full project details for edit/view modes
   useEffect(() => {
@@ -725,6 +782,7 @@ export default function CreateProjectModal({
     if (isViewMode) {
       return;
     }
+
     setSelectedLabels(values);
     form.setFieldValue("labels", values);
   };
