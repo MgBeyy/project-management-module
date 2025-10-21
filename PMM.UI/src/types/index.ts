@@ -8,6 +8,7 @@ export * from './projects';
 export * from './activities';
 export * from './tasks';
 export * from './users';
+export * from './files';
 
 // Belirli türleri yeniden export et (kolay erişim için)
 export type {
@@ -45,3 +46,8 @@ export type {
   UserDto,
   UserRole,
 } from './users';
+
+export type {
+  ProjectFileDto,
+  UploadProjectFilePayload,
+} from './files';
