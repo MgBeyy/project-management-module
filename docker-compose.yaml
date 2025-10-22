@@ -6,6 +6,7 @@ services:
     ports:
       - "5000:5000"
     environment:
+      - ASPNETCORE_URLS=http://*:5000
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=pmm_db;Username=zeyd;Password=zeyd_zeyd
     depends_on:
@@ -33,7 +34,7 @@ services:
       - backend
     volumes:
       # Local kodunuzu container'a bağlar
-      - ./PMM.UI:/app 
+      - ./PMM.UI:/app
       # node_modules'in localden override edilmesini engeller
       - /app/node_modules
 

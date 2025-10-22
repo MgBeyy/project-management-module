@@ -9,6 +9,14 @@ COPY PMM.Domain/PMM.Domain.csproj PMM.Domain/
 
 RUN dotnet restore ProjectManagementModule.sln
 
+COPY . .
 
-WORKDIR /src/PMM.API
-ENTRYPOINT ["dotnet", "run", "--urls", "http://0.0.0.0:5000", "--project", "PMM.API.csproj"]
+WORKDIR "/src/PMM.API"
+RUN dotnet publish "PMM.API.csproj" -c Release -o /app/publish --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "PMM.API.dll"]
+
+
