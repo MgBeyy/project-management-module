@@ -151,6 +151,10 @@ namespace PMM.Core.Services
 
             if (form.AssignedUserIds != null && form.AssignedUserIds.Count != 0)
             {
+                var duplicateUserIds = form.AssignedUserIds.GroupBy(x => x).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+                if (duplicateUserIds.Any())
+                    throw new BusinessException($"Aynı kullanıcı birden fazla kez atanamaz. Tekrarlanan kullanıcı ID'leri: {string.Join(", ", duplicateUserIds)}");
+
                 foreach (var userId in form.AssignedUserIds)
                 {
                     _ = await _userRepository.GetByIdAsync(userId) ?? throw new NotFoundException($"ID {userId} ile kullanıcı bulunamadı!");
@@ -406,6 +410,10 @@ namespace PMM.Core.Services
         {
             if (assignedUserIds != null && assignedUserIds.Count != 0)
             {
+                var duplicateUserIds = assignedUserIds.GroupBy(x => x).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+                if (duplicateUserIds.Any())
+                    throw new BusinessException($"Aynı kullanıcı birden fazla kez atanamaz. Tekrarlanan kullanıcı ID'leri: {string.Join(", ", duplicateUserIds)}");
+
                 foreach (var userId in assignedUserIds)
                 {
                     _ = await _userRepository.GetByIdAsync(userId) ?? throw new NotFoundException($"ID {userId} ile kullanıcı bulunamadı!");

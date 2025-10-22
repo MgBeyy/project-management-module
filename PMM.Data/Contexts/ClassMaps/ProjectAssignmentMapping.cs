@@ -22,6 +22,10 @@ namespace PMM.Data.Contexts.ClassMaps
 
             builder.Property(pa => pa.UserId).IsRequired();
             builder.HasOne(pa => pa.User).WithMany(p => p.ProjectAssignments).HasForeignKey(pa => pa.UserId);
+
+            builder.HasIndex(pa => new { pa.UserId, pa.ProjectId })
+                   .IsUnique()
+                   .HasDatabaseName("IX_ProjectAssignments_UserId_ProjectId_Unique");
         }
     }
 }

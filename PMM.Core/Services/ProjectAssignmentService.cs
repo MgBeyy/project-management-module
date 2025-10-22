@@ -41,6 +41,10 @@ namespace PMM.Core.Services
             _ = await _projectRepository.GetByIdAsync(form.ProjectId) ?? throw new NotFoundException("Proje Bulunamadı!");
             _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("Kullanıcı Bulunamadı!");
 
+            var isAlreadyAssigned = await _projectAssignmentRepository.IsUserAssignedToProjectAsync(form.UserId, form.ProjectId);
+            if (isAlreadyAssigned)
+                throw new BusinessException("Bu kullanıcı zaten bu projeye atanmış durumda!");
+
             if (form.EndAt is not null && form.StartedAt is not null)
             {
                 if (form.EndAt < form.StartedAt)

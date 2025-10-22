@@ -37,6 +37,11 @@ namespace PMM.Core.Services
                 throw new BusinessException(validation.ErrorMessage);
             _ = await _taskRepository.GetByIdAsync(form.TaskId) ?? throw new NotFoundException("Görev Bulunamadı!");
             _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("Kullanıcı Bulunamadı!");
+
+            var isAlreadyAssigned = await _taskAssignmentRepository.IsUserAssignedToTaskAsync(form.UserId, form.TaskId);
+            if (isAlreadyAssigned)
+                throw new BusinessException("Bu kullanıcı zaten bu göreve atanmış durumda!");
+
             var ta = TaskAssignmentMapper.Map(form);
             ta.CreatedAt = DateTime.UtcNow;
             ta.CreatedById = LoggedInUser.Id;

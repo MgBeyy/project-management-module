@@ -18,5 +18,18 @@ namespace PMM.Data.Repositories
                 .Where(pa => pa.ProjectId == projectId)
                 .ToListAsync();
         }
+
+        public async Task<ProjectAssignment?> GetByUserIdAndProjectIdAsync(int userId, int projectId)
+        {
+            return await _context.Set<ProjectAssignment>()
+                .Where(pa => pa.UserId == userId && pa.ProjectId == projectId)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<bool> IsUserAssignedToProjectAsync(int userId, int projectId)
+        {
+            return await _context.Set<ProjectAssignment>()
+                .AnyAsync(pa => pa.UserId == userId && pa.ProjectId == projectId);
+        }
     }
 }

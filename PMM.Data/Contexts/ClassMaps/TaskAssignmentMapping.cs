@@ -17,6 +17,10 @@ namespace PMM.Data.Contexts.ClassMaps
 
             builder.Property(ta => ta.UserId).IsRequired();
             builder.HasOne(ta => ta.User).WithMany(u => u.TaskAssignments).HasForeignKey(ta => ta.UserId);
+            
+            builder.HasIndex(ta => new { ta.UserId, ta.TaskId })
+                   .IsUnique()
+                   .HasDatabaseName("IX_TaskAssignments_UserId_TaskId_Unique");
         }
     }
 }
