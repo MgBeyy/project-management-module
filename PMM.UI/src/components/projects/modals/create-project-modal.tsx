@@ -37,6 +37,9 @@ import { getProjectById } from "../../../services/projects/get-project-by-code";
 import type { ProjectModalProps } from "@/types/projects";
 import CreateLabelModal from "./create-label-modal";
 import { parseDate } from "@/utils/retype";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+dayjs.extend(utc);
 import { getProjectFiles } from "@/services/files/get-project-files";
 import { uploadProjectFile } from "@/services/files/upload-project-file";
 import { downloadProjectFile } from "@/services/files/download-project-file";
@@ -1091,17 +1094,18 @@ export default function CreateProjectModal({
       if (isEditMode && projectData?.Id) {
         const updateData: UpdateProjectData = {
           title: values.title,
+          // Interpret the selected date as a UTC date (no local timezone shift)
           plannedStartDate: values.plannedStartDate
-            ? values.plannedStartDate.valueOf()
+            ? dayjs.utc(dayjs(values.plannedStartDate).format("YYYY-MM-DD")).valueOf()
             : null,
           plannedDeadline: values.plannedEndDate
-            ? values.plannedEndDate.valueOf()
+            ? dayjs.utc(dayjs(values.plannedEndDate).format("YYYY-MM-DD")).valueOf()
             : null,
           plannedHours: values.plannedHours || null,
-          startedAt: values.startedAt ? values.startedAt.valueOf() : null,
+          startedAt: values.startedAt ? dayjs.utc(dayjs(values.startedAt).format("YYYY-MM-DD")).valueOf() : null,
           labelIds: selectedLabels,
           parentProjectIds: selectedParentProjects,
-          endAt: values.endAt ? values.endAt.valueOf() : null,
+          endAt: values.endAt ? dayjs.utc(dayjs(values.endAt).format("YYYY-MM-DD")).valueOf() : null,
           status: statusNumberToString(values.status),
           priority: values.priority,
           assignedUsers: selectedUsers.map(user => ({
@@ -1114,7 +1118,7 @@ export default function CreateProjectModal({
         showNotification.success("Proje Güncellendi", " Proje başarıyla güncellendi!");
       } else {
         // Create mode
-        console.log(values);
+        console.log(values.plannedStartDate);
 
         const createData = {
           Code: values.code || undefined,
@@ -1122,15 +1126,15 @@ export default function CreateProjectModal({
           PlannedHours: values.plannedHours || undefined,
 
           PlannedStartDate: values.plannedStartDate
-            ? values.plannedStartDate.valueOf()
+            ? dayjs.utc(dayjs(values.plannedStartDate).format("YYYY-MM-DD")).valueOf()
             : undefined,
           PlannedDeadLine: values.plannedEndDate
-            ? values.plannedEndDate.valueOf()
+            ? dayjs.utc(dayjs(values.plannedEndDate).format("YYYY-MM-DD")).valueOf()
             : undefined,
           StartedAt: values.startedAt
-            ? values.startedAt.valueOf()
+            ? dayjs.utc(dayjs(values.startedAt).format("YYYY-MM-DD")).valueOf()
             : undefined,
-          EndAt: values.endAt ? values.endAt.valueOf() : undefined,
+          EndAt: values.endAt ? dayjs.utc(dayjs(values.endAt).format("YYYY-MM-DD")).valueOf() : undefined,
 
           Status: statusNumberToString(values.status) || undefined,
           Priority: values.priority || undefined,
