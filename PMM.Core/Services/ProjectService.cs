@@ -197,6 +197,8 @@ namespace PMM.Core.Services
 
             var project = await _projectRepository.GetByIdAsync(projectId) ?? throw new NotFoundException("Proje Bulunamadı!");
 
+            var oldStatus = project.Status;
+
             // Proje tamamlanma validasyonu
             if (project.Status != form.Status && form.Status == EProjectStatus.Completed)
             {
@@ -260,6 +262,19 @@ namespace PMM.Core.Services
             project.UpdatedById = LoggedInUser.Id;
             _projectRepository.Update(project);
             await _projectRepository.SaveChangesAsync();
+
+            if (oldStatus != project.Status && project.Status == EProjectStatus.Inactive)
+            {
+                var tasks = await _taskRepository.GetByProjectIdAsync(projectId);
+                foreach (var task in tasks)
+                {
+                    task.Status = ETaskStatus.Inactive;
+                    task.UpdatedAt = DateTime.UtcNow;
+                    task.UpdatedById = LoggedInUser.Id;
+                    _taskRepository.Update(task);
+                }
+                await _taskRepository.SaveChangesAsync();
+            }
 
             var existingRelations = await _projectRelationRepository.GetByChildProjectIdAsync(projectId);
             foreach (var relation in existingRelations)
