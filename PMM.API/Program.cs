@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PMM.API.Converters;
 using PMM.API.Extensions;
+using PMM.API.Filters;
 using PMM.API.ModelBinders;
 using PMM.Data.Contexts;
 using System.Text.Json;
@@ -12,12 +13,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers(options =>
 {
-    //options.Filters.Add<ValidationFilter>();
+    options.Filters.Add<ValidationFilter>();
     options.ModelBinderProviders.Insert(0, new DateOnlyModelBinderProvider());
     options.ModelBinderProviders.Insert(0, new DateTimeModelBinderProvider());
 }).ConfigureApiBehaviorOptions(options =>
 {
-    //options.SuppressModelStateInvalidFilter = true;
+    options.SuppressModelStateInvalidFilter = true;
 });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
