@@ -638,6 +638,7 @@ namespace PMM.Core.Services
                 EProjectStatus.Inactive => "Pasif",
                 EProjectStatus.Completed => "Tamamlandı",
                 EProjectStatus.Planned => "Planlandı",
+                EProjectStatus.WaitingForApproval => "Onay Bekliyor",
                 _ => status.ToString()
             };
         }
@@ -650,6 +651,7 @@ namespace PMM.Core.Services
                 ETaskStatus.InProgress => "Devam Ediyor",
                 ETaskStatus.Done => "Tamamlandı",
                 ETaskStatus.Inactive => "Pasif",
+                ETaskStatus.WaitingForApproval => "Onay Bekliyor",
                 _ => status.ToString()
             };
         }
