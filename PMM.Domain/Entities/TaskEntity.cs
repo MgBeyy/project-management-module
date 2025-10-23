@@ -25,5 +25,6 @@ namespace PMM.Domain.Entities
 
         public virtual ICollection<TaskDependency> Blocks { get; set; }
         public virtual ICollection<TaskDependency> BlockedBy { get; set; }
+        public bool IsLast { get; set; }
     }
 }

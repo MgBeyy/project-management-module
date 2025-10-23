@@ -61,7 +61,7 @@ namespace PMM.Core.Services
             if (existingTask is not null)
                 throw new BusinessException("Bu kod ile kayıtlı bir görev bulunmaktadır.");
 
-            _ = await _projectRepository.GetByIdAsync(form.ProjectId) ?? throw new NotFoundException("İlgili Proje Bulunamadı! Önce bir proje oluşturun");
+            var project = await _projectRepository.GetByIdAsync(form.ProjectId.Value) ?? throw new NotFoundException("İlgili Proje Bulunamadı! Önce bir proje oluşturun");
             if (form.ParentTaskId.HasValue)
                 _ = await _taskRepository.GetByIdAsync(form.ParentTaskId) ?? throw new NotFoundException("İlgili üst görev Bulunamadı!");
 
@@ -111,6 +111,15 @@ namespace PMM.Core.Services
                 await _taskAssignmentRepository.SaveChangesAsync();
             }
 
+            if (task.IsLast)
+            {
+                project.Status = EProjectStatus.WaitingForApproval;
+                project.UpdatedAt = DateTime.UtcNow;
+                project.UpdatedById = LoggedInUser.Id;
+                _projectRepository.Update(project);
+                await _projectRepository.SaveChangesAsync();
+            }
+
             var createdTask = await _taskRepository.GetWithLabelsAsync(task.Id);
             return TaskMapper.Map(createdTask);
         }
@@ -136,6 +145,8 @@ namespace PMM.Core.Services
             var task = await _taskRepository.GetByIdAsync(taskId);
             if (task == null)
                 throw new NotFoundException("Görev Bulunamadı!");
+
+            var project = await _projectRepository.GetByIdAsync(task.ProjectId);
 
             // Status değişikliği validasyonu
             if (task.Status != form.Status)
@@ -166,6 +177,15 @@ namespace PMM.Core.Services
             task.UpdatedById = LoggedInUser.Id;
             _taskRepository.Update(task);
             await _taskRepository.SaveChangesAsync();
+
+            if (task.IsLast)
+            {
+                project.Status = EProjectStatus.WaitingForApproval;
+                project.UpdatedAt = DateTime.UtcNow;
+                project.UpdatedById = LoggedInUser.Id;
+                _projectRepository.Update(project);
+                await _projectRepository.SaveChangesAsync();
+            }
 
             var existingLabels = await _taskLabelRepository.GetByTaskIdAsync(taskId);
             foreach (var taskLabel in existingLabels)

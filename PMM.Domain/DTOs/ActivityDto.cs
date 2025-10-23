@@ -9,6 +9,7 @@ namespace PMM.Domain.DTOs
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
         public decimal TotalHours { get; set; }
+        public bool IsLast { get; set; }
         public DateTime CreatedAt { get; set; }
         public int CreatedById { get; set; }
         public DateTime? UpdatedAt { get; set; }

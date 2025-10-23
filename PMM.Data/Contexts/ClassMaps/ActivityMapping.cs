@@ -30,6 +30,7 @@ namespace PMM.Data.Contexts.ClassMaps
             builder.Property(a => a.EndTime).IsRequired();
 
             builder.Property(a => a.TotalHours).IsRequired().HasPrecision(18, 2);
+            builder.Property(a => a.IsLast).IsRequired();
         }
     }
 }

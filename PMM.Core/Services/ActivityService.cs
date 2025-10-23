@@ -5,6 +5,8 @@ using PMM.Core.Exceptions;
 using PMM.Core.Mappers;
 using PMM.Core.Validators;
 using PMM.Domain.DTOs;
+using PMM.Domain.Entities;
+using PMM.Domain.Enums;
 using PMM.Domain.Forms;
 using PMM.Domain.Interfaces.Repositories;
 using PMM.Domain.Interfaces.Services;
@@ -67,6 +69,15 @@ namespace PMM.Core.Services
 
             _activityRepository.Create(activity);
             await _activityRepository.SaveChangesAsync();
+
+            if (activity.IsLast)
+            {
+                task.Status = ETaskStatus.WaitingForApproval;
+                task.UpdatedAt = DateTime.UtcNow;
+                task.UpdatedById = LoggedInUser.Id;
+                _taskRepository.Update(task);
+                await _taskRepository.SaveChangesAsync();
+            }
 
             return ActivityMapper.Map(activity);
         }
@@ -187,6 +198,8 @@ namespace PMM.Core.Services
 
             var activity = await _activityRepository.GetByIdAsync(activityId) ?? throw new NotFoundException("Aktivite Bulunamadı!");
 
+            var task = await _taskRepository.GetByIdAsync(activity.TaskId);
+
             var oldHours = activity.TotalHours;
 
             ActivityMapper.Map(form, activity);
@@ -201,6 +214,15 @@ namespace PMM.Core.Services
 
             _activityRepository.Update(activity);
             await _activityRepository.SaveChangesAsync();
+
+            if (activity.IsLast)
+            {
+                task.Status = ETaskStatus.WaitingForApproval;
+                task.UpdatedAt = DateTime.UtcNow;
+                task.UpdatedById = LoggedInUser.Id;
+                _taskRepository.Update(task);
+                await _taskRepository.SaveChangesAsync();
+            }
 
             return ActivityMapper.Map(activity);
         }

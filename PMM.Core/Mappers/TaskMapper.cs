@@ -17,7 +17,8 @@ namespace PMM.Core.Mappers
                 Title = form.Title,
                 Status = form.Status,
                 PlannedHours = form.PlannedHours,
-                ActualHours = form.ActualHours
+                ActualHours = form.ActualHours,
+                IsLast = form.IsLast
             };
         }
 
@@ -35,6 +36,7 @@ namespace PMM.Core.Mappers
                 Status = task.Status,
                 PlannedHours = task.PlannedHours,
                 ActualHours = task.ActualHours,
+                IsLast = task.IsLast,
                 Labels = task.TaskLabels?
                     .Select(tl => LabelMapper.Map(tl.Label))
                     .ToList(),

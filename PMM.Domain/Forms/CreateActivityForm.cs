@@ -19,5 +19,6 @@ namespace PMM.Domain.Forms
 
         [Required]
         public DateTime EndTime { get; set; }
+        public bool IsLast { get; set; }
     }
 }

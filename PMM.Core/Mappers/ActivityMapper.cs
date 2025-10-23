@@ -42,7 +42,8 @@ namespace PMM.Core.Mappers
                 Description = form.Description,
                 StartTime = roundedStartTime,
                 EndTime = roundedEndTime,
-                TotalHours = totalHours
+                TotalHours = totalHours,
+                IsLast = form.IsLast
             };
         }
 
@@ -57,6 +58,7 @@ namespace PMM.Core.Mappers
                 StartTime = activity.StartTime,
                 EndTime = activity.EndTime,
                 TotalHours = activity.TotalHours,
+                IsLast = activity.IsLast,
                 CreatedAt = activity.CreatedAt,
                 CreatedById = activity.CreatedById,
                 UpdatedAt = activity.UpdatedAt,
@@ -84,6 +86,7 @@ namespace PMM.Core.Mappers
             activity.StartTime = roundedStartTime;
             activity.EndTime = roundedEndTime;
             activity.TotalHours = (decimal)(roundedEndTime - roundedStartTime).TotalHours;
+            activity.IsLast = form.IsLast;
 
             return activity;
         }

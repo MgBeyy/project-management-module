@@ -14,5 +14,6 @@ namespace PMM.Domain.Entities
         public DateTime EndTime { get; set; }
 
         public decimal TotalHours { get; set; }
+        public bool IsLast { get; set; }
     }
 }

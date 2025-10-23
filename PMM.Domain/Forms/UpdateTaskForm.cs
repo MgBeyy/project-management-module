@@ -17,5 +17,6 @@ namespace PMM.Domain.Forms
         public decimal? ActualHours { get; set; }
         public List<int>? LabelIds { get; set; }
         public List<int>? AssignedUserIds { get; set; }
+        public bool IsLast { get; set; }
     }
 }
