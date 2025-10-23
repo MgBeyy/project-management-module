@@ -1,0 +1,4 @@
+- yorum satýrý kullanma
+- summery vb. tagler kullanma
+- kod yazarken olabildiðince daha önceden yazýlmýþ fonksiyonlarý kullanmaya çalýþ
+- olabildiðince daha önceki yapýyý kurarak en minimum kod deðiþiklikleri ile sonuca ulaþmaya çalýþ
