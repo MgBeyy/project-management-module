@@ -6,23 +6,43 @@ namespace PMM.Core.Mappers
 {
     public class ActivityMapper
     {
-        private static decimal RoundToNearestQuarter(decimal hours)
+        private static DateTime RoundToNearest15Minutes(DateTime dateTime)
         {
-            return Math.Round(hours * 4, MidpointRounding.AwayFromZero) / 4;
+            var utcDateTime = dateTime.ToUniversalTime();
+
+            var minutes = utcDateTime.Minute;
+            var roundedMinutes = (int)Math.Round(minutes / 15.0) * 15;
+
+            if (roundedMinutes == 60)
+            {
+                return new DateTime(utcDateTime.Year, utcDateTime.Month, utcDateTime.Day, utcDateTime.Hour, 0, 0, DateTimeKind.Utc)
+                    .AddHours(1);
+            }
+
+            return new DateTime(utcDateTime.Year, utcDateTime.Month, utcDateTime.Day, utcDateTime.Hour, roundedMinutes, 0, DateTimeKind.Utc);
         }
 
         public static Activity Map(CreateActivityForm form)
         {
-            var totalHours = (decimal)(form.EndTime - form.StartTime).TotalHours;
+            var roundedStartTime = RoundToNearest15Minutes(form.StartTime);
+
+            var roundedEndTime = RoundToNearest15Minutes(form.EndTime);
+
+            if (roundedEndTime <= roundedStartTime)
+            {
+                roundedEndTime = roundedStartTime.AddMinutes(15);
+            }
+
+            var totalHours = (decimal)(roundedEndTime - roundedStartTime).TotalHours;
 
             return new Activity
             {
                 TaskId = form.TaskId,
                 UserId = form.UserId,
                 Description = form.Description,
-                StartTime = form.StartTime,
-                EndTime = form.EndTime,
-                TotalHours = RoundToNearestQuarter(totalHours)
+                StartTime = roundedStartTime,
+                EndTime = roundedEndTime,
+                TotalHours = totalHours
             };
         }
 
@@ -51,10 +71,20 @@ namespace PMM.Core.Mappers
 
         public static Activity Map(UpdateActivityForm form, Activity activity)
         {
+            var roundedStartTime = RoundToNearest15Minutes(form.StartTime);
+
+            var roundedEndTime = RoundToNearest15Minutes(form.EndTime);
+
+            if (roundedEndTime <= roundedStartTime)
+            {
+                roundedEndTime = roundedStartTime.AddMinutes(15);
+            }
+
             activity.Description = form.Description;
-            activity.StartTime = form.StartTime;
-            activity.EndTime = form.EndTime;
-            activity.TotalHours = RoundToNearestQuarter((decimal)(form.EndTime - form.StartTime).TotalHours);
+            activity.StartTime = roundedStartTime;
+            activity.EndTime = roundedEndTime;
+            activity.TotalHours = (decimal)(roundedEndTime - roundedStartTime).TotalHours;
+
             return activity;
         }
     }
