@@ -84,6 +84,12 @@ namespace PMM.Core.Services
                 }
             }
 
+            if (form.Status == EProjectStatus.Completed)
+            {
+                if (form.StartedAt == null || form.EndAt == null || form.PlannedStartDate == null || form.PlannedDeadline == null || form.PlannedHours == null)
+                    throw new BusinessException("Tamamlanmış bir proje için başlangıç, bitiş, planlanan başlangıç, planlanan bitiş tarihleri ve planlanan saat zorunludur.");
+            }
+
             if (form.ParentProjectIds != null && form.ParentProjectIds.Count != 0)
             {
                 foreach (var parentId in form.ParentProjectIds)
@@ -260,6 +266,13 @@ namespace PMM.Core.Services
             project = ProjectMapper.Map(form, project);
             project.UpdatedAt = DateTime.UtcNow;
             project.UpdatedById = LoggedInUser.Id;
+
+            if (project.Status == EProjectStatus.Completed)
+            {
+                if (project.StartedAt == null || project.EndAt == null || project.PlannedStartDate == null || project.PlannedDeadline == null || project.PlannedHours == null)
+                    throw new BusinessException("Tamamlanmış bir proje için başlangıç, bitiş, planlanan başlangıç, planlanan bitiş tarihleri ve planlanan saat zorunludur.");
+            }
+
             _projectRepository.Update(project);
             await _projectRepository.SaveChangesAsync();
 
