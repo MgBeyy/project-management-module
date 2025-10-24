@@ -29,7 +29,7 @@ export default function TaskSelect({
         query: {
           page: 1,
           pageSize: 50,
-          Title: search || undefined,
+          Search: search || undefined,
         },
       });
       
@@ -38,13 +38,19 @@ export default function TaskSelect({
       const result = response.result || response;
       const taskData = result.data || [];
       
-      const formattedTasks = taskData.map((task: any) => ({
-        value: task.id,
-        label: `${task.title} (ID: ${task.id})`,
-        title: task.title,
-        id: task.id,
-        projectId: task.projectId,
-      }));
+      const formattedTasks = taskData.map((task: any) => {
+        const taskCode = task?.code ?? task?.Code ?? "";
+        const labelSuffix = taskCode ? `Kod: ${taskCode}` : `ID: ${task?.id}`;
+
+        return {
+          value: task.id,
+          label: `${task.title} (${labelSuffix})`,
+          title: task.title,
+          id: task.id,
+          code: taskCode,
+          projectId: task.projectId,
+        };
+      });
       
       setTasks(formattedTasks);
       setLoading(false);
