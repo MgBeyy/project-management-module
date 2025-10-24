@@ -7,6 +7,15 @@ namespace PMM.Core.Security
     {
         public IIdentity Identity { get; private set; }
 
+        public AppPrincipal()
+        {
+
+            this.Id = 1;
+            this.Name = "Dev User";
+            this.Email = "dev@example.com";
+            this.Identity = new GenericIdentity(this.Email);
+        }
+
         public AppPrincipal(string userName)
         {
             this.Identity = new GenericIdentity(userName);
