@@ -81,7 +81,7 @@ export const formatDate = (dateValue: string | number | null) => {
         case "Completed":
           return "Tamamlandı";
         case "Inactive":
-          return "Beklemede";
+          return "Pasif";
         default:
           return "Belirtilmemiş";
       }
@@ -91,7 +91,7 @@ export const formatDate = (dateValue: string | number | null) => {
       0: "Planlandı",
       1: "Aktif",
       2: "Tamamlandı",
-      3: "Beklemede",
+      3: "Pasif",
     };
     
     return statusMap[status] || "Belirtilmemiş";
@@ -102,7 +102,7 @@ export const formatDate = (dateValue: string | number | null) => {
       "Planlandı": 0,
       "Aktif": 1,
       "Tamamlandı": 2,
-      "Beklemede": 3,
+      "Pasif": 3,
     };
     
     return reverseMap[status] ?? 0;

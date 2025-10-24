@@ -1181,7 +1181,7 @@ export default function CreateProjectModal({
       case "Planned": return 0;
       case "Active": return 1;
       case "Completed": return 2;
-      case "Passive": return 3;
+      case "InActive": return 3;
       default: return 0;
     }
   };
@@ -1191,7 +1191,7 @@ export default function CreateProjectModal({
       case 0: return "Planned";
       case 1: return "Active";
       case 2: return "Completed";
-      case 3: return "Passive";
+      case 3: return "InActive";
       default: return "Planned";
     }
   };
@@ -1602,6 +1602,8 @@ export default function CreateProjectModal({
                   ) : (
                     <div className="flex flex-wrap gap-3">
                       {projectFiles.map((file) => {
+                        console.log(file);
+                        
                         const extension = resolveFileExtension(file);
                         const displayName = file.title || `Dosya #${file.id}`;
                         const imagePreview = isImageFile(file);

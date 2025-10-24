@@ -72,7 +72,7 @@ export enum ProjectStatus {
   PLANNED = 0,
   ACTIVE = 1,
   COMPLETED = 2,
-  PASSIVE = 3,
+  INACTIVE = 3,
 }
 
 export enum ProjectPriority {
