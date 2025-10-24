@@ -30,7 +30,8 @@ namespace PMM.Data.Contexts.ClassMaps
 
             builder.HasIndex(td => new { td.BlockingTaskId, td.BlockedTaskId })
                    .IsUnique()
-                   .HasDatabaseName("IX_TaskDependencies_BlockingTaskId_BlockedTaskId");
+                   .HasDatabaseName("IX_TaskDependencies_BlockingTaskId_BlockedTaskId")
+                   .HasFilter(IsNotDeletedFilter);
         }
     }
 }
