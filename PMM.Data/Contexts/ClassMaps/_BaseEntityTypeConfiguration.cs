@@ -6,6 +6,8 @@ namespace PMM.Data.Contexts.ClassMaps
 {
     public abstract class _BaseEntityTypeConfiguration<TEntity> : IEntityTypeConfiguration<TEntity> where TEntity : _BaseEntity
     {
+        public const string IsNotDeletedFilter = $"\"{nameof(_BaseEntity.IsDeleted)}\" = false";
+
         public virtual void Configure(EntityTypeBuilder<TEntity> builder)
         {
             builder.HasKey(e => e.Id);

@@ -26,7 +26,8 @@ namespace PMM.Data.Contexts.ClassMaps
                    .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasIndex(pl => new { pl.ProjectId, pl.LabelId })
-                   .IsUnique();
+                   .IsUnique()
+                   .HasFilter(IsNotDeletedFilter);
         }
     }
 }
