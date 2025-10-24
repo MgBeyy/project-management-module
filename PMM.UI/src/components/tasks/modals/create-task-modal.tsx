@@ -76,15 +76,15 @@ const normalizeProjectOption = (project: any): SelectOption | null => {
     return null;
   }
 
-  const projectCode = project?.code || project?.Code;
-  const projectTitle = project?.title || project?.Title || project?.name;
+  const projectCode = project?.code;
+  const projectTitle = project?.title;
 
   const composedLabel = [projectCode, projectTitle]
     .filter(Boolean)
     .join(" - ")
     .trim();
 
-  const label = composedLabel || `Proje #${numericId}`;
+  const label = composedLabel;
 
   return {
     value: numericId,
@@ -111,9 +111,9 @@ const normalizeTaskOption = (task: any): SelectOption | null => {
   if (!rawId || Number.isNaN(numericId)) {
     return null;
   }
-
+  
   const taskCode = task?.code || task?.Code;
-  const taskTitle = task?.title || task?.Title || `Görev #${numericId}`;
+  const taskTitle = task?.title;
   const projectCode = task?.projectCode || task?.ProjectCode;
 
   const labelParts = [
@@ -491,13 +491,8 @@ export default function CreateTaskModal({
           value: Number((taskData as any).ProjectId),
           label:
             [
-              (taskData as any)?.ProjectCode,
-              (taskData as any)?.ProjectId
-                ? `Proje #${(taskData as any).ProjectId}`
-                : undefined,
-            ]
-              .filter(Boolean)
-              .join(" - ") || `Proje #${(taskData as any).ProjectId}`,
+              projectOptions.find(opt => opt.value === (taskData as any).ProjectId)?.label,
+            ].join(" - "),
           key: String((taskData as any).ProjectId),
           raw: {
             Id: (taskData as any).ProjectId,
@@ -519,8 +514,7 @@ export default function CreateTaskModal({
           value: Number((taskData as any).ParentTaskId),
           label:
             (taskData as any)?.ParentTaskCode ||
-            (taskData as any)?.ParentTaskTitle ||
-            `Görev #${(taskData as any).ParentTaskId}`,
+            (taskData as any)?.ParentTaskTitle,
           key: String((taskData as any).ParentTaskId),
           raw: {
             Id: (taskData as any).ParentTaskId,
