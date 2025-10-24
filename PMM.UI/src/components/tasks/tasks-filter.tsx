@@ -85,10 +85,10 @@ export default function TasksFilter() {
           />
         </Form.Item>
 
-        <Form.Item label="Planlanan Saat (Max)" name="plannedHoursMax" className="mb-3">
+        <Form.Item label="Planlanan Saat (Maks)" name="plannedHoursMax" className="mb-3">
           <InputNumber
             min={0}
-            placeholder="Max saat"
+            placeholder="Maks saat"
             size="middle"
             style={{ width: "100%" }}
           />
@@ -104,10 +104,10 @@ export default function TasksFilter() {
           />
         </Form.Item>
 
-        <Form.Item label="Oluşturulma (Max)" name="createdAtMax" className="mb-3">
+        <Form.Item label="Oluşturulma (Maks)" name="createdAtMax" className="mb-3">
           <DatePicker
             showTime
-            placeholder="Max tarih"
+            placeholder="Maks tarih"
             size="middle"
             style={{ width: "100%" }}
             format="DD-MM-YYYY HH:mm:ss"

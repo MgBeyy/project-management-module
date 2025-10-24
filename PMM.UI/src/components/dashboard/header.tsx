@@ -39,7 +39,7 @@ export default function Header() {
                       <Link to="/pm-module/projects">
                         <div className="flex gap-2 items-center text-gray-600">
                           <FaFolderOpen />
-                          <span>PM Module</span>
+                          <span>PM Modül</span>
                         </div>
                       </Link>
                     ),

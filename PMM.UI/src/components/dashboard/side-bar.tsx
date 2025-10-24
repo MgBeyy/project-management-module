@@ -17,7 +17,7 @@ export default function SideBar() {
       className: "h-screen",
       key: `PM_Module`,
       icon: React.createElement(icon),
-      label: `PM Module`,
+      label: `PM Modül`,
       children: itemsOptions.map((element, j) => {
         const subKey = index * 4 + j + 1;
         return {
