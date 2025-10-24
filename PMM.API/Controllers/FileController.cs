@@ -10,9 +10,14 @@ namespace PMM.API.Controllers
     public class FileController : _BaseController
     {
         private readonly IFileService _fileService;
-        public FileController(ILogger<FileController> logger, IFileService fileService) : base(logger)
+        private readonly IWebHostEnvironment _env;
+
+        public FileController(ILogger<FileController> logger,
+                              IFileService fileService,
+                              IWebHostEnvironment env) : base(logger)
         {
             _fileService = fileService;
+            _env = env;
         }
 
         [ProducesResponseType(typeof(FileDto), StatusCodes.Status201Created)]
@@ -21,7 +26,8 @@ namespace PMM.API.Controllers
         [HttpPost]
         public async Task<ApiResponse> Create([FromForm] CreateFileForm form)
         {
-            var file = await _fileService.AddFileAsync(form);
+            var physicalSavePath = Path.Combine(_env.WebRootPath, "files");
+            var file = await _fileService.AddFileAsync(form, physicalSavePath);
             return new ApiResponse(file, StatusCodes.Status201Created);
         }
 
@@ -62,7 +68,7 @@ namespace PMM.API.Controllers
         [HttpDelete("{fileId:int}")]
         public async Task<ApiResponse> Delete(int fileId)
         {
-            await _fileService.DeleteFileAsync(fileId);
+            await _fileService.DeleteFileAsync(fileId, _env.WebRootPath);
             return new ApiResponse("File deleted successfully", StatusCodes.Status200OK);
         }
 
@@ -74,13 +80,15 @@ namespace PMM.API.Controllers
         {
             var fileDto = await _fileService.GetFileAsync(fileId);
 
-            if (!System.IO.File.Exists(fileDto.File))
+            var physicalPath = Path.Combine(_env.WebRootPath, fileDto.File.TrimStart('/'));
+
+            if (!System.IO.File.Exists(physicalPath))
             {
                 return NotFound(new { message = "Dosya fiziksel olarak bulunamadý!" });
             }
 
-            var fileBytes = await System.IO.File.ReadAllBytesAsync(fileDto.File);
-            var fileName = Path.GetFileName(fileDto.File);
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(physicalPath);
+            var fileName = Path.GetFileName(physicalPath);
             var contentType = GetContentType(fileName);
 
             return File(fileBytes, contentType, fileName);
