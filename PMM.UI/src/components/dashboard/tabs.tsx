@@ -1,6 +1,5 @@
 import React from "react";
 import { Tabs } from "antd";
-import TaskTab from "./task-tab";
 
 const onChange = (key: string) => {
   console.log(key);

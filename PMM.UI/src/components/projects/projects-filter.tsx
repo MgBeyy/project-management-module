@@ -1,5 +1,5 @@
 import { Button, DatePicker, Form, Input, InputNumber, Select } from "antd";
-import type { DatePickerProps, InputNumberProps } from "antd";
+import type { InputNumberProps } from "antd";
 import { useProjectsStore } from "@/store/zustand/projects-store";
 import MultiSelectSearch from "./multi-select-search";
 import { ProjectPriority, ProjectStatus } from "@/services/projects/get-projects";
