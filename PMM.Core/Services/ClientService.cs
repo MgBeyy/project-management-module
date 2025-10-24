@@ -41,8 +41,6 @@ namespace PMM.Core.Services
 
                 _logger.LogInformation("Creating client entity for: {Name}", form.Name);
                 var client = ClientMapper.Map(form);
-                client.CreatedAt = DateTime.UtcNow;
-                client.CreatedById = LoggedInUser.Id;
 
                 _logger.LogInformation("Saving client to database: {Name}", client.Name);
                 _clientRepository.Create(client);
@@ -80,9 +78,6 @@ namespace PMM.Core.Services
                 throw new NotFoundException("Müşteri Bulunamadı!");
 
             client.Name = form.Name;
-            client.UpdatedAt = DateTime.UtcNow;
-            client.UpdatedById = LoggedInUser.Id;
-
             _clientRepository.Update(client);
             await _clientRepository.SaveChangesAsync();
 

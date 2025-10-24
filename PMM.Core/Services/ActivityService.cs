@@ -62,8 +62,6 @@ namespace PMM.Core.Services
                 throw new BusinessException("Bu kullanıcı belirtilen göreve atanmamıştır. Sadece göreve atanmış kullanıcılar aktivite ekleyebilir.");
 
             var activity = ActivityMapper.Map(form);
-            activity.CreatedAt = DateTime.UtcNow;
-            activity.CreatedById = LoggedInUser.Id;
 
             await UpdateTaskAndParentHours(task.Id, activity.TotalHours);
 
@@ -209,17 +207,12 @@ namespace PMM.Core.Services
 
             await UpdateTaskAndParentHours(activity.TaskId, hoursDifference);
 
-            activity.UpdatedAt = DateTime.UtcNow;
-            activity.UpdatedById = LoggedInUser.Id;
-
             _activityRepository.Update(activity);
             await _activityRepository.SaveChangesAsync();
 
             if (activity.IsLast)
             {
                 task.Status = ETaskStatus.WaitingForApproval;
-                task.UpdatedAt = DateTime.UtcNow;
-                task.UpdatedById = LoggedInUser.Id;
                 _taskRepository.Update(task);
                 await _taskRepository.SaveChangesAsync();
             }

@@ -57,8 +57,6 @@ namespace PMM.Core.Services
                 throw new BusinessException("Döngüsel bağımlılık oluşturulamaz!");
 
             var dependency = TaskDependencyMapper.Map(form);
-            dependency.CreatedAt = DateTime.UtcNow;
-            dependency.CreatedById = LoggedInUser.Id;
 
             _taskDependencyRepository.Create(dependency);
             await _taskDependencyRepository.SaveChangesAsync();
@@ -115,8 +113,6 @@ namespace PMM.Core.Services
                 {
                     BlockingTaskId = form.TaskId,
                     BlockedTaskId = blockedTaskId,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedById = LoggedInUser.Id
                 };
                 _taskDependencyRepository.Create(dependency);
             }
