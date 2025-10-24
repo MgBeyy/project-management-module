@@ -826,7 +826,7 @@ export default function CreateProjectModal({
         }
       }
     }
-  }, [visible, isEditMode, isViewMode, projectData, fullProjectDetails, labelSelectOptions]);
+  }, [visible, isEditMode, isViewMode, projectData, fullProjectDetails]);
 
   // Reset form when opening create mode
   useEffect(() => {

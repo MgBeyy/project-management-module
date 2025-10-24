@@ -1,10 +1,134 @@
 import { Button, DatePicker, Form, Input, InputNumber, Select } from "antd";
+import { useState, useEffect, useCallback } from "react";
 import { useTasksStore } from "@/store/zustand/tasks-store";
 import { TaskStatus } from "@/services/tasks/get-tasks";
+import getMultiSelectSearch from "@/services/projects/get-multi-select-search";
+import type { SelectProps } from "antd";
+
+const MIN_SEARCH_LENGTH = 2;
+
+type BaseSelectOption = NonNullable<SelectProps["options"]>[number];
+
+interface SelectOption extends BaseSelectOption {
+  value: number;
+  label: string;
+  key: string;
+  raw?: any;
+}
+
+const extractArrayFromResponse = (payload: any): any[] => {
+  if (!payload) {
+    return [];
+  }
+  const candidates = [
+    payload?.data
+  ];
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) {
+      return candidate;
+    }
+  }
+
+  return [];
+};
+
+const normalizeProjectOption = (project: any): SelectOption | null => {
+  const rawId = project?.id
+
+  const numericId = Number(rawId);
+
+  if (!rawId || Number.isNaN(numericId)) {
+    return null;
+  }
+
+  const projectCode = project?.code;
+  const projectTitle = project?.title;
+
+  const composedLabel = [projectCode, projectTitle]
+    .filter(Boolean)
+    .join(" - ")
+    .trim();
+  const label = composedLabel;
+  return {
+    value: numericId,
+    label,
+    key: String(numericId),
+    raw: project,
+  };
+};
 
 export default function TasksFilter() {
   const [form] = Form.useForm();
   const { setFilters, resetFilters } = useTasksStore();
+
+  const [projectOptions, setProjectOptions] = useState<SelectOption[]>([]);
+  const [defaultProjectOptions, setDefaultProjectOptions] = useState<SelectOption[]>([]);
+  const [projectLoading, setProjectLoading] = useState(false);
+
+  const loadInitialProjectData = useCallback(async () => {
+    setProjectLoading(true);
+    try {
+      const projectsRaw = await getMultiSelectSearch("", "/Project");
+      const projectList = extractArrayFromResponse(projectsRaw)
+        .map(normalizeProjectOption)
+        .filter((option): option is SelectOption => Boolean(option));
+
+      setProjectOptions(projectList);
+      setDefaultProjectOptions(projectList);
+    } catch (error) {
+      console.error("Proje seçenekleri yüklenirken hata:", error);
+    } finally {
+      setProjectLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadInitialProjectData();
+  }, [loadInitialProjectData]);
+
+  const handleProjectSearch = useCallback(
+    async (searchText: string) => {
+      const trimmed = searchText.trim();
+
+      if (!trimmed || trimmed.length < MIN_SEARCH_LENGTH) {
+        setProjectOptions(defaultProjectOptions);
+        return;
+      }
+
+      setProjectLoading(true);
+      try {
+        const projectsRaw = await getMultiSelectSearch(trimmed, "/Project");
+        const projectList = extractArrayFromResponse(projectsRaw)
+          .map(normalizeProjectOption)
+          .filter((option): option is SelectOption => Boolean(option));
+
+        setProjectOptions(projectList);
+      } catch (error) {
+        console.error("Proje arama hatası:", error);
+      } finally {
+        setProjectLoading(false);
+      }
+    },
+    [defaultProjectOptions]
+  );
+
+  const handleProjectChange = useCallback(
+    (value: number | undefined) => {
+      // Filter için project değiştiğinde herhangi bir işlem yapmıyoruz
+      console.log("Project changed:", value);
+    },
+    []
+  );
+
+  const ensureProjectOptions = useCallback(
+    (open: boolean) => {
+      if (open && projectOptions.length === 0 && defaultProjectOptions.length > 0) {
+        setProjectOptions(defaultProjectOptions);
+      }
+    },
+    [defaultProjectOptions, projectOptions.length]
+  );
 
   const handleSubmit = (values: any) => {
     const serializedPayload = {
@@ -24,7 +148,7 @@ export default function TasksFilter() {
       page: 1,
       pageSize: 50,
     };
-    
+
     const cleanedPayload = Object.fromEntries(
       Object.entries(serializedPayload).filter(
         ([_, value]) => value !== undefined && value !== null && value !== ""
@@ -66,16 +190,23 @@ export default function TasksFilter() {
         <Form.Item label="Açıklama" name="description" className="mb-3">
           <Input placeholder="Açıklama" size="middle" />
         </Form.Item>
-
-        <Form.Item label="Proje ID" name="projectId" className="mb-3">
-          <InputNumber
-            placeholder="Proje ID"
-            size="middle"
-            style={{ width: "100%" }}
-            min={1}
+        <Form.Item
+          label="Proje"
+          name="projectId"
+          className="mb-3"
+        >
+          <Select
+            showSearch
+            placeholder="Proje seçin..."
+            options={projectOptions}
+            onSearch={handleProjectSearch}
+            onChange={handleProjectChange}
+            onDropdownVisibleChange={ensureProjectOptions}
+            filterOption={false}
+            allowClear
+            loading={projectLoading}
           />
         </Form.Item>
-
         <Form.Item label="Planlanan Saat (Min)" name="plannedHoursMin" className="mb-3">
           <InputNumber
             min={0}
