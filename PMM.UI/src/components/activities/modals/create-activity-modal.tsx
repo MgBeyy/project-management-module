@@ -110,7 +110,7 @@ export default function CreateActivityModal({
           rules={[{ required: true, message: "Başlangıç zamanı gereklidir" }]}
         >
           <DatePicker
-            showTime
+            showTime={{ format: "HH:mm", minuteStep: 15 }}
             format="DD-MM-YYYY HH:mm"
             style={{ width: "100%" }}
             placeholder="Başlangıç zamanı seçin"
@@ -123,7 +123,7 @@ export default function CreateActivityModal({
           rules={[{ required: true, message: "Bitiş zamanı gereklidir" }]}
         >
           <DatePicker
-            showTime
+            showTime={{ format: "HH:mm", minuteStep: 15 }}
             format="DD-MM-YYYY HH:mm"
             style={{ width: "100%" }}
             placeholder="Bitiş zamanı seçin"
