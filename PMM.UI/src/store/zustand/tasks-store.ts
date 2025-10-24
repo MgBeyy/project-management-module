@@ -16,6 +16,12 @@ interface TaskData {
   UpdatedById: number | null;
   PlannedHours: number | null;
   ActualHours: number | null;
+  AssignedUsers: Array<{
+    id: string;
+    name: string;
+  }>;
+  ParentTaskCode: string | null;
+  ParentTaskTitle: string | null;
 }
 
 interface TasksState {

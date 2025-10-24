@@ -55,6 +55,7 @@ export default function TasksCustomTable() {
           UpdatedById: item?.updatedById || null,
           PlannedHours: item?.plannedHours || null,
           ActualHours: item?.actualHours || null,
+          AssignedUsers: item?.assignedUsers || [],
         }));
             
       setTasks(transformedData);
@@ -197,6 +198,8 @@ export default function TasksCustomTable() {
   ];
 
   function onRowClick(record: any) {
+    console.log(record);
+    
     setSelectedTask(record);
   }
 

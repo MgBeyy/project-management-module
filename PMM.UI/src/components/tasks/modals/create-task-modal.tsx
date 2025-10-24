@@ -63,12 +63,7 @@ const normalizeProjectOption = (project: any): SelectOption | null => {
     return null;
   }
 
-  const rawId =
-    project?.id ??
-    project?.Id ??
-    project?.projectId ??
-    project?.value ??
-    project?.key;
+  const rawId = project?.id
 
   const numericId = Number(rawId);
 
@@ -111,7 +106,7 @@ const normalizeTaskOption = (task: any): SelectOption | null => {
   if (!rawId || Number.isNaN(numericId)) {
     return null;
   }
-  
+
   const taskCode = task?.code || task?.Code;
   const taskTitle = task?.title;
   const projectCode = task?.projectCode || task?.ProjectCode;
@@ -134,12 +129,14 @@ export default function CreateTaskModal({
   visible,
   onClose,
   onSuccess,
-  taskData,
   mode = "create",
 }: TaskModalProps) {
   const notification = useNotification();
   const [form] = Form.useForm();
-  const { triggerRefresh } = useTasksStore();
+  const { triggerRefresh, selectedTask } = useTasksStore();
+
+  // Use selectedTask from zustand if available, otherwise use prop
+  const currentTaskData = selectedTask;
 
   const [projectOptions, setProjectOptions] = useState<SelectOption[]>([]);
   const [defaultProjectOptions, setDefaultProjectOptions] = useState<SelectOption[]>([]);
@@ -151,14 +148,15 @@ export default function CreateTaskModal({
 
 
   // User assignment state
-  const [selectedUsers, setSelectedUsers] = useState<{ userId: string; name: string }[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<{ id: string; name: string }[]>([]);
   const [userOptions, setUserOptions] = useState<MultiSelectOption[]>([]);
   const [userLoading, setUserLoading] = useState(false);
   const [userSearchValue, setUserSearchValue] = useState("");
-
+  console.log(currentTaskData);
+  
   const handleRemoveUser = (userId: string) => {
     if (isViewMode) return;
-    setSelectedUsers(prev => prev.filter(user => user.userId !== userId));
+    setSelectedUsers(prev => prev.filter(user => user.id !== userId));
   };
 
   const handleAddUser = (userId: string) => {
@@ -168,59 +166,30 @@ export default function CreateTaskModal({
     if (!userOption) return;
 
     // Kullanıcı zaten ekli mi kontrol et
-    if (selectedUsers.some(user => user.userId === userId)) {
+    if (selectedUsers.some(user => user.id === userId)) {
       return;
     }
 
     const newUser = {
-      userId,
+      id: userId,
       name: typeof userOption.label === 'string' ? userOption.label : String(userOption.label),
-      role: 'Member',
     };
 
     setSelectedUsers(prev => [...prev, newUser]);
   };
 
-   const handleUserSearch = async (searchText: string) => {
-      if (!searchText || searchText.trim().length === 0) {
-        // Boş arama için tüm listeyi yükle
-        setUserLoading(true);
-        try {
-          const response = await getMultiSelectSearch("", "/User");
-          const apiResult = extractArrayFromResponse(response.data);
-  
-          const formattedOptions: MultiSelectOption[] = apiResult.map((item: any) => {
-            const id = item.id?.toString() || Math.random().toString();
-            const name = item.name || item.title || `${item.firstName || ""} ${item.lastName || ""}`.trim() || `User ${id}`;
-  
-            return {
-              value: id,
-              label: name,
-              key: id,
-              ...item,
-            };
-          });
-  
-          setUserOptions(formattedOptions);
-        } catch (error) {
-          console.error("Kullanıcı listesi yükleme hatası:", error);
-          setUserOptions([]);
-        } finally {
-          setUserLoading(false);
-        }
-        return;
-      }
-  
+  const handleUserSearch = async (searchText: string) => {
+    if (!searchText || searchText.trim().length === 0) {
+      // Boş arama için tüm listeyi yükle
       setUserLoading(true);
-  
       try {
-        const response = await getMultiSelectSearch(searchText, "/User");
+        const response = await getMultiSelectSearch("", "/User");
         const apiResult = extractArrayFromResponse(response.data);
-  
+
         const formattedOptions: MultiSelectOption[] = apiResult.map((item: any) => {
           const id = item.id?.toString() || Math.random().toString();
           const name = item.name || item.title || `${item.firstName || ""} ${item.lastName || ""}`.trim() || `User ${id}`;
-  
+
           return {
             value: id,
             label: name,
@@ -228,21 +197,48 @@ export default function CreateTaskModal({
             ...item,
           };
         });
-  
+
         setUserOptions(formattedOptions);
       } catch (error) {
-        console.error("Kullanıcı arama hatası:", error);
+        console.error("Kullanıcı listesi yükleme hatası:", error);
         setUserOptions([]);
       } finally {
         setUserLoading(false);
       }
-    };
+      return;
+    }
+
+    setUserLoading(true);
+
+    try {
+      const response = await getMultiSelectSearch(searchText, "/User");
+      const apiResult = extractArrayFromResponse(response.data);
+
+      const formattedOptions: MultiSelectOption[] = apiResult.map((item: any) => {
+        const id = item.id?.toString() || Math.random().toString();
+        const name = item.name || item.title || `${item.firstName || ""} ${item.lastName || ""}`.trim() || `User ${id}`;
+
+        return {
+          value: id,
+          label: name,
+          key: id,
+          ...item,
+        };
+      });
+
+      setUserOptions(formattedOptions);
+    } catch (error) {
+      console.error("Kullanıcı arama hatası:", error);
+      setUserOptions([]);
+    } finally {
+      setUserLoading(false);
+    }
+  };
 
 
-  const isEditMode = mode === "edit" && !!taskData;
-  const isViewMode = mode === "view" && !!taskData;
-  const resolvedTaskId =
-    taskData && ("Id" in (taskData as any) ? (taskData as any).Id : (taskData as any)?.id);
+  const isEditMode = mode === "edit" && !!currentTaskData;
+  const isViewMode = mode === "view" && !!currentTaskData;
+  const resolvedTaskId = currentTaskData?.Id;
 
   const closeModal = useCallback(() => {
     form.resetFields();
@@ -297,7 +293,7 @@ export default function CreateTaskModal({
 
     const normalizedValues = {
       ...values,
-      assignedUserIds: selectedUsers.map(user => user.userId),
+      assignedUserIds: selectedUsers.map(user => user.id),
       parentTaskId: values.parentTaskId ?? null,
       plannedHours: values.plannedHours ?? null,
       actualHours: values.actualHours ?? null,
@@ -466,8 +462,8 @@ export default function CreateTaskModal({
       return;
     }
 
-    if ((isEditMode || isViewMode) && taskData) {
-      const currentStatus = (taskData as any)?.Status;
+    if ((isEditMode || isViewMode) && currentTaskData) {
+      const currentStatus = (currentTaskData as any)?.Status;
       let statusValue = TaskStatus.TODO;
       if (currentStatus === "InProgress") {
         statusValue = TaskStatus.IN_PROGRESS;
@@ -476,27 +472,28 @@ export default function CreateTaskModal({
       }
 
       form.setFieldsValue({
-        code: (taskData as any)?.Code ?? "",
-        projectId: (taskData as any)?.ProjectId ?? undefined,
-        parentTaskId: (taskData as any)?.ParentTaskId ?? undefined,
-        title: (taskData as any)?.Title ?? "",
-        description: (taskData as any)?.Description ?? "",
+        code: currentTaskData?.Code ?? "",
+        projectId: currentTaskData?.ProjectId ?? undefined,
+        parentTaskId: currentTaskData?.ParentTaskId ?? undefined,
+        title: currentTaskData?.Title ?? "",
+        description: currentTaskData?.Description ?? "",
         status: statusValue,
-        plannedHours: (taskData as any)?.PlannedHours ?? undefined,
-        actualHours: (taskData as any)?.ActualHours ?? undefined,
+        plannedHours: currentTaskData?.PlannedHours ?? undefined,
+        actualHours: currentTaskData?.ActualHours ?? undefined,
       });
 
-      if ((taskData as any)?.ProjectId) {
+      if (currentTaskData?.ProjectId) {
         const option: SelectOption = {
-          value: Number((taskData as any).ProjectId),
-          label:
-            [
-              projectOptions.find(opt => opt.value === (taskData as any).ProjectId)?.label,
-            ].join(" - "),
-          key: String((taskData as any).ProjectId),
+          value: Number(currentTaskData?.ProjectId),
+          label: String(
+            projectOptions.find(opt => opt.value === currentTaskData?.ProjectId)?.label ??
+            currentTaskData?.ProjectCode ??
+            ""
+          ),
+          key: String(currentTaskData?.ProjectId),
           raw: {
-            Id: (taskData as any).ProjectId,
-            Code: (taskData as any)?.ProjectCode,
+            Id: currentTaskData?.ProjectId,
+            Code: currentTaskData?.ProjectCode,
           },
         };
 
@@ -505,21 +502,20 @@ export default function CreateTaskModal({
           const exists = prev.some(existing => existing.value === option.value);
           return exists ? prev : [...prev, option];
         });
+        setSelectedUsers(currentTaskData?.AssignedUsers);
 
-        fetchParentTasks("", Number((taskData as any).ProjectId));
+        // fetchParentTasks("", Number((currentTaskData as any).ProjectId)); // Removed to avoid API call in modal
       }
 
-      if ((taskData as any)?.ParentTaskId) {
+      if (currentTaskData?.ParentTaskId) {
         const parentOption: SelectOption = {
-          value: Number((taskData as any).ParentTaskId),
-          label:
-            (taskData as any)?.ParentTaskCode ||
-            (taskData as any)?.ParentTaskTitle,
-          key: String((taskData as any).ParentTaskId),
+          value: Number(currentTaskData?.ParentTaskId),
+          label: String(currentTaskData?.ParentTaskCode ?? currentTaskData?.ParentTaskTitle ?? ""),
+          key: String(currentTaskData?.ParentTaskId),
           raw: {
-            Id: (taskData as any).ParentTaskId,
-            Code: (taskData as any)?.ParentTaskCode,
-            Title: (taskData as any)?.ParentTaskTitle,
+            Id: currentTaskData?.ParentTaskId,
+            Code: currentTaskData?.ParentTaskCode,
+            Title: currentTaskData?.ParentTaskTitle,
           },
         };
 
@@ -537,15 +533,15 @@ export default function CreateTaskModal({
     visible,
     isEditMode,
     isViewMode,
-    taskData,
+    currentTaskData,
     form,
     fetchParentTasks,
   ]);
 
   const modalTitle = isViewMode
-    ? `Görev Detayları${(taskData as any)?.code ? ` (${(taskData as any)?.code})` : ""}`
+    ? `Görev Detayları${currentTaskData?.Code ? ` (${currentTaskData?.Code})` : ""}`
     : isEditMode
-      ? `Görev Güncelle${(taskData as any)?.code ? ` (${(taskData as any)?.code})` : ""}`
+      ? `Görev Güncelle${currentTaskData?.Code ? ` (${currentTaskData?.Code})` : ""}`
       : "Yeni Görev Oluştur";
 
   const okText = isEditMode ? "Güncelle" : "Oluştur";
@@ -665,12 +661,12 @@ export default function CreateTaskModal({
 
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {selectedUsers.map((user) => {
-                const userOption = userOptions.find(option => option.value === user.userId);
-                const userName = userOption?.label || user.name || `User ${user.userId}`;
+                const userOption = userOptions.find(option => option.value === user.id);
+                const userName = userOption?.label || user.name || `User ${user.id}`;
 
                 return (
                   <div
-                    key={user.userId}
+                    key={user.id}
                     className="flex items-center mt-1 p-1 pl-3 rounded-lg border border-gray-200 bg-white"
                   >
                     <div className="flex-1">
@@ -681,7 +677,7 @@ export default function CreateTaskModal({
                         type="text"
                         danger
                         icon={<AiOutlinePlus style={{ transform: 'rotate(45deg)' }} />}
-                        onClick={() => handleRemoveUser(user.userId)}
+                        onClick={() => handleRemoveUser(user.id)}
                         size="small"
                       />
                     )}

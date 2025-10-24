@@ -63,10 +63,6 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
     setOptions(prev => mergeOptionArrays(initialOptions, prev));
   }, [initialOptions]);
 
-  useEffect(() => {
-   console.log("optins", options);
-  }, [options]);
-
   
   const handleSearch = async (searchText: string) => {
     if (disabled) {

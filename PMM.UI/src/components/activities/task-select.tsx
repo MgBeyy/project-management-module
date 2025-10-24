@@ -32,9 +32,7 @@ export default function TaskSelect({
           Search: search || undefined,
         },
       });
-      
-      console.log("Tasks API response:", response);
-      
+            
       const result = response.result || response;
       const taskData = result.data || [];
       

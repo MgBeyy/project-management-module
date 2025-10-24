@@ -27,7 +27,6 @@ export default function UserSelect({
       setLoading(true);
       const response = await GetUsers(search);
       
-      console.log("Users API response:", response);
       
       const result = response.result || response;
       const userData = result.data || [];
