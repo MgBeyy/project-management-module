@@ -1528,10 +1528,10 @@ export default function CreateProjectModal({
                     return (
                       <div
                         key={user.userId}
-                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border"
+                        className="flex items-center mt-1 p-1 pl-3 rounded-lg border border-gray-200 bg-white"
                       >
                         <div className="flex-1">
-                          <span className="font-medium text-gray-900">{userName}</span>
+                          <span className="font-sm text-gray-900">{userName}</span>
                         </div>
 
                         <Select
@@ -1666,7 +1666,7 @@ export default function CreateProjectModal({
             )}
 
             <Form.Item style={formItemNoMarginStyle}>
-              <div className="flex justify-end w-full gap-3">
+              <div className="flex justify-end w-full gap-3 pt-3">
                 <Button
                   onClick={handleModalClose}
                   size="middle"

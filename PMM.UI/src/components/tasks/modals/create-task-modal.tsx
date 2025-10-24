@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Modal, Form, Input, InputNumber, Select, Row, Col } from "antd";
+import { Modal, Form, Input, InputNumber, Select, Row, Col, AutoComplete, Button, Spin } from "antd";
 import type { SelectProps } from "antd";
 import { useNotification } from "@/hooks/useNotification";
 import { useTasksStore } from "@/store/zustand/tasks-store";
@@ -9,6 +9,8 @@ import { createTask } from "@/services/tasks/create-task";
 import { TaskStatus } from "@/services/tasks/get-tasks";
 import { updateTask } from "@/services/tasks/update-task";
 import type { TaskModalProps } from "@/types/tasks";
+import { AiOutlinePlus } from "react-icons/ai";
+import { MultiSelectOption } from "@/types";
 
 
 const { TextArea } = Input;
@@ -147,6 +149,96 @@ export default function CreateTaskModal({
   const [defaultParentTaskOptions, setDefaultParentTaskOptions] = useState<SelectOption[]>([]);
   const [parentTaskLoading, setParentTaskLoading] = useState(false);
 
+
+  // User assignment state
+  const [selectedUsers, setSelectedUsers] = useState<{ userId: string; name: string }[]>([]);
+  const [userOptions, setUserOptions] = useState<MultiSelectOption[]>([]);
+  const [userLoading, setUserLoading] = useState(false);
+  const [userSearchValue, setUserSearchValue] = useState("");
+
+  const handleRemoveUser = (userId: string) => {
+    if (isViewMode) return;
+    setSelectedUsers(prev => prev.filter(user => user.userId !== userId));
+  };
+
+  const handleAddUser = (userId: string) => {
+    if (isViewMode) return;
+
+    const userOption = userOptions.find(option => option.value === userId);
+    if (!userOption) return;
+
+    // Kullanıcı zaten ekli mi kontrol et
+    if (selectedUsers.some(user => user.userId === userId)) {
+      return;
+    }
+
+    const newUser = {
+      userId,
+      name: typeof userOption.label === 'string' ? userOption.label : String(userOption.label),
+      role: 'Member',
+    };
+
+    setSelectedUsers(prev => [...prev, newUser]);
+  };
+
+   const handleUserSearch = async (searchText: string) => {
+      if (!searchText || searchText.trim().length === 0) {
+        // Boş arama için tüm listeyi yükle
+        setUserLoading(true);
+        try {
+          const response = await getMultiSelectSearch("", "/User");
+          const apiResult = extractArrayFromResponse(response.data);
+  
+          const formattedOptions: MultiSelectOption[] = apiResult.map((item: any) => {
+            const id = item.id?.toString() || Math.random().toString();
+            const name = item.name || item.title || `${item.firstName || ""} ${item.lastName || ""}`.trim() || `User ${id}`;
+  
+            return {
+              value: id,
+              label: name,
+              key: id,
+              ...item,
+            };
+          });
+  
+          setUserOptions(formattedOptions);
+        } catch (error) {
+          console.error("Kullanıcı listesi yükleme hatası:", error);
+          setUserOptions([]);
+        } finally {
+          setUserLoading(false);
+        }
+        return;
+      }
+  
+      setUserLoading(true);
+  
+      try {
+        const response = await getMultiSelectSearch(searchText, "/User");
+        const apiResult = extractArrayFromResponse(response.data);
+  
+        const formattedOptions: MultiSelectOption[] = apiResult.map((item: any) => {
+          const id = item.id?.toString() || Math.random().toString();
+          const name = item.name || item.title || `${item.firstName || ""} ${item.lastName || ""}`.trim() || `User ${id}`;
+  
+          return {
+            value: id,
+            label: name,
+            key: id,
+            ...item,
+          };
+        });
+  
+        setUserOptions(formattedOptions);
+      } catch (error) {
+        console.error("Kullanıcı arama hatası:", error);
+        setUserOptions([]);
+      } finally {
+        setUserLoading(false);
+      }
+    };
+
+
   const isEditMode = mode === "edit" && !!taskData;
   const isViewMode = mode === "view" && !!taskData;
   const resolvedTaskId =
@@ -154,6 +246,7 @@ export default function CreateTaskModal({
 
   const closeModal = useCallback(() => {
     form.resetFields();
+    setSelectedUsers([]);
     setProjectOptions(defaultProjectOptions);
     setParentTaskOptions(defaultParentTaskOptions);
     onClose();
@@ -204,6 +297,7 @@ export default function CreateTaskModal({
 
     const normalizedValues = {
       ...values,
+      assignedUserIds: selectedUsers.map(user => user.userId),
       parentTaskId: values.parentTaskId ?? null,
       plannedHours: values.plannedHours ?? null,
       actualHours: values.actualHours ?? null,
@@ -367,7 +461,7 @@ export default function CreateTaskModal({
     ]
   );
 
-  useEffect(() => { 
+  useEffect(() => {
     if (!visible) {
       return;
     }
@@ -443,6 +537,7 @@ export default function CreateTaskModal({
       }
     } else if (visible) {
       form.resetFields();
+      setSelectedUsers([]);
     }
   }, [
     visible,
@@ -540,6 +635,74 @@ export default function CreateTaskModal({
           <TextArea rows={4} />
         </Form.Item>
 
+        <Form.Item label="Görev Ekibi">
+          <div className="space-y-3">
+            {!isViewMode && (
+              <AutoComplete
+                value={userSearchValue}
+                options={userOptions}
+                onSearch={handleUserSearch}
+                onSelect={(value) => {
+                  handleAddUser(value);
+                  setUserSearchValue("");
+                }}
+                onChange={setUserSearchValue}
+                onFocus={() => handleUserSearch("")}
+                placeholder="Kullanıcı ara ve ekle..."
+                notFoundContent={
+                  userLoading ? (
+                    <div className="flex justify-center items-center py-2">
+                      <Spin size="small" />
+                      <span className="ml-2">Kullanıcılar aranıyor...</span>
+                    </div>
+                  ) : (
+                    "Kullanıcı bulunamadı"
+                  )
+                }
+                allowClear
+                size="middle"
+                style={{
+                  width: "100%",
+                }}
+                filterOption={false}
+                showSearch={true}
+              />
+            )}
+
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {selectedUsers.map((user) => {
+                const userOption = userOptions.find(option => option.value === user.userId);
+                const userName = userOption?.label || user.name || `User ${user.userId}`;
+
+                return (
+                  <div
+                    key={user.userId}
+                    className="flex items-center mt-1 p-1 pl-3 rounded-lg border border-gray-200 bg-white"
+                  >
+                    <div className="flex-1">
+                      <span className="font-sm text-gray-900">{userName}</span>
+                    </div>
+                    {!isViewMode && (
+                      <Button
+                        type="text"
+                        danger
+                        icon={<AiOutlinePlus style={{ transform: 'rotate(45deg)' }} />}
+                        onClick={() => handleRemoveUser(user.userId)}
+                        size="small"
+                      />
+                    )}
+                  </div>
+                );
+              })}
+
+              {selectedUsers.length === 0 && (
+                <div className="text-center py-2 text-gray-500">
+                  Henüz ekip üyesi eklenmemiş
+                </div>
+              )}
+            </div>
+          </div>
+        </Form.Item>
         <Form.Item label="Durum" name="status" style={{ pointerEvents: isViewMode ? 'none' : 'auto' }}>
           <Select>
             <Select.Option value={TaskStatus.TODO}>Yapılacak</Select.Option>
