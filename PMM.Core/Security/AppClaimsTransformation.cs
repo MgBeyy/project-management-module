@@ -38,35 +38,8 @@ namespace PMM.Core.Security
 
             };
 
-            // Roller gelecekte gerekirse bu döngü aktif edilebilir.
-            // foreach (var role in user.Roles)
-            // {
-            //     claims.Add(new Claim(ClaimTypes.Role, role));
-            // }
-
-            // İzinler gelecekte gerekirse bu döngü aktif edilebilir.
-            // foreach (var permission in user.Permissions)
-            // {
-            //     claims.Add(new Claim("Permission", permission.ToString()));
-            // }
-
             return claims.ToArray();
         }
-
-        // Bu metotlar gelecekte roller veya izinler eklenirse kullanılabilir.
-        // private static IList<string> GetClaimRoles(ClaimsPrincipal principal)
-        // {
-        //     return principal.Claims.Where(o => o.Type == ClaimTypes.Role)
-        //                     .Select(x => x.Value)
-        //                     .ToList();
-        // }
-
-        // private static IList<EPermission> GetClaimPermissions(ClaimsPrincipal principal)
-        // {
-        //     return principal.Claims.Where(o => o.Type == "Permission")
-        //           .Select(x => (EPermission)Enum.Parse(typeof(EPermission), x.Value))
-        //           .ToList();
-        // }
 
         private static string GetClaim(ClaimsPrincipal principal, string type)
         {
