@@ -54,6 +54,9 @@ namespace PMM.Core.Services
                 throw new BusinessException("Bitiş zamanı başlangıç zamanından sonra olmalıdır!");
 
             var task = await _taskRepository.GetByIdAsync(form.TaskId) ?? throw new NotFoundException("Görev Bulunamadı!");
+            if (task.Status == ETaskStatus.Done || task.Status == ETaskStatus.Inactive || task.Status == ETaskStatus.WaitingForApproval)
+                throw new BusinessException("Bu görev durumu nedeniyle aktivite eklenemez. Görev durumu Tamamlandı, Pasif veya Onay Bekliyor ise aktivite eklenemez.");
+
             _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("Kullanıcı Bulunamadı!");
 
             if (await _activityRepository.HasConflictingActivityAsync(form.UserId, form.StartTime, form.EndTime))
