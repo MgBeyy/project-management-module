@@ -5,7 +5,6 @@ using PMM.Core.Exceptions;
 using PMM.Core.Mappers;
 using PMM.Core.Validators;
 using PMM.Domain.DTOs;
-using PMM.Domain.Entities;
 using PMM.Domain.Enums;
 using PMM.Domain.Forms;
 using PMM.Domain.Interfaces.Repositories;
@@ -56,6 +55,9 @@ namespace PMM.Core.Services
 
             var task = await _taskRepository.GetByIdAsync(form.TaskId) ?? throw new NotFoundException("Görev Bulunamadı!");
             _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("Kullanıcı Bulunamadı!");
+
+            if (await _activityRepository.HasConflictingActivityAsync(form.UserId, form.StartTime, form.EndTime))
+                throw new BusinessException("Bu zaman aralığında çakışan bir aktivite bulunmaktadır. Aynı kullanıcı için çakışan saatlerde aktivite eklenemez.");
 
             var isUserAssigned = await _taskAssignmentRepository.IsUserAssignedToTaskAsync(form.UserId, form.TaskId);
             if (!isUserAssigned)
@@ -195,6 +197,9 @@ namespace PMM.Core.Services
                 throw new BusinessException("Bitiş zamanı başlangıç zamanından sonra olmalıdır!");
 
             var activity = await _activityRepository.GetByIdAsync(activityId) ?? throw new NotFoundException("Aktivite Bulunamadı!");
+
+            if (await _activityRepository.HasConflictingActivityAsync(activity.UserId, form.StartTime, form.EndTime, activity.Id))
+                throw new BusinessException("Bu zaman aralığında çakışan bir aktivite bulunmaktadır. Aynı kullanıcı için çakışan saatlerde aktivite düzenlenemez.");
 
             var task = await _taskRepository.GetByIdAsync(activity.TaskId);
 
