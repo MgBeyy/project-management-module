@@ -1,0 +1,14 @@
+# Ignore build artifacts from host to avoid contaminating container restore/publish
+**/bin/
+**/obj/
+.vs/
+.vscode/
+.DS_Store
+*.user
+*.suo
+.git/
+node_modules/
+PMM.UI/node_modules/
+PMM.UI/dist/
+logs/
+/*.log
