@@ -5,7 +5,6 @@ using PMM.Core.Exceptions;
 using PMM.Core.Mappers;
 using PMM.Core.Validators;
 using PMM.Domain.DTOs;
-using PMM.Domain.Entities;
 using PMM.Domain.Enums;
 using PMM.Domain.Forms;
 using PMM.Domain.Interfaces.Repositories;
@@ -57,13 +56,14 @@ namespace PMM.Core.Services
             var task = await _taskRepository.GetByIdAsync(form.TaskId) ?? throw new NotFoundException("Görev Bulunamadı!");
             _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("Kullanıcı Bulunamadı!");
 
+            if (await _activityRepository.HasConflictingActivityAsync(form.UserId, form.StartTime, form.EndTime))
+                throw new BusinessException("Bu zaman aralığında çakışan bir aktivite bulunmaktadır. Aynı kullanıcı için çakışan saatlerde aktivite eklenemez.");
+
             var isUserAssigned = await _taskAssignmentRepository.IsUserAssignedToTaskAsync(form.UserId, form.TaskId);
             if (!isUserAssigned)
                 throw new BusinessException("Bu kullanıcı belirtilen göreve atanmamıştır. Sadece göreve atanmış kullanıcılar aktivite ekleyebilir.");
 
             var activity = ActivityMapper.Map(form);
-            activity.CreatedAt = DateTime.UtcNow;
-            activity.CreatedById = LoggedInUser.Id;
 
             await UpdateTaskAndParentHours(task.Id, activity.TotalHours);
 
@@ -198,6 +198,9 @@ namespace PMM.Core.Services
 
             var activity = await _activityRepository.GetByIdAsync(activityId) ?? throw new NotFoundException("Aktivite Bulunamadı!");
 
+            if (await _activityRepository.HasConflictingActivityAsync(activity.UserId, form.StartTime, form.EndTime, activity.Id))
+                throw new BusinessException("Bu zaman aralığında çakışan bir aktivite bulunmaktadır. Aynı kullanıcı için çakışan saatlerde aktivite düzenlenemez.");
+
             var task = await _taskRepository.GetByIdAsync(activity.TaskId);
 
             var oldHours = activity.TotalHours;
@@ -209,17 +212,12 @@ namespace PMM.Core.Services
 
             await UpdateTaskAndParentHours(activity.TaskId, hoursDifference);
 
-            activity.UpdatedAt = DateTime.UtcNow;
-            activity.UpdatedById = LoggedInUser.Id;
-
             _activityRepository.Update(activity);
             await _activityRepository.SaveChangesAsync();
 
             if (activity.IsLast)
             {
                 task.Status = ETaskStatus.WaitingForApproval;
-                task.UpdatedAt = DateTime.UtcNow;
-                task.UpdatedById = LoggedInUser.Id;
                 _taskRepository.Update(task);
                 await _taskRepository.SaveChangesAsync();
             }

@@ -74,8 +74,6 @@ namespace PMM.Core.Services
             await ValidateAssignedUsersAsync(form.AssignedUserIds);
 
             var task = TaskMapper.Map(form);
-            task.CreatedAt = DateTime.UtcNow;
-            task.CreatedById = LoggedInUser.Id;
             _taskRepository.Create(task);
             await _taskRepository.SaveChangesAsync();
 
@@ -86,9 +84,7 @@ namespace PMM.Core.Services
                     var taskLabel = new TaskLabel
                     {
                         TaskId = task.Id,
-                        LabelId = labelId,
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedById = LoggedInUser.Id
+                        LabelId = labelId
                     };
                     _taskLabelRepository.Create(taskLabel);
                 }
@@ -102,9 +98,7 @@ namespace PMM.Core.Services
                     var taskAssignment = new TaskAssignment
                     {
                         TaskId = task.Id,
-                        UserId = userId,
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedById = LoggedInUser.Id
+                        UserId = userId
                     };
                     _taskAssignmentRepository.Create(taskAssignment);
                 }
@@ -114,8 +108,6 @@ namespace PMM.Core.Services
             if (task.IsLast)
             {
                 project.Status = EProjectStatus.WaitingForApproval;
-                project.UpdatedAt = DateTime.UtcNow;
-                project.UpdatedById = LoggedInUser.Id;
                 _projectRepository.Update(project);
                 await _projectRepository.SaveChangesAsync();
             }
@@ -173,16 +165,12 @@ namespace PMM.Core.Services
             }
 
             task = TaskMapper.Map(form, task);
-            task.UpdatedAt = DateTime.UtcNow;
-            task.UpdatedById = LoggedInUser.Id;
             _taskRepository.Update(task);
             await _taskRepository.SaveChangesAsync();
 
             if (task.IsLast)
             {
                 project.Status = EProjectStatus.WaitingForApproval;
-                project.UpdatedAt = DateTime.UtcNow;
-                project.UpdatedById = LoggedInUser.Id;
                 _projectRepository.Update(project);
                 await _projectRepository.SaveChangesAsync();
             }
@@ -201,9 +189,7 @@ namespace PMM.Core.Services
                     var taskLabel = new TaskLabel
                     {
                         TaskId = task.Id,
-                        LabelId = labelId,
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedById = LoggedInUser.Id
+                        LabelId = labelId
                     };
                     _taskLabelRepository.Create(taskLabel);
                 }
@@ -230,9 +216,7 @@ namespace PMM.Core.Services
                         var newAssignment = new TaskAssignment
                         {
                             TaskId = task.Id,
-                            UserId = userId,
-                            CreatedAt = DateTime.UtcNow,
-                            CreatedById = LoggedInUser.Id
+                            UserId = userId
                         };
                         _taskAssignmentRepository.Create(newAssignment);
                     }
@@ -403,8 +387,6 @@ namespace PMM.Core.Services
                 if (task.Status != form.Status)
                 {
                     task.Status = form.Status;
-                    task.UpdatedAt = DateTime.UtcNow;
-                    task.UpdatedById = LoggedInUser.Id;
                     _taskRepository.Update(task);
                 }
             }

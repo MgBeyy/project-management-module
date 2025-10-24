@@ -25,4 +25,8 @@
     <ProjectReference Include="..\PMM.Data\PMM.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
 </Project>

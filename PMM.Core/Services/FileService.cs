@@ -16,7 +16,6 @@ namespace PMM.Core.Services
         private readonly IFileRepository _fileRepository;
         private readonly IProjectRepository _projectRepository;
         private readonly ILogger<FileService> _logger;
-        private readonly string _basePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Files");
 
         public FileService(IFileRepository fileRepository,
             IProjectRepository projectRepository,
@@ -28,32 +27,37 @@ namespace PMM.Core.Services
             _fileRepository = fileRepository;
             _projectRepository = projectRepository;
             _logger = logger;
-            if (!Directory.Exists(_basePath))
-                Directory.CreateDirectory(_basePath);
         }
 
-        public async Task<FileDto> AddFileAsync(CreateFileForm form)
+        public async Task<FileDto> AddFileAsync(CreateFileForm form, string physicalSaveBasePath)
         {
             if (form == null)
                 throw new ArgumentNullException("CreateFileForm is empty");
             _ = await _projectRepository.GetByIdAsync(form.ProjectId) ?? throw new NotFoundException("Proje Bulunamadı!");
             if (form.FileContent == null || form.FileContent.Length == 0)
                 throw new ArgumentException("Dosya içeriği boş!");
-            var extension = Path.GetExtension(form.FileContent.FileName);
-            var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
-            var fileNameWithExtension = string.IsNullOrWhiteSpace(extension)
-                ? $"{form.Title}_{timestamp}"
-                : $"{form.Title}_{timestamp}{extension}";
-            var filePath = Path.Combine(_basePath, fileNameWithExtension);
-            using (var ms = new MemoryStream())
+
+            if (!Directory.Exists(physicalSaveBasePath))
+                Directory.CreateDirectory(physicalSaveBasePath);
+
+            var originalFileName = form.FileContent.FileName;
+            var fileExtension = Path.GetExtension(originalFileName);
+            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalFileName);
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+
+            fileNameWithoutExtension = SanitizeFileName(fileNameWithoutExtension);
+
+            var newFileName = $"{fileNameWithoutExtension}_{timestamp}{fileExtension}";
+            var fullFilePath = Path.Combine(physicalSaveBasePath, newFileName);
+
+            using (var fileStream = new FileStream(fullFilePath, FileMode.Create))
             {
-                await form.FileContent.CopyToAsync(ms);
-                await File.WriteAllBytesAsync(filePath, ms.ToArray());
+                await form.FileContent.CopyToAsync(fileStream);
             }
+
             var fileEntity = FileMapper.Map(form);
-            fileEntity.File = filePath;
-            fileEntity.CreatedById = LoggedInUser.Id;
-            fileEntity.CreatedAt = DateTime.UtcNow;
+            fileEntity.File = $"/files/{newFileName}";
+
             _fileRepository.Create(fileEntity);
             await _fileRepository.SaveChangesAsync();
             return FileMapper.Map(fileEntity);
@@ -76,20 +80,24 @@ namespace PMM.Core.Services
                 throw new NotFoundException("Dosya Bulunamadı!");
             file.Title = form.Title;
             file.Description = form.Description;
-            file.UpdatedAt = DateTime.UtcNow;
-            file.UpdatedById = LoggedInUser.Id;
             _fileRepository.Update(file);
             await _fileRepository.SaveChangesAsync();
             return FileMapper.Map(file);
         }
 
-        public async Task DeleteFileAsync(int fileId)
+        public async Task DeleteFileAsync(int fileId, string webRootPath)
         {
             var file = await _fileRepository.GetByIdAsync(fileId);
             if (file == null)
                 throw new NotFoundException("Dosya Bulunamadı!");
-            if (File.Exists(file.File))
-                File.Delete(file.File);
+
+            if (!string.IsNullOrEmpty(file.File))
+            {
+                var physicalPath = Path.Combine(webRootPath, file.File.TrimStart('/'));
+                if (File.Exists(physicalPath))
+                    File.Delete(physicalPath);
+            }
+
             _fileRepository.Delete(file);
             await _fileRepository.SaveChangesAsync();
         }
@@ -156,6 +164,16 @@ namespace PMM.Core.Services
                 Page = page,
                 PageSize = pageSize
             };
+        }
+
+        private string SanitizeFileName(string fileName)
+        {
+            fileName = Path.GetInvalidFileNameChars()
+                .Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
+
+            fileName = fileName.Replace(" ", "-");
+
+            return fileName;
         }
     }
 }

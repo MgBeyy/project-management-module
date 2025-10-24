@@ -125,8 +125,7 @@ namespace PMM.Core.Services
             }
 
             var project = ProjectMapper.Map(form);
-            project.CreatedAt = DateTime.UtcNow;
-            project.CreatedById = LoggedInUser.Id;
+
             _projectRepository.Create(project);
             await _projectRepository.SaveChangesAsync();
 
@@ -138,9 +137,7 @@ namespace PMM.Core.Services
                     var relation = new ProjectRelation
                     {
                         ParentProjectId = parentId,
-                        ChildProjectId = project.Id,
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedById = LoggedInUser.Id
+                        ChildProjectId = project.Id
                     };
                     _projectRelationRepository.Create(relation);
                 }
@@ -154,9 +151,7 @@ namespace PMM.Core.Services
                     var projectLabel = new ProjectLabel
                     {
                         ProjectId = project.Id,
-                        LabelId = labelId,
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedById = LoggedInUser.Id
+                        LabelId = labelId
                     };
                     _projectLabelRepository.Create(projectLabel);
                 }
@@ -174,9 +169,7 @@ namespace PMM.Core.Services
                         Role = assignedUser.Role,
                         StartedAt = assignedUser.StartedAt,
                         EndAt = assignedUser.EndAt,
-                        ExpectedHours = assignedUser.ExpectedHours,
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedById = LoggedInUser.Id
+                        ExpectedHours = assignedUser.ExpectedHours
                     };
                     _projectAssignmentRepository.Create(projectAssignment);
                 }
@@ -264,8 +257,6 @@ namespace PMM.Core.Services
             }
 
             project = ProjectMapper.Map(form, project);
-            project.UpdatedAt = DateTime.UtcNow;
-            project.UpdatedById = LoggedInUser.Id;
 
             if (project.Status == EProjectStatus.Completed)
             {
@@ -282,9 +273,6 @@ namespace PMM.Core.Services
                 foreach (var task in tasks)
                 {
                     task.Status = ETaskStatus.Inactive;
-                    task.UpdatedAt = DateTime.UtcNow;
-                    task.UpdatedById = LoggedInUser.Id;
-                    _taskRepository.Update(task);
                 }
                 await _taskRepository.SaveChangesAsync();
             }
@@ -303,9 +291,7 @@ namespace PMM.Core.Services
                     var relation = new ProjectRelation
                     {
                         ParentProjectId = parentId,
-                        ChildProjectId = project.Id,
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedById = LoggedInUser.Id
+                        ChildProjectId = project.Id
                     };
                     _projectRelationRepository.Create(relation);
                 }
@@ -326,9 +312,7 @@ namespace PMM.Core.Services
                     var projectLabel = new ProjectLabel
                     {
                         ProjectId = project.Id,
-                        LabelId = labelId,
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedById = LoggedInUser.Id
+                        LabelId = labelId
                     };
                     _projectLabelRepository.Create(projectLabel);
                 }
@@ -366,8 +350,6 @@ namespace PMM.Core.Services
                             existingAssignment.StartedAt = assignedUser.StartedAt;
                             existingAssignment.EndAt = assignedUser.EndAt;
                             existingAssignment.ExpectedHours = assignedUser.ExpectedHours;
-                            existingAssignment.UpdatedAt = DateTime.UtcNow;
-                            existingAssignment.UpdatedById = LoggedInUser.Id;
                             _projectAssignmentRepository.Update(existingAssignment);
                         }
                     }
@@ -380,9 +362,7 @@ namespace PMM.Core.Services
                             Role = assignedUser.Role,
                             StartedAt = assignedUser.StartedAt,
                             EndAt = assignedUser.EndAt,
-                            ExpectedHours = assignedUser.ExpectedHours,
-                            CreatedAt = DateTime.UtcNow,
-                            CreatedById = LoggedInUser.Id
+                            ExpectedHours = assignedUser.ExpectedHours
                         };
                         _projectAssignmentRepository.Create(newAssignment);
                     }

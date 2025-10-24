@@ -484,3 +484,6 @@ $RECYCLE.BIN/
 *.swp
 
 PMM.API/appsettings.Development.json
+
+# Uploaded Files
+PMM.API/wwwroot/files/*
