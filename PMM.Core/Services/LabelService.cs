@@ -38,8 +38,6 @@ namespace PMM.Core.Services
                 throw new BusinessException(validation.ErrorMessage);
 
             var label = LabelMapper.Map(form);
-            label.CreatedAt = DateTime.UtcNow;
-            label.CreatedById = LoggedInUser.Id;
             _labelRepository.Create(label);
             await _labelRepository.SaveChangesAsync();
 
@@ -60,8 +58,6 @@ namespace PMM.Core.Services
                 throw new NotFoundException("Etiket Bulunamadý!");
 
             label = LabelMapper.Map(form, label);
-            label.UpdatedAt = DateTime.UtcNow;
-            label.UpdatedById = LoggedInUser.Id;
             _labelRepository.Update(label);
             await _labelRepository.SaveChangesAsync();
 
