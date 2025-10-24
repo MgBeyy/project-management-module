@@ -54,134 +54,26 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
   const [searchValue, setSearchValue] = useState("");
 
   useEffect(() => {
+    
     if (!initialOptions) {
       return;
     }
 
-    if (initialOptions.length === 0) {
-      setOptions([]);
-      return;
-    }
 
     setOptions(prev => mergeOptionArrays(initialOptions, prev));
   }, [initialOptions]);
 
-  const loadAllOptions = async () => {
-    if (disabled) {
-      return;
-    }
+  useEffect(() => {
+   console.log("optins", options);
+  }, [options]);
 
-    setLoading(true);
-
-    try {
-      console.log("🔍 Tüm seçenekler yükleniyor:", apiUrl);
-
-      const response = await getMultiSelectSearch("", apiUrl);
-
-      console.log("✅ Tüm seçenekler API yanıtı:", response.data);
-
-      const apiResult =
-        response.data?.result?.data || response.data?.data || response.data;
-
-      console.log("🔍 Parsed data:", apiResult);
-
-      if (!Array.isArray(apiResult)) {
-        console.error("❌ API yanıtı array formatında değil:", apiResult);
-        setOptions(initialOptions ? [...initialOptions] : []);
-        return;
-      }
-
-      const formattedOptions: MultiSelectOption[] = apiResult.map((item: any) => {
-        const id = item.id?.toString() || Math.random().toString();
-        let value = id;
-        let label = "";
-
-        if (apiUrl.includes("/Label")) {
-          label = item.name || item.title || item.label || `Label ${id}`;
-        } else if (apiUrl.includes("/Project")) {
-          if (item.code && item.title) {
-            label = `${item.code} - ${item.title}`;
-          } else {
-            label = item.title || item.name || `Project ${id}`;
-          }
-        } else if (apiUrl.includes("/Client")) {
-          label =
-            item.name ||
-            item.companyName ||
-            `${item.firstName || ""} ${item.lastName || ""}`.trim() ||
-            `Client ${id}`;
-        } else {
-          label =
-            item.name ||
-            item.title ||
-            item.label ||
-            item.displayName ||
-            `Item ${id}`;
-        }
-
-        const resolvedColor =
-          item?.color ??
-          item?.Color ??
-          item?.hexColor ??
-          item?.HexColor ??
-          item?.hex ??
-          item?.Hex ??
-          item?.colour ??
-          item?.Colour;
-
-        const resolvedDescription =
-          item?.description ??
-          item?.Description ??
-          item?.desc ??
-          item?.Desc;
-
-        return {
-          value: value,
-          label: label,
-          key: id,
-          color: resolvedColor,
-          description: resolvedDescription,
-          ...item,
-        };
-      });
-
-      console.log("✅ Tüm formatted options:", formattedOptions);
-      setOptions(prev => {
-        const merged = mergeOptionArrays(prev, formattedOptions);
-        if (onOptionsChange) {
-          onOptionsChange(merged);
-        }
-        return merged;
-      });
-    } catch (error: any) {
-      console.error("❌ Tüm seçenekler yükleme hatası:", error);
-
-      if (error.code === "ERR_NETWORK") {
-        console.error("🔥 Network hatası: Backend çalışmıyor olabilir!");
-        console.error("🔧 Çözüm: Backend'i başlatın veya URL'yi kontrol edin");
-      } else if (error.code === "ERR_EMPTY_RESPONSE") {
-        console.error("📭 Boş yanıt: API endpoint'i yanıt vermiyor");
-      }
-
-      setOptions(initialOptions ? [...initialOptions] : []);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  
   const handleSearch = async (searchText: string) => {
     if (disabled) {
       return;
     }
 
     setSearchValue(searchText);
-
-    if (!searchText || searchText.trim().length === 0) {
-      // Boş arama için tüm listeyi yükle
-      await loadAllOptions();
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -233,21 +125,8 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
             `Item ${id}`;
         }
 
-        const resolvedColor =
-          item?.color ??
-          item?.Color ??
-          item?.hexColor ??
-          item?.HexColor ??
-          item?.hex ??
-          item?.Hex ??
-          item?.colour ??
-          item?.Colour;
-
-        const resolvedDescription =
-          item?.description ??
-          item?.Description ??
-          item?.desc ??
-          item?.Desc;
+        const resolvedColor = item?.color
+        const resolvedDescription = item?.description
 
         return {
           value: value,
@@ -259,12 +138,12 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
         };
       });
 
-      console.log("✅ Formatted options:", formattedOptions);
       setOptions(prev => {
         const merged = mergeOptionArrays(prev, formattedOptions);
         if (onOptionsChange) {
           onOptionsChange(merged);
         }
+        
         return merged;
       });
     } catch (error: any) {
@@ -276,7 +155,6 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
       } else if (error.code === "ERR_EMPTY_RESPONSE") {
         console.error("📭 Boş yanıt: API endpoint'i yanıt vermiyor");
       }
-
       setOptions([]);
     } finally {
       setLoading(false);
@@ -292,8 +170,7 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
   const handleOpenChange = async (open: boolean) => {
     if (open && !disabled) {
       // Dropdown açıldığında tüm listeyi yükle
-      await loadAllOptions();
-    } else if (!open) {
+      await handleSearch("");
       setSearchValue("");
     }
   };
