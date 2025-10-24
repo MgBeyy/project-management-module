@@ -43,8 +43,6 @@ namespace PMM.Core.Services
                 throw new BusinessException("Bu kullanıcı zaten bu göreve atanmış durumda!");
 
             var ta = TaskAssignmentMapper.Map(form);
-            ta.CreatedAt = DateTime.UtcNow;
-            ta.CreatedById = LoggedInUser.Id;
             _taskAssignmentRepository.Create(ta);
             await _taskAssignmentRepository.SaveChangesAsync();
             return TaskAssignmentMapper.Map(ta);

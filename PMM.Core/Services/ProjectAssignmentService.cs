@@ -52,8 +52,6 @@ namespace PMM.Core.Services
             }
 
             var pa = ProjectAssignmentMapper.Map(form);
-            pa.CreatedAt = DateTime.UtcNow;
-            pa.CreatedById = LoggedInUser.Id;
             _projectAssignmentRepository.Create(pa);
             await _projectAssignmentRepository.SaveChangesAsync();
             return ProjectAssignmentMapper.Map(pa);
@@ -77,8 +75,6 @@ namespace PMM.Core.Services
             }
 
             projectAssignment = ProjectAssignmentMapper.Map(form, projectAssignment);
-            projectAssignment.UpdatedAt = DateTime.UtcNow;
-            projectAssignment.UpdatedById = LoggedInUser.Id;
             _projectAssignmentRepository.Update(projectAssignment);
             await _projectAssignmentRepository.SaveChangesAsync();
             return ProjectAssignmentMapper.Map(projectAssignment);

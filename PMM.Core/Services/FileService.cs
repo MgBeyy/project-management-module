@@ -52,8 +52,6 @@ namespace PMM.Core.Services
             }
             var fileEntity = FileMapper.Map(form);
             fileEntity.File = filePath;
-            fileEntity.CreatedById = LoggedInUser.Id;
-            fileEntity.CreatedAt = DateTime.UtcNow;
             _fileRepository.Create(fileEntity);
             await _fileRepository.SaveChangesAsync();
             return FileMapper.Map(fileEntity);
@@ -76,8 +74,6 @@ namespace PMM.Core.Services
                 throw new NotFoundException("Dosya Bulunamadı!");
             file.Title = form.Title;
             file.Description = form.Description;
-            file.UpdatedAt = DateTime.UtcNow;
-            file.UpdatedById = LoggedInUser.Id;
             _fileRepository.Update(file);
             await _fileRepository.SaveChangesAsync();
             return FileMapper.Map(file);
