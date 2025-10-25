@@ -4,6 +4,7 @@ export enum TaskStatus {
   TODO = "Todo",
   IN_PROGRESS = "InProgress",
   DONE = "Done",
+  INACTIVE = "InActive",
 }
 
 type TaskQuery = {

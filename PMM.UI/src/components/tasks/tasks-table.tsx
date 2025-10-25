@@ -153,7 +153,9 @@ export default function TasksCustomTable() {
               ? "Devam Ediyor"
               : text === "Todo"
                 ? "Yapılacak"
-                : text;
+                : text === "Inactive"
+                  ? "Pasif"
+                  : text;
         return (
           <span title={label} style={{fontWeight: "bold" }}>
             {label}

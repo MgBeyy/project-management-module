@@ -699,6 +699,7 @@ export default function CreateTaskModal({
             <Select.Option value={TaskStatus.IN_PROGRESS}>
               Devam Ediyor
             </Select.Option>
+            <Select.Option value={TaskStatus.INACTIVE}>Pasif</Select.Option>
             <Select.Option value={TaskStatus.DONE}>Tamamlandı</Select.Option>
           </Select>
         </Form.Item>
