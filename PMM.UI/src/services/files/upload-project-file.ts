@@ -7,7 +7,8 @@ export async function uploadProjectFile({
   file,
   title,
   description,
-}: UploadProjectFilePayload): Promise<ProjectFileDto> {
+  onProgress,
+}: UploadProjectFilePayload & { onProgress?: (progress: number) => void }): Promise<ProjectFileDto> {
   const formData = new FormData();
   formData.append("ProjectId", projectId.toString());
   formData.append("FileContent", file);
@@ -20,6 +21,12 @@ export async function uploadProjectFile({
   const response = await apiClient.post("/File", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
+    },
+    onUploadProgress: (progressEvent) => {
+      if (onProgress && progressEvent.total) {
+        const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        onProgress(percent);
+      }
     },
   });
 

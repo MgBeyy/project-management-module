@@ -9,7 +9,6 @@
   Spin,
   Modal,
   Tag,
-  Upload,
   Image,
 } from "antd";
 import { useState, useEffect, useCallback } from "react";
@@ -391,6 +390,8 @@ export default function CreateProjectModal({
   const [projectFiles, setProjectFiles] = useState<ProjectFileDto[]>([]);
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const isEditMode = mode === 'edit' && !!projectData;
   const isViewMode = mode === 'view' && !!projectData;
@@ -564,6 +565,8 @@ export default function CreateProjectModal({
     setProjectFiles([]);
     setIsLoadingFiles(false);
     setIsUploadingFile(false);
+    setUploadProgress(0);
+    setIsDragOver(false);
     console.log("Form temizlendi");
   }, [form]);
 
@@ -574,11 +577,13 @@ export default function CreateProjectModal({
     }
 
     setIsUploadingFile(true);
+    setUploadProgress(0);
     try {
       const uploaded = await uploadProjectFile({
         projectId: resolvedProjectId,
         file,
         title: file.name,
+        onProgress: (progress) => setUploadProgress(progress),
       });
       showNotification.success("Dosya yüklendi", `"${uploaded.title}" başarıyla yüklendi.`);
       await loadProjectFiles(resolvedProjectId);
@@ -587,6 +592,7 @@ export default function CreateProjectModal({
       showNotification.error("Dosya yüklenemedi", "Dosya yüklenirken bir hata oluştu.");
     } finally {
       setIsUploadingFile(false);
+      setUploadProgress(0);
     }
   }, [resolvedProjectId, loadProjectFiles]);
 
@@ -600,6 +606,35 @@ export default function CreateProjectModal({
       showNotification.error("Dosya indirilemedi", "Dosya indirilirken bir hata oluştu.");
     }
   }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFileUpload(files[0]);
+    }
+  }, [handleFileUpload]);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleFileUpload(files[0]);
+    }
+    // Reset input value to allow selecting the same file again
+    e.target.value = '';
+  }, [handleFileUpload]);
 
   const labelTagRender: SelectProps["tagRender"] = tagProps => {
     const { label, value, closable, onClose } = tagProps;
@@ -1569,100 +1604,135 @@ export default function CreateProjectModal({
 
             {(isEditMode || isViewMode) && (
               <Form.Item label="Proje Dosyaları" style={formItemNoMarginStyle}>
-                <div className="space-y-3">
-                  {isEditMode && (
-                    <Upload
-                      multiple={false}
-                      showUploadList={false}
-                      beforeUpload={(file) => {
-                        handleFileUpload(file as File);
-                        return false;
-                      }}
-                      disabled={isUploadingFile}
-                    >
-                      <Button
-                        type="primary"
-                        icon={<AiOutlineCloudUpload />}
-                        loading={isUploadingFile}
-                      >
-                        {isUploadingFile ? "Yükleniyor..." : "Dosya Yükle"}
-                      </Button>
-                    </Upload>
+                <div className="border-2 border-dashed rounded-lg p-2 pt-0 transition-colors duration-200"
+                     style={{
+                       borderColor: isDragOver ? '#1890ff' : '#d9d9d9',
+                       backgroundColor: isDragOver ? '#f0f8ff' : 'transparent'
+                     }}
+                     onDragOver={handleDragOver}
+                     onDragLeave={handleDragLeave}
+                     onDrop={handleDrop}>
+                  
+                  {/* Upload Progress */}
+                  {isUploadingFile && (
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Dosya yükleniyor...</span>
+                        <span className="text-sm text-gray-500">{uploadProgress}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${uploadProgress}%` }}
+                        ></div>
+                      </div>
+                    </div>
                   )}
 
-                  {isLoadingFiles ? (
-                    <div className="flex items-center justify-center py-6">
-                      <Spin size="small" />
-                      <span className="ml-2">Dosyalar yükleniyor...</span>
-                    </div>
-                  ) : projectFiles.length === 0 ? (
-                    <div className="text-sm text-gray-500 bg-gray-50 border rounded-lg px-3 py-4">
-                      Henüz yüklenmiş dosya bulunmuyor.
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-3">
-                      {projectFiles.map((file) => {
-                        console.log(file);
-                        
-                        const extension = resolveFileExtension(file);
-                        const displayName = file.title || `Dosya #${file.id}`;
-                        const imagePreview = isImageFile(file);
-
-                        const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            handleFileDownload(file);
-                          }
-                        };
-
-                        return (
-                          <div
-                            key={file.id}
-                            role="button"
-                            tabIndex={0}
-                            className="flex w-32 cursor-pointer flex-col gap-2 rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition hover:border-blue-500 hover:shadow-md focus:border-blue-500 focus:shadow-md focus:outline-none"
-                            onClick={() => handleFileDownload(file)}
-                            onKeyDown={handleKeyDown}
+                  {/* Upload Area */}
+                  {isEditMode && !isUploadingFile && (
+                    <div className="text-center">
+                      <AiOutlineCloudUpload className="mx-auto h-12 w-12 text-gray-400 mb-0" />
+                      <div className="space-y-2">
+                        <p className="text-sm text-gray-600">
+                          Dosyalarınızı sürükleyip bırakın veya
+                        </p>
+                        <div className="flex justify-center mb-0">
+                          <Button
+                            type="primary"
+                            size="small"
+                            onClick={() => document.getElementById('file-input')?.click()}
                           >
-                            <div className="flex items-center justify-center">
-                              {imagePreview ? (
-                                <Image
-                                  src={file.file}
-                                  alt={displayName}
-                                  width={64}
-                                  height={64}
-                                  className="h-16 w-16 rounded-md object-cover"
-                                  preview={false}
-                                />
-                              ) : (
-                                <span className="flex h-16 w-16 items-center justify-center rounded-md bg-blue-50 text-blue-500">
-                                  {getFileIconByExtension(extension)}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <span
-                                className="truncate text-sm font-medium text-gray-900"
-                                title={displayName}
-                              >
-                                {displayName}
-                              </span>
-                              {extension && (
-                                <span className="text-xs uppercase text-gray-500">
-                                  .{extension}
-                                </span>
-                              )}
-                              {file.description && (
-                                <span className="text-xs text-gray-500">
-                                  {file.description}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+                            Dosya Seç
+                          </Button>
+                        </div>
+                        <input
+                          id="file-input"
+                          type="file"
+                          className="hidden"
+                          onChange={handleFileSelect}
+                          accept="*/*"
+                        />
+                      </div>
                     </div>
                   )}
+
+                  {/* Files List */}
+                  <div className="mt-2">
+                    {isLoadingFiles ? (
+                      <div className="flex items-center justify-center py-6">
+                        <Spin size="small" />
+                        <span className="ml-2">Dosyalar yükleniyor...</span>
+                      </div>
+                    ) : projectFiles.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        {isEditMode ? "Henüz dosya yüklenmemiş" : "Dosya bulunmuyor"}
+                      </div>
+                    ) : (
+                      <div className="flex gap-3 overflow-x-auto">
+                        {projectFiles.map((file) => {
+                          console.log(file);
+                          
+                          const extension = resolveFileExtension(file);
+                          const displayName = file.title || `Dosya #${file.id}`;
+                          const imagePreview = isImageFile(file);
+
+                          const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              handleFileDownload(file);
+                            }
+                          };
+
+                          return (
+                            <div
+                              key={file.id}
+                              role="button"
+                              tabIndex={0}
+                              className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition hover:border-blue-500 hover:shadow-md focus:border-blue-500 focus:shadow-md focus:outline-none flex-shrink-0 w-32"
+                              onClick={() => handleFileDownload(file)}
+                              onKeyDown={handleKeyDown}
+                            >
+                              <div className="flex items-center justify-center">
+                                {imagePreview ? (
+                                  <Image
+                                    src={file.file}
+                                    alt={displayName}
+                                    width={48}
+                                    height={48}
+                                    className="h-12 w-12 rounded-md object-cover"
+                                    preview={false}
+                                  />
+                                ) : (
+                                  <span className="flex h-16 w-16 items-center justify-center rounded-md bg-blue-50 text-blue-500">
+                                    {getFileIconByExtension(extension)}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <span
+                                  className="truncate text-sm font-medium text-gray-900"
+                                  title={displayName}
+                                >
+                                  {displayName}
+                                </span>
+                                {extension && (
+                                  <span className="text-xs uppercase text-gray-500">
+                                    .{extension}
+                                  </span>
+                                )}
+                                {file.description && (
+                                  <span className="text-xs text-gray-500">
+                                    {file.description}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </Form.Item>
             )}
