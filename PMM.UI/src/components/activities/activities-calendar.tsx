@@ -513,7 +513,7 @@ export default function ActivitiesCalendar() {
             userSelect: "none",
           }}
           onMouseLeave={() => setHoveredSlot(null)}
-          onMouseUp={handleMouseUp} // ⬅️ lokal mouseup
+          onMouseUp={handleMouseUp} // lokal mouseup
         >
           {hours.map((hour) => (
             <div key={hour}>
@@ -545,6 +545,7 @@ export default function ActivitiesCalendar() {
                           ? "1px solid #d9d9d9"
                           : "1px solid #f5f5f5",
                       position: "relative",
+                      overflow: "visible", // ⬅️ dikey border'ı köprülemek için
                     }}
                   >
                     {/* Hour Label */}
@@ -699,7 +700,7 @@ export default function ActivitiesCalendar() {
                                   height: `${activityHeight}px`,
                                   display: "flex",
                                   flexDirection: "column",
-                                  zIndex: 10, // seçim overlay'i altında (50)
+                                  zIndex: 10, // overlay'in altında kalır
                                   boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
                                   // Drag sırasında alttaki slotların hover'ını engelleme
                                   pointerEvents: isDragging ? "none" : "auto",
@@ -750,12 +751,15 @@ export default function ActivitiesCalendar() {
                             );
                           })}
 
-                          {/* Seçim Border Overlay (daima üstte, etkinlikleri engellemeden) */}
+                          {/* Seçim Border Overlay (köprüleyen -1px ile kesintisiz) */}
                           {selected && (
                             <div
                               style={{
                                 position: "absolute",
-                                inset: 0,
+                                top: -1,       // yatay grid çizgisinin üstüne taş
+                                bottom: -1,    // alt çizginin üstüne taş
+                                left: 0,
+                                right: 0,
                                 borderLeft: `2px solid ${SELECTION_BORDER_COLOR}`,
                                 borderRight: `2px solid ${SELECTION_BORDER_COLOR}`,
                                 borderTop: startEdge
