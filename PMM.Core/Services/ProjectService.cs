@@ -298,16 +298,14 @@ namespace PMM.Core.Services
                 await _projectRelationRepository.SaveChangesAsync();
             }
 
-            var existingLabels = await _projectLabelRepository.GetByProjectIdAsync(projectId);
-            foreach (var projectLabel in existingLabels)
+            if (form.LabelIds != null)
             {
-                _projectLabelRepository.Delete(projectLabel);
-            }
-            await _projectLabelRepository.SaveChangesAsync();
+                var currentLabels = await _projectLabelRepository.GetByProjectIdAsync(projectId);
+                var currentLabelIds = currentLabels.Select(pl => pl.LabelId).ToHashSet();
+                var newLabelIds = form.LabelIds.ToHashSet();
 
-            if (form.LabelIds != null && form.LabelIds.Any())
-            {
-                foreach (var labelId in form.LabelIds)
+                var toAdd = newLabelIds.Except(currentLabelIds);
+                foreach (var labelId in toAdd)
                 {
                     var projectLabel = new ProjectLabel
                     {
@@ -316,7 +314,17 @@ namespace PMM.Core.Services
                     };
                     _projectLabelRepository.Create(projectLabel);
                 }
-                await _projectLabelRepository.SaveChangesAsync();
+
+                var toRemove = currentLabels.Where(pl => !newLabelIds.Contains(pl.LabelId));
+                foreach (var pl in toRemove)
+                {
+                    _projectLabelRepository.Delete(pl);
+                }
+
+                if (toAdd.Any() || toRemove.Any())
+                {
+                    await _projectLabelRepository.SaveChangesAsync();
+                }
             }
 
             var existingAssignments = await _projectAssignmentRepository.GetByProjectIdAsync(projectId);
@@ -338,7 +346,6 @@ namespace PMM.Core.Services
 
                     if (existingAssignment != null)
                     {
-                        // Mevcut atamayı güncelle
                         var hasChanges = existingAssignment.Role != assignedUser.Role ||
                                        existingAssignment.StartedAt != assignedUser.StartedAt ||
                                        existingAssignment.EndAt != assignedUser.EndAt ||

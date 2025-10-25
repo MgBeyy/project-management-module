@@ -62,6 +62,9 @@ namespace PMM.Core.Services
                 throw new BusinessException("Bu kod ile kayıtlı bir görev bulunmaktadır.");
 
             var project = await _projectRepository.GetByIdAsync(form.ProjectId.Value) ?? throw new NotFoundException("İlgili Proje Bulunamadı! Önce bir proje oluşturun");
+            if (project.Status == EProjectStatus.Inactive || project.Status == EProjectStatus.Completed || project.Status == EProjectStatus.WaitingForApproval)
+                throw new BusinessException("Bu proje durumu nedeniyle görev eklenemez. Proje durumu Pasif, Tamamlandı veya Onay Bekliyor ise görev eklenemez.");
+
             if (form.ParentTaskId.HasValue)
                 _ = await _taskRepository.GetByIdAsync(form.ParentTaskId) ?? throw new NotFoundException("İlgili üst görev Bulunamadı!");
 
