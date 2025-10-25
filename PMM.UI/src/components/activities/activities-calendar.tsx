@@ -6,7 +6,7 @@ import "dayjs/locale/tr";
 import isoWeek from "dayjs/plugin/isoWeek";
 dayjs.extend(isoWeek);
 dayjs.locale("tr");
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { GetActivities } from "../../services/activities/get-activities";
 import { useActivitiesStore } from "@/store/zustand/activities-store";
 import CreateActivityModal from "./modals/create-activity-modal";
@@ -23,20 +23,42 @@ interface TimeSlot {
 
 const SLOT_HEIGHT = 21; // px height used per 15-minute slot
 
+// Seçim kutusu görünümü
+const SELECTION_BORDER_COLOR = "#1677ff"; // Ant Design primary ton
+const SELECTION_Z_INDEX = 50; // etkinlik kartlarının üstünde (kartlar zIndex:10)
+
+// Yardımcılar
+const toMinuteOfDay = (hour: number, minute: number) => hour * 60 + minute;
+const prevSlot = (hour: number, minute: number) => {
+  const m = toMinuteOfDay(hour, minute) - 15;
+  if (m < 0) return null;
+  return { hour: Math.floor(m / 60), minute: m % 60 };
+};
+const nextSlot = (hour: number, minute: number) => {
+  const m = toMinuteOfDay(hour, minute) + 15;
+  if (m > 23 * 60 + 45) return null;
+  return { hour: Math.floor(m / 60), minute: m % 60 };
+};
+
 export default function ActivitiesCalendar() {
   const { activities, setActivities, isLoading, setIsLoading, refreshTrigger } =
     useActivitiesStore();
+
   const [currentWeekStart, setCurrentWeekStart] = useState<Dayjs>(
     dayjs().startOf("isoWeek")
   );
   const [currentTime, setCurrentTime] = useState(dayjs());
   const [hasAutoScrolled, setHasAutoScrolled] = useState(false);
+
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const currentTimeIndicatorRef = useRef<HTMLDivElement | null>(null);
+
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+
   const [selectedActivity, setSelectedActivity] = useState<any>(null);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [selectedEndSlot, setSelectedEndSlot] = useState<TimeSlot | null>(null);
@@ -48,6 +70,9 @@ export default function ActivitiesCalendar() {
     start: TimeSlot;
     end: TimeSlot;
   } | null>(null);
+
+  // Drag sırasında imlecin üzerinde olduğu slot
+  const [hoveredSlot, setHoveredSlot] = useState<TimeSlot | null>(null);
 
   useEffect(() => {
     fetchActivities();
@@ -102,49 +127,44 @@ export default function ActivitiesCalendar() {
     const timer = setInterval(() => {
       setCurrentTime(dayjs());
     }, 30000);
-
     return () => clearInterval(timer);
   }, []);
 
   const goToToday = () => {
-  setCurrentWeekStart(dayjs().startOf("isoWeek"));
+    setCurrentWeekStart(dayjs().startOf("isoWeek"));
   };
 
   const getWeekDays = () => {
     const days = [];
     for (let i = 0; i < 7; i++) {
       days.push(currentWeekStart.add(i, "day"));
-    }    
+    }
     return days;
   };
 
   const hours = Array.from({ length: 24 }, (_, i) => i);
-  const minutes = [0, 15, 30, 45]; // 15 dakikalık aralıklar
+  const minutes = [0, 15, 30, 45];
+
   const weekDays = getWeekDays();
   const currentDayIndex = weekDays.findIndex((day) =>
     day.isSame(currentTime, "day")
   );
   const isCurrentWeek = currentDayIndex !== -1;
 
+  // Current time'a otomatik scroll
   useEffect(() => {
-    if (isLoading || hasAutoScrolled || !isCurrentWeek) {
-      return;
-    }
+    if (isLoading || hasAutoScrolled || !isCurrentWeek) return;
 
     const indicatorEl = currentTimeIndicatorRef.current;
     const containerEl = scrollContainerRef.current;
-
-    if (!indicatorEl || !containerEl) {
-      return;
-    }
+    if (!indicatorEl || !containerEl) return;
 
     const frame = requestAnimationFrame(() => {
       const indicatorRect = indicatorEl.getBoundingClientRect();
       const containerRect = containerEl.getBoundingClientRect();
       const indicatorOffset =
         indicatorRect.top - containerRect.top + containerEl.scrollTop;
-      const targetScroll =
-        indicatorOffset - containerEl.clientHeight / 2;
+      const targetScroll = indicatorOffset - containerEl.clientHeight / 2;
 
       containerEl.scrollTo({
         top: Math.max(targetScroll, 0),
@@ -161,28 +181,29 @@ export default function ActivitiesCalendar() {
     setHasAutoScrolled(false);
   }, [currentWeekStart]);
 
-  // Başlangıç zamanı bu slota denk gelen aktiviteleri getir
-  // Eğer aktivite birden fazla güne yayılıyorsa, her günün başında (00:00) tekrar göster
-  const getActivitiesStartingInSlot = (date: Dayjs, hour: number, minute: number) => {
+  // Slotta başlayan aktiviteleri getir (çok günlük aktiviteler için gün başı render)
+  const getActivitiesStartingInSlot = (
+    date: Dayjs,
+    hour: number,
+    minute: number
+  ) => {
     return activities.filter((activity) => {
       const startTime = dayjs(activity.StartTime);
       const endTime = dayjs(activity.EndTime);
 
-      // Aktivitenin başlangıç saati bu slotun içindeyse
-      const startsHere = startTime.isSame(date, "day") &&
+      const startsHere =
+        startTime.isSame(date, "day") &&
         startTime.hour() === hour &&
         Math.floor(startTime.minute() / 15) * 15 === minute;
-      
+
       if (startsHere) return true;
 
-      // Eğer aktivite birden fazla güne yayılıyorsa
       if (!startTime.isSame(endTime, "day")) {
-        // Bu gün aktivitenin başlangıç ve bitiş tarihleri arasındaysa
-        // ve bu slot günün başlangıcı (00:00) ise, aktiviteyi göster
-        const isActivityDay = date.isAfter(startTime, "day") && date.isBefore(endTime, "day");
-        const isLastDay = date.isSame(endTime, "day") && date.isAfter(startTime, "day");
+        const isActivityDay =
+          date.isAfter(startTime, "day") && date.isBefore(endTime, "day");
+        const isLastDay =
+          date.isSame(endTime, "day") && date.isAfter(startTime, "day");
         const isDayStart = hour === 0 && minute === 0;
-        
         if ((isActivityDay || isLastDay) && isDayStart) {
           return true;
         }
@@ -192,41 +213,34 @@ export default function ActivitiesCalendar() {
     });
   };
 
-  // Aktivitenin süresini hesapla (15 dakikalık slot cinsinden)
-  // Eğer aktivite birden fazla güne yayılıyorsa, sadece başladığı günün sonuna kadar olan kısmı hesapla
+  // Aktivite süresi (slot sayısı)
   const getActivityDuration = (activity: any, currentDate: Dayjs) => {
     const startTime = dayjs(activity.StartTime);
     const endTime = dayjs(activity.EndTime);
-    
-    // Eğer aktivite aynı gün içinde bitiyorsa
+
     if (startTime.isSame(endTime, "day")) {
       const durationMinutes = endTime.diff(startTime, "minute");
-      return Math.max(1, Math.ceil(durationMinutes / 15)); // En az 1 slot
+      return Math.max(1, Math.ceil(durationMinutes / 15));
     }
-    
-    // Aktivite birden fazla güne yayılıyor
-    // Başladığı gün için: o günün sonuna kadar
+
     if (startTime.isSame(currentDate, "day")) {
       const endOfDay = startTime.endOf("day");
       const durationMinutes = endOfDay.diff(startTime, "minute");
       return Math.max(1, Math.ceil(durationMinutes / 15));
     }
-    
-    // Diğer günler için: tam gün (00:00'dan 23:59'a kadar)
+
     const startOfDay = currentDate.startOf("day");
-    
-    // Eğer bu gün aktivitenin son günüyse
+
     if (endTime.isSame(currentDate, "day")) {
       const durationMinutes = endTime.diff(startOfDay, "minute");
       return Math.max(1, Math.ceil(durationMinutes / 15));
     }
-    
-    // Ara günler için tam gün
+
     const fullDayMinutes = 24 * 60;
     return Math.ceil(fullDayMinutes / 15);
   };
 
-  // Kullanıcı ID'sine göre renk üret
+  // Kullanıcı rengi
   const getUserColor = (userId: number) => {
     const colors = [
       "#1890ff", // blue
@@ -243,62 +257,44 @@ export default function ActivitiesCalendar() {
     return colors[userId % colors.length];
   };
 
-  // Çakışan aktiviteleri bul ve konum hesapla
+  // Çakışma konum hesaplama (aynı gün içindeki aktiviteler)
   const getActivityPosition = (activity: any, allActivitiesInDay: any[]) => {
     const startTime = dayjs(activity.StartTime);
     const endTime = dayjs(activity.EndTime);
 
-    // Bu aktivite ile çakışan tüm aktiviteleri bul
     const overlappingActivities = allActivitiesInDay.filter((otherActivity) => {
       const otherStart = dayjs(otherActivity.StartTime);
       const otherEnd = dayjs(otherActivity.EndTime);
-
-      // Çakışma kontrolü: Zaman aralıkları kesişiyor mu?
-      return (
-        startTime.isBefore(otherEnd) && endTime.isAfter(otherStart)
-      );
+      return startTime.isBefore(otherEnd) && endTime.isAfter(otherStart);
     });
 
-    // Başlangıç zamanına göre sırala
     const sortedActivities = overlappingActivities.sort((a, b) => {
       const aStart = dayjs(a.StartTime).valueOf();
       const bStart = dayjs(b.StartTime).valueOf();
       if (aStart !== bStart) return aStart - bStart;
-      // Aynı başlangıç zamanı ise, bitiş zamanına göre
       return dayjs(a.EndTime).valueOf() - dayjs(b.EndTime).valueOf();
     });
 
-    // Her aktivite için uygun bir lane (kolon) bul
     const lanes: any[][] = [];
-
     for (const act of sortedActivities) {
       const actStart = dayjs(act.StartTime);
-
-      // Mevcut lane'lerden uygun olanı bul
       let placed = false;
       for (let i = 0; i < lanes.length; i++) {
         const lane = lanes[i];
         const lastInLane = lane[lane.length - 1];
         const lastEnd = dayjs(lastInLane.EndTime);
-
-        // Bu lane'deki son aktivite bitmişse, bu lane'e yerleştir
         if (!actStart.isBefore(lastEnd)) {
           lane.push(act);
           placed = true;
           break;
         }
       }
-
-      // Uygun lane bulunamadıysa, yeni lane oluştur
-      if (!placed) {
-        lanes.push([act]);
-      }
+      if (!placed) lanes.push([act]);
     }
 
-    // Bu aktivitenin hangi lane'de olduğunu bul
     let columnIndex = 0;
     for (let i = 0; i < lanes.length; i++) {
-      if (lanes[i].some(a => a.Id === activity.Id)) {
+      if (lanes[i].some((a) => a.Id === activity.Id)) {
         columnIndex = i;
         break;
       }
@@ -306,38 +302,42 @@ export default function ActivitiesCalendar() {
 
     return {
       totalColumns: lanes.length,
-      columnIndex: columnIndex,
+      columnIndex,
     };
   };
 
+  // Seçim başlat
   const handleMouseDown = (date: Dayjs, hour: number, minute: number) => {
     const slot: TimeSlot = { date, hour, minute };
     setIsDragging(true);
     setDragStart(slot);
     setSelectionRange({ start: slot, end: slot });
+    setHoveredSlot(slot);
   };
 
+  // Grid hover
   const handleMouseEnter = (date: Dayjs, hour: number, minute: number) => {
+    const slot: TimeSlot = { date, hour, minute };
+    setHoveredSlot(slot);
+
     if (isDragging && dragStart) {
-      const slot: TimeSlot = { date, hour, minute };
-      // Only allow selection on the same day
       if (slot.date.isSame(dragStart.date, "day")) {
         setSelectionRange({ start: dragStart, end: slot });
       }
     }
   };
 
-  const handleMouseUp = () => {
+  // Seçimi tamamla (useCallback ile sabit referans)
+  const handleMouseUp = useCallback(() => {
     if (isDragging && selectionRange) {
       setIsDragging(false);
 
-      // Calculate start and end times
       const { start, end } = selectionRange;
       const startTime = start.date.hour(start.hour).minute(start.minute);
       const endTimeSlot = end.hour * 60 + end.minute;
       const startTimeSlot = start.hour * 60 + start.minute;
 
-      let finalStart, finalEnd;
+      let finalStart: Dayjs, finalEnd: Dayjs;
       if (endTimeSlot >= startTimeSlot) {
         finalStart = startTime;
         finalEnd = end.date.hour(end.hour).minute(end.minute).add(15, "minute");
@@ -359,12 +359,24 @@ export default function ActivitiesCalendar() {
       setIsCreateModalVisible(true);
       setSelectionRange(null);
       setDragStart(null);
+      setHoveredSlot(null);
     }
-  };
+  }, [isDragging, selectionRange]);
 
+  // ⬇️ Global mouseup: takvim dışındayken bile bırakmayı yakala
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      if (isDragging) {
+        handleMouseUp();
+      }
+    };
+    window.addEventListener("mouseup", handleGlobalMouseUp);
+    return () => window.removeEventListener("mouseup", handleGlobalMouseUp);
+  }, [isDragging, handleMouseUp]);
+
+  // Slot seçili mi?
   const isSlotSelected = (date: Dayjs, hour: number, minute: number) => {
     if (!selectionRange) return false;
-
     const { start, end } = selectionRange;
     if (!date.isSame(start.date, "day")) return false;
 
@@ -379,16 +391,19 @@ export default function ActivitiesCalendar() {
     }
   };
 
-  useEffect(() => {
-    const handleGlobalMouseUp = () => {
-      if (isDragging) {
-        handleMouseUp();
-      }
-    };
-
-    window.addEventListener("mouseup", handleGlobalMouseUp);
-    return () => window.removeEventListener("mouseup", handleGlobalMouseUp);
-  }, [isDragging, selectionRange]);
+  // Seçimin üst/alt kenarı
+  const isStartOfSelection = (date: Dayjs, hour: number, minute: number) => {
+    if (!isSlotSelected(date, hour, minute)) return false;
+    const prev = prevSlot(hour, minute);
+    if (!prev) return true;
+    return !isSlotSelected(date, prev.hour, prev.minute);
+  };
+  const isEndOfSelection = (date: Dayjs, hour: number, minute: number) => {
+    if (!isSlotSelected(date, hour, minute)) return false;
+    const next = nextSlot(hour, minute);
+    if (!next) return true;
+    return !isSlotSelected(date, next.hour, next.minute);
+  };
 
   if (isLoading) {
     return (
@@ -492,7 +507,13 @@ export default function ActivitiesCalendar() {
         {/* Time Slots */}
         <div
           ref={scrollContainerRef}
-          style={{ maxHeight: "calc(100vh - 400px)", overflowY: "auto", userSelect: "none" }}
+          style={{
+            maxHeight: "calc(100vh - 400px)",
+            overflowY: "auto",
+            userSelect: "none",
+          }}
+          onMouseLeave={() => setHoveredSlot(null)}
+          onMouseUp={handleMouseUp} // ⬅️ lokal mouseup
         >
           {hours.map((hour) => (
             <div key={hour}>
@@ -502,6 +523,7 @@ export default function ActivitiesCalendar() {
                   currentTime.hour() === hour &&
                   currentTime.minute() >= minute &&
                   currentTime.minute() < minute + 15;
+
                 const minutesIntoSlot =
                   currentTime.minute() - minute + currentTime.second() / 60;
                 const clampedMinutes = Math.min(
@@ -511,6 +533,7 @@ export default function ActivitiesCalendar() {
                 const indicatorOffset = (clampedMinutes / 15) * SLOT_HEIGHT;
                 const indicatorLineTop = `${indicatorOffset}px`;
                 const indicatorDotTop = `${indicatorOffset}px`;
+
                 return (
                   <div
                     key={`${hour}-${minute}`}
@@ -524,177 +547,236 @@ export default function ActivitiesCalendar() {
                       position: "relative",
                     }}
                   >
-                    {/* Hour Label - only show on first 15-min slot */}
+                    {/* Hour Label */}
                     <div
                       style={{
                         padding: "0px 8px",
                         textAlign: "center",
-                      fontSize: "12px",
-                      color: "#666",
-                      backgroundColor: "#fafafa",
-                      borderBottom:
-                        index !== minutes.length - 1
-                          ? "1px solid #f5f5f5"
-                          : "none",
-                    }}
-                  >
-                    {index === 0
-                      ? `${hour.toString().padStart(2, "0")}:00`
-                      : `${hour.toString().padStart(2, "0")}:${minute
-                        .toString()
-                        .padStart(2, "0")}`}
-                  </div>
+                        fontSize: "12px",
+                        color: "#666",
+                        backgroundColor: "#fafafa",
+                        borderBottom:
+                          index !== minutes.length - 1
+                            ? "1px solid #f5f5f5"
+                            : "none",
+                      }}
+                    >
+                      {index === 0
+                        ? `${hour.toString().padStart(2, "0")}:00`
+                        : `${hour.toString().padStart(2, "0")}:${minute
+                            .toString()
+                            .padStart(2, "0")}`}
+                    </div>
 
-                  {/* Day Columns */}
-                  {weekDays.map((day) => {
-                    const slotActivities = getActivitiesStartingInSlot(
-                      day,
-                      hour,
-                      minute
-                    );
-                    // O günün tüm aktivitelerini al (çakışma kontrolü için)
-                    const allActivitiesInDay = activities.filter(act =>
-                      dayjs(act.StartTime).isSame(day, "day")
-                    );
-                    const isSelected = isSlotSelected(day, hour, minute);
-                    const isToday = day.isSame(currentTime, "day");
-                    const showIndicator = isCurrentRow && isToday;
+                    {/* Day Columns */}
+                    {weekDays.map((day) => {
+                      const slotActivities = getActivitiesStartingInSlot(
+                        day,
+                        hour,
+                        minute
+                      );
+                      const allActivitiesInDay = activities.filter((act) =>
+                        dayjs(act.StartTime).isSame(day, "day")
+                      );
 
-                    return (
-                      <div
-                        key={`${day.format("YYYY-MM-DD")}-${hour}-${minute}`}
-                        style={{
-                          minHeight: "20px",
-                          padding: "2px",
-                          borderLeft: "1px solid #f0f0f0",
-                          cursor: "pointer",
-                          position: "relative",
-                          backgroundColor: isSelected
-                            ? "#bae7ff"
-                            : isToday
-                              ? "#f6ffed"
-                              : "#fff",
-                          transition: "background-color 0.1s",
-                        }}
-                        onMouseDown={() => handleMouseDown(day, hour, minute)}
-                        onMouseEnter={() => handleMouseEnter(day, hour, minute)}
-                        onMouseOver={(e) => {
-                          if (!isDragging && !isSelected) {
-                            e.currentTarget.style.backgroundColor = "#e6f7ff";
-                          }
-                        }}
-                        onMouseOut={(e) => {
-                          if (!isDragging && !isSelected) {
-                            e.currentTarget.style.backgroundColor = isToday
-                              ? "#f6ffed"
-                              : "#fff";
-                          }
-                        }}
-                      >
-                        {showIndicator && (
-                          <>
+                      const selected = isSlotSelected(day, hour, minute);
+                      const startEdge = isStartOfSelection(day, hour, minute);
+                      const endEdge = isEndOfSelection(day, hour, minute);
+
+                      const isToday = day.isSame(currentTime, "day");
+                      const showIndicator = isCurrentRow && isToday;
+
+                      const hoveredDT = hoveredSlot
+                        ? hoveredSlot.date
+                            .hour(hoveredSlot.hour)
+                            .minute(hoveredSlot.minute)
+                        : null;
+
+                      return (
+                        <div
+                          key={`${day.format("YYYY-MM-DD")}-${hour}-${minute}`}
+                          style={{
+                            minHeight: "20px",
+                            padding: "2px",
+                            borderLeft: "1px solid #f0f0f0",
+                            cursor: "pointer",
+                            position: "relative",
+                            backgroundColor: isToday ? "#f6ffed" : "#fff",
+                            transition: "background-color 0.1s",
+                          }}
+                          onMouseDown={() => handleMouseDown(day, hour, minute)}
+                          onMouseEnter={() => handleMouseEnter(day, hour, minute)}
+                          onMouseOver={(e) => {
+                            if (!isDragging && !selected) {
+                              e.currentTarget.style.backgroundColor = "#e6f7ff";
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            if (!isDragging && !selected) {
+                              e.currentTarget.style.backgroundColor = isToday
+                                ? "#f6ffed"
+                                : "#fff";
+                            }
+                          }}
+                        >
+                          {showIndicator && (
+                            <>
+                              <div
+                                ref={currentTimeIndicatorRef}
+                                style={{
+                                  position: "absolute",
+                                  top: indicatorLineTop,
+                                  left: "2px",
+                                  right: "2px",
+                                  height: "2px",
+                                  backgroundColor: "#ff4d4f",
+                                  zIndex: 80, // saat çizgisi üstte kalsın
+                                  pointerEvents: "none",
+                                }}
+                              />
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  top: indicatorDotTop,
+                                  left: "50%",
+                                  width: "8px",
+                                  height: "8px",
+                                  borderRadius: "50%",
+                                  backgroundColor: "#ff4d4f",
+                                  transform: "translateX(-50%)",
+                                  boxShadow: "0 0 0 2px #fff",
+                                  zIndex: 81,
+                                  pointerEvents: "none",
+                                }}
+                              />
+                            </>
+                          )}
+
+                          {/* Etkinlik Kartları */}
+                          {slotActivities.map((activity: any) => {
+                            const duration = getActivityDuration(
+                              activity,
+                              day
+                            );
+                            const activityHeight =
+                              duration * SLOT_HEIGHT - 4;
+
+                            const userColor = getUserColor(activity.UserId);
+                            const {
+                              totalColumns,
+                              columnIndex,
+                            } = getActivityPosition(
+                              activity,
+                              allActivitiesInDay
+                            );
+                            const columnWidth = 100 / totalColumns;
+                            const leftOffset = columnWidth * columnIndex;
+
+                            const startTime = dayjs(activity.StartTime);
+                            const endTime = dayjs(activity.EndTime);
+                            const hoverHitsActivity =
+                              !!hoveredDT &&
+                              (hoveredDT.isAfter(startTime) ||
+                                hoveredDT.isSame(startTime)) &&
+                              hoveredDT.isBefore(endTime);
+
+                            return (
+                              <div
+                                key={activity.Id}
+                                style={{
+                                  padding: "4px 6px",
+                                  marginBottom: "2px",
+                                  backgroundColor: userColor,
+                                  color: "#fff",
+                                  borderRadius: "4px",
+                                  fontSize: "11px",
+                                  cursor: isDragging ? "default" : "pointer",
+                                  overflow: "hidden",
+                                  position: "absolute",
+                                  top: "2px",
+                                  left: `calc(2px + ${leftOffset}%)`,
+                                  width: `calc(${columnWidth}% - 4px)`,
+                                  height: `${activityHeight}px`,
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  zIndex: 10, // seçim overlay'i altında (50)
+                                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                                  // Drag sırasında alttaki slotların hover'ını engelleme
+                                  pointerEvents: isDragging ? "none" : "auto",
+                                  // Drag sırasında o anda hover edilen slotun zaman aralığı bu karta denkse opaklık düşür
+                                  opacity:
+                                    isDragging && hoverHitsActivity ? 0.35 : 1,
+                                  transition: "opacity 0.08s linear",
+                                }}
+                                onMouseDown={(e) => {
+                                  if (!isDragging) e.stopPropagation();
+                                }}
+                                onClick={(e) => {
+                                  if (isDragging) return;
+                                  e.stopPropagation();
+                                  setSelectedActivity(activity);
+                                  setIsUpdateModalVisible(true);
+                                }}
+                                title={`${activity.Description}\n${dayjs(
+                                  activity.StartTime
+                                ).format("HH:mm")} - ${dayjs(
+                                  activity.EndTime
+                                ).format("HH:mm")}`}
+                              >
+                                <div
+                                  style={{
+                                    fontWeight: 500,
+                                    marginBottom: "2px",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  {activity.Description}
+                                </div>
+                                <div
+                                  style={{
+                                    fontSize: "10px",
+                                    opacity: 0.9,
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  {dayjs(activity.StartTime).format("HH:mm")} -{" "}
+                                  {dayjs(activity.EndTime).format("HH:mm")}
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                          {/* Seçim Border Overlay (daima üstte, etkinlikleri engellemeden) */}
+                          {selected && (
                             <div
-                              ref={currentTimeIndicatorRef}
                               style={{
                                 position: "absolute",
-                                top: indicatorLineTop,
-                                left: "2px",
-                                right: "2px",
-                                height: "2px",
-                                backgroundColor: "#ff4d4f",
-                                zIndex: 15,
+                                inset: 0,
+                                borderLeft: `2px solid ${SELECTION_BORDER_COLOR}`,
+                                borderRight: `2px solid ${SELECTION_BORDER_COLOR}`,
+                                borderTop: startEdge
+                                  ? `2px solid ${SELECTION_BORDER_COLOR}`
+                                  : "none",
+                                borderBottom: endEdge
+                                  ? `2px solid ${SELECTION_BORDER_COLOR}`
+                                  : "none",
+                                borderRadius: startEdge
+                                  ? "6px 6px 0 0"
+                                  : endEdge
+                                  ? "0 0 6px 6px"
+                                  : 0,
+                                zIndex: SELECTION_Z_INDEX,
                                 pointerEvents: "none",
                               }}
                             />
-                            <div
-                              style={{
-                                position: "absolute",
-                                top: indicatorDotTop,
-                                left: "50%",
-                                width: "8px",
-                                height: "8px",
-                                borderRadius: "50%",
-                                backgroundColor: "#ff4d4f",
-                                transform: "translateX(-50%)",
-                                boxShadow: "0 0 0 2px #fff",
-                                zIndex: 16,
-                                pointerEvents: "none",
-                              }}
-                            />
-                          </>
-                        )}
-                        {slotActivities.map((activity: any) => {
-                          const duration = getActivityDuration(activity, day);
-                          const activityHeight = duration * SLOT_HEIGHT - 4; // -4 for gap
-
-                          // Kullanıcıya özel renk
-                          const userColor = getUserColor(activity.UserId);
-
-                          // Çakışma pozisyonu hesapla
-                          const { totalColumns, columnIndex } = getActivityPosition(activity, allActivitiesInDay);
-                          const columnWidth = 100 / totalColumns; // Yüzde cinsinden genişlik
-                          const leftOffset = columnWidth * columnIndex; // Yüzde cinsinden sol konum
-
-                          return (
-                            <div
-                              key={activity.Id}
-                              style={{
-                                padding: "4px 6px",
-                                marginBottom: "2px",
-                                backgroundColor: userColor,
-                                color: "#fff",
-                                borderRadius: "4px",
-                                fontSize: "11px",
-                                cursor: "pointer",
-                                overflow: "hidden",
-                                position: "absolute",
-                                top: "2px",
-                                left: `calc(2px + ${leftOffset}%)`,
-                                width: `calc(${columnWidth}% - 4px)`,
-                                height: `${activityHeight}px`,
-                                display: "flex",
-                                flexDirection: "column",
-                                zIndex: 10,
-                                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-                              }}
-                              onMouseDown={(e) => {
-                                e.stopPropagation();
-                              }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedActivity(activity);
-                                setIsUpdateModalVisible(true);
-                              }}
-                              title={`${activity.Description}\n${dayjs(
-                                activity.StartTime
-                              ).format("HH:mm")} - ${dayjs(
-                                activity.EndTime
-                              ).format("HH:mm")}`}
-                            >
-                              <div style={{
-                                fontWeight: "500",
-                                marginBottom: "2px",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}>
-                                {activity.Description}
-                              </div>
-                              <div style={{
-                                fontSize: "10px",
-                                opacity: 0.9,
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}>
-                                {dayjs(activity.StartTime).format("HH:mm")} - {dayjs(activity.EndTime).format("HH:mm")}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 );
               })}
@@ -712,12 +794,16 @@ export default function ActivitiesCalendar() {
         }}
         initialDate={
           selectedSlot
-            ? selectedSlot.date.hour(selectedSlot.hour).minute(selectedSlot.minute)
+            ? selectedSlot.date
+                .hour(selectedSlot.hour)
+                .minute(selectedSlot.minute)
             : dayjs()
         }
         initialEndDate={
           selectedEndSlot
-            ? selectedEndSlot.date.hour(selectedEndSlot.hour).minute(selectedEndSlot.minute)
+            ? selectedEndSlot.date
+                .hour(selectedEndSlot.hour)
+                .minute(selectedEndSlot.minute)
             : undefined
         }
         selectedUserId={selectedUserId}
