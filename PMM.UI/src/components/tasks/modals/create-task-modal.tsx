@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { Modal, Form, Input, InputNumber, Select, Row, Col, AutoComplete, Button, Spin } from "antd";
+import type { CSSProperties, MouseEvent } from "react";
+import { Modal, Form, Input, InputNumber, Select, AutoComplete, Button, Spin, Tag } from "antd";
 import type { SelectProps } from "antd";
 import { useNotification } from "@/hooks/useNotification";
 import { useTasksStore } from "@/store/zustand/tasks-store";
@@ -9,12 +10,16 @@ import { createTask } from "@/services/tasks/create-task";
 import { TaskStatus } from "@/services/tasks/get-tasks";
 import { updateTask } from "@/services/tasks/update-task";
 import type { TaskModalProps } from "@/types/tasks";
-import { AiOutlinePlus } from "react-icons/ai";
+import { AiOutlinePlus, AiOutlineEdit } from "react-icons/ai";
 import { MultiSelectOption } from "@/types";
+import MultiSelectSearch, { MultiSelectOption as MultiSelectSearchOption } from "../../projects/multi-select-search";
+import CreateLabelModal from "../../projects/modals/create-label-modal";
 
 
 const { TextArea } = Input;
 const MIN_SEARCH_LENGTH = 2;
+
+const formItemNoMarginStyle: CSSProperties = { marginBottom: 0 };
 
 type BaseSelectOption = NonNullable<SelectProps["options"]>[number];
 
@@ -25,8 +30,8 @@ interface SelectOption extends BaseSelectOption {
   raw?: any;
 }
 
-const mergeOptions = (existing: SelectOption[], incoming: SelectOption[]) => {
-  const map = new Map<string, SelectOption>();
+const mergeOptions = <T extends { value: string | number }>(existing: T[], incoming: T[]) => {
+  const map = new Map<string, T>();
   existing.forEach(option => map.set(String(option.value), option));
   incoming.forEach(option => map.set(String(option.value), option));
   return Array.from(map.values());
@@ -152,6 +157,14 @@ export default function CreateTaskModal({
   const [userOptions, setUserOptions] = useState<MultiSelectOption[]>([]);
   const [userLoading, setUserLoading] = useState(false);
   const [userSearchValue, setUserSearchValue] = useState("");
+
+  // Label state
+  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+  const [labelSelectOptions, setLabelSelectOptions] = useState<MultiSelectSearchOption[]>([]);
+  const [isLabelModalVisible, setIsLabelModalVisible] = useState(false);
+  const [labelModalMode, setLabelModalMode] = useState<'create' | 'edit'>('create');
+  const [editingLabelData, setEditingLabelData] = useState<MultiSelectSearchOption | null>(null);
+
   console.log(currentTaskData);
   
   const handleRemoveUser = (userId: string) => {
@@ -235,6 +248,105 @@ export default function CreateTaskModal({
     }
   };
 
+  const handleLabelsChange = (values: string[]) => {
+    if (isViewMode) {
+      return;
+    }
+
+    setSelectedLabels(values);
+    form.setFieldValue("labels", values);
+  };
+
+  const handleLabelCreateButtonClick = () => {
+    setLabelModalMode('create');
+    setEditingLabelData(null);
+    setIsLabelModalVisible(true);
+  };
+
+  const handleLabelModalSuccess = (labelOption: MultiSelectSearchOption) => {
+    // Update label options
+    setLabelSelectOptions(prev => mergeOptions(prev, [labelOption]));
+
+    // Add to selected labels if it's a new label
+    if (labelModalMode === 'create') {
+      const newId = String(labelOption.value);
+      const updatedLabels = Array.from(new Set([...selectedLabels, newId]));
+      setSelectedLabels(updatedLabels);
+      form.setFieldValue("labels", updatedLabels);
+    }
+
+    setIsLabelModalVisible(false);
+    setEditingLabelData(null);
+  };
+
+  const handleLabelModalCancel = () => {
+    setIsLabelModalVisible(false);
+    setEditingLabelData(null);
+  };
+
+  const handleLabelOptionsSync = (options: MultiSelectSearchOption[]) => {
+    setLabelSelectOptions(options);
+  };
+
+  const labelTagRender: SelectProps["tagRender"] = tagProps => {
+    const { label, value, closable, onClose } = tagProps;
+
+    const option = (tagProps as any)?.option;
+
+    const handleMouseDown = (event: MouseEvent<HTMLSpanElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+    };
+
+    const handleEditClick = (event: MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      // Find the label data from labelSelectOptions
+      const labelOption = labelSelectOptions.find(opt => opt.value === String(value));
+
+      const labelData: MultiSelectSearchOption = {
+        value: String(value),
+        label: labelOption?.name || labelOption?.label || '',
+        key: String(value),
+        name: labelOption?.name || labelOption?.label || '',
+        description: (labelOption as any)?.description || '',
+        color: (labelOption as any)?.color || '#1890ff',
+      };
+
+      setLabelModalMode('edit');
+      setEditingLabelData(labelData);
+      setIsLabelModalVisible(true);
+    };
+
+    const resolvedColor = (option as any)?.color || "#4a90e2";
+
+    return (
+      <Tag
+        color={resolvedColor}
+        onMouseDown={handleMouseDown}
+        closable={!isViewMode && closable}
+        onClose={onClose}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          marginInlineEnd: 4,
+          paddingInlineEnd: isViewMode ? 8 : 4,
+        }}
+      >
+        <span>{label}</span>
+        {!isViewMode && (
+          <Button
+            type="text"
+            size="small"
+            icon={<AiOutlineEdit />}
+            onClick={handleEditClick}
+          />
+        )}
+      </Tag>
+    );
+  };
 
   const isEditMode = mode === "edit" && !!currentTaskData;
   const isViewMode = mode === "view" && !!currentTaskData;
@@ -243,6 +355,7 @@ export default function CreateTaskModal({
   const closeModal = useCallback(() => {
     form.resetFields();
     setSelectedUsers([]);
+    setSelectedLabels([]);
     setProjectOptions(defaultProjectOptions);
     setParentTaskOptions(defaultParentTaskOptions);
     onClose();
@@ -294,6 +407,7 @@ export default function CreateTaskModal({
     const normalizedValues = {
       ...values,
       assignedUserIds: selectedUsers.map(user => user.id),
+      labelIds: selectedLabels,
       parentTaskId: values.parentTaskId ?? null,
       plannedHours: values.plannedHours ?? null,
       actualHours: values.actualHours ?? null,
@@ -480,7 +594,10 @@ export default function CreateTaskModal({
         status: statusValue,
         plannedHours: currentTaskData?.PlannedHours ?? undefined,
         actualHours: currentTaskData?.ActualHours ?? undefined,
+        labels: (currentTaskData as any)?.LabelIds ?? [],
       });
+
+      setSelectedLabels((currentTaskData as any)?.LabelIds ?? []);
 
       if (currentTaskData?.ProjectId) {
         const option: SelectOption = {
@@ -544,19 +661,21 @@ export default function CreateTaskModal({
       ? `Görev Güncelle${currentTaskData?.Code ? ` (${currentTaskData?.Code})` : ""}`
       : "Yeni Görev Oluştur";
 
-  const okText = isEditMode ? "Güncelle" : "Oluştur";
-  const cancelText = isViewMode ? "Kapat" : "İptal";
-
   return (
-    <Modal
+    <>
+      <Modal
       title={modalTitle}
       open={visible}
-      onOk={isViewMode ? undefined : () => form.submit()}
       onCancel={handleCancel}
-      okText={okText}
-      cancelText={cancelText}
-      width={600}
-      okButtonProps={isViewMode ? { style: { display: "none" } } : undefined}
+      footer={null}
+      width={1200}
+      destroyOnClose={true}
+      styles={{
+        body: {
+          maxHeight: "70vh",
+          overflowY: "auto",
+        },
+      }}
     >
       <Form
         form={form}
@@ -566,67 +685,127 @@ export default function CreateTaskModal({
           status: TaskStatus.TODO,
         }}
       >
-        <Form.Item
-          label="Görev Kodu"
-          name="code"
-          rules={[{ required: true, message: "Görev kodu gereklidir" }]}
-          style={{ pointerEvents: isViewMode ? 'none' : 'auto' }}
-        >
-          <Input placeholder="Görev kodu girin..." disabled={isEditMode} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-2 gap-y-1">
+          <Form.Item
+            label="Görev Kodu"
+            name="code"
+            rules={[{ required: true, message: "Görev kodu gereklidir" }]}
+            style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}
+          >
+            <Input placeholder="Görev kodu girin..." disabled={isEditMode} />
+          </Form.Item>
+
+          <Form.Item
+            label="Proje"
+            name="projectId"
+            rules={[{ required: true, message: "Proje seçimi gereklidir" }]}
+            style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}
+          >
+            <Select
+              showSearch
+              placeholder="Proje seçin..."
+              options={projectOptions}
+              onSearch={handleProjectSearch}
+              onChange={handleProjectChange}
+              onDropdownVisibleChange={ensureProjectOptions}
+              filterOption={false}
+              allowClear={!isViewMode}
+              loading={projectLoading}
+              disabled={isEditMode}
+            />
+          </Form.Item>
+
+          <Form.Item label="Üst Görev" name="parentTaskId" style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}>
+            <Select
+              showSearch
+              placeholder="Üst görev seçin..."
+              options={parentTaskOptions}
+              onSearch={handleParentTaskSearch}
+              onDropdownVisibleChange={ensureParentTaskOptions}
+              filterOption={false}
+              allowClear={!isViewMode}
+              loading={parentTaskLoading}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Başlık"
+            name="title"
+            rules={[{ required: true, message: "Başlık gereklidir" }]}
+            style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item label="Durum" name="status" style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}>
+            <Select>
+              <Select.Option value={TaskStatus.TODO}>Yapılacak</Select.Option>
+              <Select.Option value={TaskStatus.IN_PROGRESS}>
+                Devam Ediyor
+              </Select.Option>
+              <Select.Option value={TaskStatus.INACTIVE}>Pasif</Select.Option>
+              <Select.Option value={TaskStatus.DONE}>Tamamlandı</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Planlanan Saat" name="plannedHours" style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}>
+            <InputNumber
+              style={{ width: "100%" }}
+              min={0}
+              step={0.5}
+            />
+          </Form.Item>
+
+          <Form.Item label="Gerçekleşen Saat" name="actualHours" style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}>
+            <InputNumber
+              style={{ width: "100%" }}
+              min={0}
+              step={0.5}
+            />
+          </Form.Item>
+        </div>
+
+        <Form.Item label="Etiketler" name="labels" style={formItemNoMarginStyle}>
+          <div className="space-y-2 flex flex-row gap-2">
+            <MultiSelectSearch
+              placeholder="Etiket ara ve seç..."
+              onChange={handleLabelsChange}
+              value={selectedLabels}
+              apiUrl="/Label"
+              size="middle"
+              className="w-full flex-1"
+              disabled={isViewMode}
+              style={{
+                width: "100%",
+              }}
+              initialOptions={labelSelectOptions}
+              tagRender={labelTagRender}
+              onOptionsChange={handleLabelOptionsSync}
+            />
+
+            {!isViewMode && (
+              <Button
+                type="dashed"
+                icon={<AiOutlinePlus />}
+                onClick={handleLabelCreateButtonClick}
+                size="middle"
+                className="w-full h-[32px] flex items-center justify-center gap-1"
+                style={{
+                  borderStyle: "dashed",
+                  color: "#52c41a",
+                  borderColor: "#52c41a",
+                }}
+              >
+              </Button>
+            )}
+          </div>
         </Form.Item>
 
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              label="Proje"
-              name="projectId"
-              rules={[{ required: true, message: "Proje seçimi gereklidir" }]}
-              style={{ pointerEvents: isViewMode ? 'none' : 'auto' }}
-            >
-              <Select
-                showSearch
-                placeholder="Proje seçin..."
-                options={projectOptions}
-                onSearch={handleProjectSearch}
-                onChange={handleProjectChange}
-                onDropdownVisibleChange={ensureProjectOptions}
-                filterOption={false}
-                allowClear={!isViewMode}
-                loading={projectLoading}
-                disabled={isEditMode}
-              />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item label="Üst Görev" name="parentTaskId" style={{ pointerEvents: isViewMode ? 'none' : 'auto' }}>
-              <Select
-                showSearch
-                placeholder="Üst görev seçin..."
-                options={parentTaskOptions}
-                onSearch={handleParentTaskSearch}
-                onDropdownVisibleChange={ensureParentTaskOptions}
-                filterOption={false}
-                allowClear={!isViewMode}
-                loading={parentTaskLoading}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Form.Item
-          label="Başlık"
-          name="title"
-          rules={[{ required: true, message: "Başlık gereklidir" }]}
-          style={{ pointerEvents: isViewMode ? 'none' : 'auto' }}
-        >
-          <Input />
-        </Form.Item>
-
-        <Form.Item label="Açıklama" required name="description" style={{ pointerEvents: isViewMode ? 'none' : 'auto' }}>
+        <Form.Item label="Açıklama" required name="description" style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}>
           <TextArea rows={4} />
         </Form.Item>
 
-        <Form.Item label="Görev Ekibi">
+        <Form.Item label="Görev Ekibi" style={formItemNoMarginStyle}>
           <div className="space-y-3">
             {!isViewMode && (
               <AutoComplete
@@ -694,38 +873,42 @@ export default function CreateTaskModal({
             </div>
           </div>
         </Form.Item>
-        <Form.Item label="Durum" name="status" style={{ pointerEvents: isViewMode ? 'none' : 'auto' }}>
-          <Select>
-            <Select.Option value={TaskStatus.TODO}>Yapılacak</Select.Option>
-            <Select.Option value={TaskStatus.IN_PROGRESS}>
-              Devam Ediyor
-            </Select.Option>
-            <Select.Option value={TaskStatus.INACTIVE}>Pasif</Select.Option>
-            <Select.Option value={TaskStatus.DONE}>Tamamlandı</Select.Option>
-          </Select>
-        </Form.Item>
 
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item label="Planlanan Saat" name="plannedHours" style={{ pointerEvents: isViewMode ? 'none' : 'auto' }}>
-              <InputNumber
-                style={{ width: "100%" }}
-                min={0}
-                step={0.5}
-              />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item label="Gerçekleşen Saat" name="actualHours" style={{ pointerEvents: isViewMode ? 'none' : 'auto' }}>
-              <InputNumber
-                style={{ width: "100%" }}
-                min={0}
-                step={0.5}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
+        <Form.Item style={formItemNoMarginStyle}>
+          <div className="flex justify-end w-full gap-3 pt-3">
+            <Button
+              onClick={handleCancel}
+              size="middle"
+              className="min-w-[100px]"
+            >
+              {isViewMode ? "Kapat" : "İptal"}
+            </Button>
+            {!isViewMode && (
+              <Button
+                type="primary"
+                htmlType="submit"
+                size="middle"
+                className="min-w-[100px]"
+              >
+                {isEditMode ? "Güncelle" : "Oluştur"}
+              </Button>
+            )}
+          </div>
+        </Form.Item>
       </Form>
     </Modal>
+    <CreateLabelModal
+      visible={isLabelModalVisible}
+      mode={labelModalMode}
+      initialData={editingLabelData ? {
+        id: editingLabelData.value.toString(),
+        name: editingLabelData.label,
+        description: (editingLabelData as any).description || '',
+        color: (editingLabelData as any).color || ''
+      } : undefined}
+      onSuccess={handleLabelModalSuccess}
+      onCancel={handleLabelModalCancel}
+    />
+    </>
   );
 }
