@@ -593,6 +593,7 @@ export default function CreateTaskModal({
                 filterOption={false}
                 allowClear={!isViewMode}
                 loading={projectLoading}
+                disabled={isEditMode}
               />
             </Form.Item>
           </Col>
