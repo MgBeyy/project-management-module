@@ -58,5 +58,16 @@ namespace PMM.Data.Repositories
                     .ThenInclude(ta => ta.User)
                 .ToListAsync();
         }
+
+        public async Task<List<TaskEntity>> GetByUserIdAsync(int userId)
+        {
+            return await Query(t => t.TaskAssignments.Any(ta => ta.UserId == userId))
+                .Include(t => t.Project)
+                .Include(t => t.TaskLabels)
+                    .ThenInclude(tl => tl.Label)
+                .Include(t => t.TaskAssignments)
+                    .ThenInclude(ta => ta.User)
+                .ToListAsync();
+        }
     }
 }

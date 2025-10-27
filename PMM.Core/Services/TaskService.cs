@@ -308,6 +308,11 @@ namespace PMM.Core.Services
                 }
             }
 
+            if (form.AssignedUserId.HasValue)
+            {
+                query = query.Where(t => t.TaskAssignments.Any(ta => ta.UserId == form.AssignedUserId.Value));
+            }
+
             query = OrderByHelper.OrderByDynamic(query, form.SortBy, form.SortDesc);
 
             int page = form.Page ?? 1;
