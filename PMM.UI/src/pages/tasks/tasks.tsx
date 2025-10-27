@@ -9,7 +9,9 @@ export default function Tasks() {
         Görevler
       </h1>
       <TasksFilter />
-      <TasksCrudModal />
+      <div className="flex items-center justify-between rounded-t-2xl bg-[#F1F5FF] shrink-0">
+        <TasksCrudModal />
+      </div>
       <TasksCustomTable />
     </div>
   );

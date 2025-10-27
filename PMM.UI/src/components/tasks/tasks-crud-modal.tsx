@@ -1,4 +1,4 @@
-import { Button, Space } from "antd";
+import { Button, Divider } from "antd";
 import { useState } from "react";
 import { AiOutlineDelete, AiOutlineEdit, AiOutlineEye, AiOutlinePlus } from "react-icons/ai";
 import { useTasksStore } from "@/store/zustand/tasks-store";
@@ -57,8 +57,10 @@ export default function TasksCrudModal() {
   };
 
   return (
-    <div style={{ marginBottom: "16px" }}>
-      <Space>
+    <>
+      <div className="m-4 flex items-center rounded-3xl bg-[#F1F5FF] gap-4">
+        <span>Görevler</span>
+        <Divider type="vertical" className="h-6" />
         <Button
           type="primary"
           icon={<AiOutlinePlus />}
@@ -84,8 +86,7 @@ export default function TasksCrudModal() {
           onClick={handleDeleteClick}
           danger
         />
-      </Space>
-
+      </div>
       <CreateTaskModal
         visible={taskModalVisible}
         onClose={handleModalClose}
@@ -99,6 +100,6 @@ export default function TasksCrudModal() {
         onClose={handleDeleteModalClose}
         task={selectedTask}
       />
-    </div>
+    </>
   );
 }
