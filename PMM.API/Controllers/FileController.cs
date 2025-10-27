@@ -27,6 +27,7 @@ namespace PMM.API.Controllers
         public async Task<ApiResponse> Create([FromForm] CreateFileForm form)
         {
             var physicalSavePath = Path.Combine(_env.WebRootPath, "files");
+            Console.WriteLine($"Physical Save Path: {physicalSavePath}");
             var file = await _fileService.AddFileAsync(form, physicalSavePath);
             return new ApiResponse(file, StatusCodes.Status201Created);
         }
