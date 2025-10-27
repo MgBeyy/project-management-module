@@ -3,257 +3,32 @@
 import { List, Avatar, Progress, Tag, Button, Tree, Tabs } from 'antd';
 import { UserOutlined, CalendarOutlined, ClockCircleOutlined, ProjectOutlined, FileTextOutlined, CheckSquareOutlined } from '@ant-design/icons';
 import ProjectOrganizationDiagram from '../../components/projects/project-details/project-organization-diagram';
+// Çoklu parent destekli, sadeleştirilmiş ve "PRT-800 ↛ PGM-900" ayrımı yapılmış veri
+// 🌳 Kurumsal ağaç üst seviyesi eklendi: ENT-100
+// PRJ-001, hem PGM-900 (Program) hem PRT-800 (Portföy) altında yer alıyor;
+// bu iki üst katman da artık ENT-100 stratejisinin altında. Böylece PRJ-001 orta katmanda konumlandı.
+
+// 🔎 ODAK: PRJ-001-FE-WEB (Web Uygulaması) — tam ağaç görünümü
 
 const projectData = {
-  id: 1,
-  code: 'PRJ-001',
-  name: 'Proje Yönetim Modülü Geliştirme',
+// 🔎 ODAK AĞAÇ: PRJ-001-FE-WEB (Web Uygulaması) — TÜM AĞAÇ, GÜNCELLENMİŞ
+  // ======================================
+  // 🎯 Focus Node
+  // ======================================
+  id: 1021,
+  code: 'PRJ-001-FE-WEB',
+  name: 'Web Uygulaması',
   description:
-    'Bu proje, proje yönetimi için kapsamlı bir modül geliştirmeyi amaçlar. Görev atama, zaman takibi, raporlama ve ekip yönetimi özelliklerini içerir.',
+    'Proje yönetim modülünün web arayüzü (React) — temel modüller, DS entegrasyonu, performans ve erişilebilirlik.',
   status: 'Devam Ediyor',
-  startDate: '2025-01-01',
-  endDate: '2025-12-31',
-  progress: 65,
+  startDate: '2025-04-01',
+  endDate: '2025-12-01',
+  progress: 62,
   priority: 'Yüksek',
-  parentId: 900, // doğrudan parent id'si
-  parentProject: {
-    id: 900,
-    code: 'PGM-900',
-    name: 'Kurumsal PMO Programı',
-    description:
-      'Kurumsal düzeyde proje/portföy yönetimi süreçlerinin standartlaştırılması ve merkezi PMO araçlarının devreye alınması.',
-    status: 'Devam Ediyor',
-    startDate: '2024-10-01',
-    endDate: '2026-03-31',
-    progress: 58,
-    priority: 'Yüksek',
-    parentId: 800,
-    // parent → parent (yukarı doğru recursive)
-    parentProject: {
-      id: 800,
-      code: 'PRT-800',
-      name: 'Dijital Dönüşüm Portföyü',
-      description:
-        'Şirket genelindeki dijital dönüşüm girişimlerinin portföy düzeyinde planlanması, finansmanı ve takibi.',
-      status: 'Devam Ediyor',
-      startDate: '2024-01-01',
-      endDate: '2026-12-31',
-      progress: 61,
-      priority: 'Kritik',
-      parentId: null,
-      parentProject: null,
-      // parent projelerde de task/subtask/activity var
-      tasks: [
-        {
-          id: 8001,
-          title: 'Portföy Strateji Uyum Kontrolü',
-          status: 'Devam Ediyor',
-          assignee: 'Selin Aras',
-          priority: 'Yüksek',
-          dueDate: '2025-11-15',
-          estimatedHours: 40,
-          loggedHours: 22,
-          subtasks: [
-            { id: 80011, title: 'Stratejik hedef matrisi', status: 'Tamamlandı' },
-            { id: 80012, title: 'Girişim/ hedef eşleştirme', status: 'Devam Ediyor' },
-          ],
-          activities: [
-            { id: 800111, description: 'Kick-off atölyesi', duration: '3 saat', date: '2025-09-29' },
-            { id: 800112, description: 'İş birimleri görüşmeleri', duration: '5 saat', date: '2025-10-07' },
-          ],
-        },
-        {
-          id: 8002,
-          title: 'Portföy Risk Değerlendirmesi',
-          status: 'Devam Ediyor',
-          assignee: 'Mert Ekinci',
-          priority: 'Orta',
-          dueDate: '2025-12-05',
-          estimatedHours: 32,
-          loggedHours: 10,
-          subtasks: [
-            { id: 80021, title: 'Risk kayıtları güncelleme', status: 'Devam Ediyor' },
-            { id: 80022, title: 'Heatmap oluşturma', status: 'Bekliyor' },
-          ],
-          activities: [
-            { id: 800211, description: 'Risk toplama oturumu', duration: '2 saat', date: '2025-10-10' },
-          ],
-        },
-      ],
-      members: [
-        { id: 201, name: 'Selin Aras', role: 'Portfolio Manager', avatar: null },
-        { id: 202, name: 'Mert Ekinci', role: 'Risk Analyst', avatar: null },
-      ],
-    },
-    tasks: [
-      {
-        id: 9001,
-        title: 'PMO Süreç Tanımı',
-        status: 'Tamamlandı',
-        assignee: 'Ebru Deniz',
-        priority: 'Orta',
-        dueDate: '2025-06-30',
-        estimatedHours: 60,
-        loggedHours: 62,
-        subtasks: [
-          { id: 90011, title: 'Şablon ve politikalar', status: 'Tamamlandı' },
-          { id: 90012, title: 'Onay süreçleri', status: 'Tamamlandı' },
-        ],
-        activities: [
-          { id: 900111, description: 'Süreç çalıştayı', duration: '4 saat', date: '2025-04-12' },
-          { id: 900112, description: 'CIO onayı', duration: '1 saat', date: '2025-06-27' },
-        ],
-      },
-      {
-        id: 9002,
-        title: 'Kaynak Planlama Çerçevesi',
-        status: 'Devam Ediyor',
-        assignee: 'Selin Aras',
-        priority: 'Yüksek',
-        dueDate: '2025-11-22',
-        estimatedHours: 48,
-        loggedHours: 18,
-        subtasks: [
-          { id: 90021, title: 'Yük tahmin modeli', status: 'Devam Ediyor' },
-          { id: 90022, title: 'On-call politikası', status: 'Bekliyor' },
-        ],
-        activities: [
-          { id: 900211, description: 'Modelleme toplantısı', duration: '2 saat', date: '2025-10-15' },
-        ],
-      },
-    ],
-    members: [
-      { id: 301, name: 'Ebru Deniz', role: 'Program Manager', avatar: null },
-      { id: 201, name: 'Selin Aras', role: 'Portfolio Manager', avatar: null },
-    ],
-  },
 
-  // ↓↓↓ proje (id:1) için alt projeler (aşağı doğru recursive)
-  subprojects: [
-    {
-      id: 101,
-      code: 'PRJ-001-BE',
-      name: 'Backend Modülü',
-      status: 'Devam Ediyor',
-      startDate: '2025-01-15',
-      endDate: '2025-11-30',
-      progress: 70,
-      priority: 'Yüksek',
-      parentId: 1,
-      parentProject: null, // üstte already represented
-      subprojects: [
-        {
-          id: 1011,
-          code: 'PRJ-001-BE-SVC',
-          name: 'Task Service (Mikroservis)',
-          status: 'Devam Ediyor',
-          startDate: '2025-08-01',
-          endDate: '2025-11-15',
-          progress: 65,
-          priority: 'Yüksek',
-          parentId: 101,
-          parentProject: null,
-          subprojects: [],
-          tasks: [
-            {
-              id: 101101,
-              title: 'Görev CRUD & İş Kuralları',
-              status: 'Devam Ediyor',
-              assignee: 'Ahmet Yılmaz',
-              priority: 'Yüksek',
-              dueDate: '2025-11-05',
-              estimatedHours: 36,
-              loggedHours: 20,
-              subtasks: [
-                { id: 1011011, title: 'CRUD endpointleri', status: 'Tamamlandı' },
-                { id: 1011012, title: 'Durum makineleri (state machine)', status: 'Devam Ediyor' },
-                { id: 1011013, title: 'Validasyon kuralları', status: 'Devam Ediyor' },
-              ],
-              activities: [
-                { id: 10110101, description: 'Domain model tasarımı', duration: '2 saat', date: '2025-10-16' },
-                { id: 10110102, description: 'State machine PoC', duration: '3 saat', date: '2025-10-24' },
-              ],
-            },
-            {
-              id: 101102,
-              title: 'Queue & Event Entegrasyonu',
-              status: 'Bekliyor',
-              assignee: 'Ahmet Yılmaz',
-              priority: 'Orta',
-              dueDate: '2025-11-12',
-              estimatedHours: 20,
-              loggedHours: 0,
-              subtasks: [
-                { id: 1011021, title: 'Event şemaları', status: 'Bekliyor' },
-                { id: 1011022, title: 'Retry/ DLQ stratejisi', status: 'Bekliyor' },
-              ],
-              activities: [],
-            },
-          ],
-          members: [
-            { id: 1, name: 'Ahmet Yılmaz', role: 'Backend Developer', avatar: null },
-            { id: 5, name: 'Caner Usta', role: 'DevOps Engineer', avatar: null },
-          ],
-        },
-      ],
-      tasks: [
-        {
-          id: 10101,
-          title: 'Kimlik Doğrulama (Auth) Servisi',
-          status: 'Devam Ediyor',
-          assignee: 'Ahmet Yılmaz',
-          priority: 'Yüksek',
-          dueDate: '2025-10-31',
-          estimatedHours: 24,
-          loggedHours: 17,
-          subtasks: [
-            { id: 101011, title: 'JWT akışı', status: 'Tamamlandı' },
-            { id: 101012, title: 'OAuth2/ OpenID Connect', status: 'Devam Ediyor' },
-          ],
-          activities: [
-            { id: 1010111, description: 'Güvenlik tasarımı', duration: '2 saat', date: '2025-10-20' },
-            { id: 1010112, description: 'Token yenileme implementasyonu', duration: '2 saat', date: '2025-10-23' },
-          ],
-        },
-        {
-          id: 10102,
-          title: 'Bildirim Servisi',
-          status: 'Bekliyor',
-          assignee: 'Mehmet Demir',
-          priority: 'Orta',
-          dueDate: '2025-11-20',
-          estimatedHours: 18,
-          loggedHours: 0,
-          subtasks: [
-            { id: 101021, title: 'E-posta şablonları', status: 'Bekliyor' },
-            { id: 101022, title: 'Webhook altyapısı', status: 'Bekliyor' },
-          ],
-          activities: [],
-        },
-        {
-          id: 10103,
-          title: 'CI/CD Pipeline',
-          status: 'Tamamlandı',
-          assignee: 'Caner Usta',
-          priority: 'Orta',
-          dueDate: '2025-03-31',
-          estimatedHours: 20,
-          loggedHours: 22,
-          subtasks: [
-            { id: 101031, title: 'Build + Test aşamaları', status: 'Tamamlandı' },
-            { id: 101032, title: 'Staging deploy', status: 'Tamamlandı' },
-          ],
-          activities: [
-            { id: 1010311, description: 'GitHub Actions tasarımı', duration: '1 saat', date: '2025-03-15' },
-          ],
-        },
-      ],
-      members: [
-        { id: 1, name: 'Ahmet Yılmaz', role: 'Backend Developer', avatar: null },
-        { id: 3, name: 'Mehmet Demir', role: 'Database Administrator', avatar: null },
-        { id: 5, name: 'Caner Usta', role: 'DevOps Engineer', avatar: null },
-      ],
-    },
+  // ⬆️ Güncellendi: FE-WEB artık 2 parent’a bağlı (PRJ-001-FE ve UXP-310)
+  parentIds: [102, 1310],
+  parentProjects: [
     {
       id: 102,
       code: 'PRJ-001-FE',
@@ -263,111 +38,699 @@ const projectData = {
       endDate: '2025-12-15',
       progress: 60,
       priority: 'Yüksek',
-      parentId: 1,
-      parentProject: null,
-      subprojects: [
+
+      parentIds: [1],
+      parentProjects: [
         {
-          id: 1021,
-          code: 'PRJ-001-FE-WEB',
-          name: 'Web Uygulaması',
+          id: 1,
+          code: 'PRJ-001',
+          name: 'Proje Yönetim Modülü Geliştirme',
           status: 'Devam Ediyor',
-          startDate: '2025-04-01',
-          endDate: '2025-12-01',
-          progress: 62,
+          startDate: '2025-01-01',
+          endDate: '2025-12-31',
+          progress: 65,
           priority: 'Yüksek',
-          parentId: 102,
-          parentProject: null,
-          subprojects: [],
-          tasks: [
+
+          // PRJ-001’in üst katmanları (DAG)
+          parentIds: [900, 800],
+          parentProjects: [
             {
-              id: 102101,
-              title: 'Tasarım Sistemi (Design System)',
+              id: 900,
+              code: 'PGM-900',
+              name: 'Kurumsal PMO Programı',
+              description:
+                'Kurumsal düzeyde proje/portföy yönetimi süreçlerinin standartlaştırılması ve merkezi PMO araçlarının devreye alınması.',
               status: 'Devam Ediyor',
-              assignee: 'Ayşe Kaya',
+              startDate: '2024-10-01',
+              endDate: '2026-03-31',
+              progress: 58,
               priority: 'Yüksek',
-              dueDate: '2025-11-10',
-              estimatedHours: 30,
-              loggedHours: 19,
-              subtasks: [
-                { id: 1021011, title: 'Bileşen kütüphanesi', status: 'Devam Ediyor' },
-                { id: 1021012, title: 'Erişilebilirlik (a11y)', status: 'Bekliyor' },
+              parentIds: [100],
+              parentProjects: [
+                {
+                  id: 100,
+                  code: 'ENT-100',
+                  name: 'Kurumsal Dönüşüm Stratejisi',
+                  description:
+                    'Şirket genelinde dijitalleşme, verimlilik ve yönetişim hedeflerine yönelik çok yıllı dönüşüm stratejisi.',
+                  status: 'Devam Ediyor',
+                  startDate: '2024-01-01',
+                  endDate: '2027-12-31',
+                  progress: 52,
+                  priority: 'Kritik',
+                  parentIds: [], // kök
+                },
               ],
-              activities: [
-                { id: 10210101, description: 'UI token çalışması', duration: '2 saat', date: '2025-10-22' },
+              siblingProjects: [
+                { id: 45, code: 'PRJ-045-FIN', name: 'Finans Entegrasyon Çerçevesi', status: 'Devam Ediyor' },
+                { id: 62, code: 'PRJ-062-SSO', name: 'Kurumsal SSO / IAM İyileştirmeleri', status: 'Planlandı' },
               ],
             },
             {
-              id: 102102,
-              title: 'Durum Yönetimi (State)',
+              id: 800,
+              code: 'PRT-800',
+              name: 'Dijital Dönüşüm Portföyü',
+              description:
+                'Şirket genelindeki dijital dönüşüm girişimlerinin portföy düzeyinde planlanması, finansmanı ve takibi.',
               status: 'Devam Ediyor',
-              assignee: 'Ayşe Kaya',
-              priority: 'Orta',
-              dueDate: '2025-11-20',
-              estimatedHours: 24,
-              loggedHours: 8,
-              subtasks: [
-                { id: 1021021, title: 'Query katmanı', status: 'Devam Ediyor' },
-                { id: 1021022, title: 'Cache stratejisi', status: 'Bekliyor' },
+              startDate: '2024-01-01',
+              endDate: '2026-12-31',
+              progress: 61,
+              priority: 'Kritik',
+              parentIds: [100],
+              parentProjects: [
+                {
+                  id: 100,
+                  code: 'ENT-100',
+                  name: 'Kurumsal Dönüşüm Stratejisi',
+                  status: 'Devam Ediyor',
+                },
               ],
-              activities: [
-                { id: 10210201, description: 'Store yapısı POC', duration: '1 saat', date: '2025-10-23' },
+              siblingProjects: [
+                { id: 77, code: 'PRJ-077-ML', name: 'Tahminleme (ML) Platformu', status: 'Devam Ediyor' },
+                { id: 81, code: 'PRJ-081-CRM', name: 'CRM Yenileme', status: 'Beklemede' },
               ],
             },
           ],
-          members: [
-            { id: 2, name: 'Ayşe Kaya', role: 'Frontend Developer', avatar: null },
+
+          // PRJ-001 alt ağaç
+          subprojects: [
+            // --- Backend ---
+            {
+              id: 101,
+              code: 'PRJ-001-BE',
+              name: 'Backend Modülü',
+              status: 'Devam Ediyor',
+              startDate: '2025-01-15',
+              endDate: '2025-11-30',
+              progress: 70,
+              priority: 'Yüksek',
+              parentIds: [1],
+
+              subprojects: [
+                {
+                  id: 1011,
+                  code: 'PRJ-001-BE-SVC',
+                  name: 'Task Service (Mikroservis)',
+                  status: 'Devam Ediyor',
+                  startDate: '2025-08-01',
+                  endDate: '2025-11-15',
+                  progress: 65,
+                  priority: 'Yüksek',
+                  parentIds: [101],
+
+                  subprojects: [
+                    {
+                      id: 10111,
+                      code: 'PRJ-001-BE-SVC-API',
+                      name: 'Public API Katmanı',
+                      status: 'Devam Ediyor',
+                      startDate: '2025-09-15',
+                      endDate: '2025-11-10',
+                      progress: 60,
+                      priority: 'Yüksek',
+                      parentIds: [1011],
+                      subprojects: [],
+                      tasks: [
+                        {
+                          id: 1011101,
+                          title: 'API versiyonlama ve backward-compat',
+                          status: 'Devam Ediyor',
+                          assignee: 'Ahmet Yılmaz',
+                          priority: 'Orta',
+                          dueDate: '2025-11-08',
+                          estimatedHours: 20,
+                          loggedHours: 8,
+                          subtasks: [
+                            { id: 10111011, title: 'v1 -> v2 geçiş stratejisi', status: 'Devam Ediyor' },
+                          ],
+                          activities: [
+                            { id: 101110101, description: 'ADR yazımı', duration: '1 saat', date: '2025-10-24' },
+                          ],
+                        },
+                      ],
+                      members: [{ id: 1, name: 'Ahmet Yılmaz', role: 'Backend Developer', avatar: null }],
+                    },
+                  ],
+                  tasks: [
+                    {
+                      id: 101101,
+                      title: 'Görev CRUD & İş Kuralları',
+                      status: 'Devam Ediyor',
+                      assignee: 'Ahmet Yılmaz',
+                      priority: 'Yüksek',
+                      dueDate: '2025-11-05',
+                      estimatedHours: 36,
+                      loggedHours: 20,
+                      subtasks: [
+                        { id: 1011011, title: 'CRUD endpointleri', status: 'Tamamlandı' },
+                        { id: 1011012, title: 'Durum makineleri', status: 'Devam Ediyor' },
+                      ],
+                      activities: [
+                        { id: 10110101, description: 'Domain model tasarımı', duration: '2 saat', date: '2025-10-16' },
+                      ],
+                    },
+                    {
+                      id: 101102,
+                      title: 'Zaman Takip Servisi',
+                      status: 'Planlandı',
+                      assignee: 'Caner Usta',
+                      priority: 'Orta',
+                      dueDate: '2025-11-25',
+                      estimatedHours: 28,
+                      loggedHours: 0,
+                      subtasks: [
+                        { id: 1011021, title: 'Timesheet veri modeli', status: 'Planlandı' },
+                        { id: 1011022, title: 'REST & webhook tasarımı', status: 'Planlandı' },
+                      ],
+                      activities: [],
+                    },
+                  ],
+                  members: [
+                    { id: 1, name: 'Ahmet Yılmaz', role: 'Backend Developer', avatar: null },
+                    { id: 5, name: 'Caner Usta', role: 'DevOps Engineer', avatar: null },
+                  ],
+                },
+                {
+                  id: 1012,
+                  code: 'PRJ-001-BE-REP',
+                  name: 'Raporlama Servisi',
+                  status: 'Planlandı',
+                  startDate: '2025-10-28',
+                  endDate: '2025-12-05',
+                  progress: 0,
+                  priority: 'Orta',
+                  parentIds: [101],
+                  subprojects: [],
+                  tasks: [
+                    {
+                      id: 101201,
+                      title: 'Metri̇k şeması',
+                      status: 'Planlandı',
+                      assignee: 'Fatma Çelik',
+                      priority: 'Orta',
+                      dueDate: '2025-11-12',
+                      estimatedHours: 16,
+                      loggedHours: 0,
+                      subtasks: [],
+                      activities: [],
+                    },
+                  ],
+                  members: [{ id: 4, name: 'Fatma Çelik', role: 'QA Engineer', avatar: null }],
+                },
+              ],
+              tasks: [
+                {
+                  id: 10101,
+                  title: 'Kimlik Doğrulama (Auth) Servisi',
+                  status: 'Devam Ediyor',
+                  assignee: 'Ahmet Yılmaz',
+                  priority: 'Yüksek',
+                  dueDate: '2025-10-31',
+                  estimatedHours: 24,
+                  loggedHours: 17,
+                  subtasks: [
+                    { id: 101011, title: 'JWT akışı', status: 'Tamamlandı' },
+                    { id: 101012, title: 'OAuth2/ OpenID Connect', status: 'Devam Ediyor' },
+                  ],
+                  activities: [
+                    { id: 1010111, description: 'Güvenlik tasarımı', duration: '2 saat', date: '2025-10-20' },
+                  ],
+                },
+              ],
+              members: [
+                { id: 1, name: 'Ahmet Yılmaz', role: 'Backend Developer', avatar: null },
+                { id: 5, name: 'Caner Usta', role: 'DevOps Engineer', avatar: null },
+              ],
+            },
+
+            // --- Frontend (buradaki çocuklardan biri ODAK düğüm) ---
+            {
+              id: 102,
+              code: 'PRJ-001-FE',
+              name: 'Frontend Modülü',
+              status: 'Devam Ediyor',
+              startDate: '2025-02-01',
+              endDate: '2025-12-15',
+              progress: 60,
+              priority: 'Yüksek',
+              parentIds: [1],
+
+              subprojects: [
+                // 🎯 ODAK: Web Uygulaması — ⬆️ Ek parent UXP-310 ile güncellendi
+                {
+                  id: 1021,
+                  code: 'PRJ-001-FE-WEB',
+                  name: 'Web Uygulaması',
+                  status: 'Devam Ediyor',
+                  startDate: '2025-04-01',
+                  endDate: '2025-12-01',
+                  progress: 62,
+                  priority: 'Yüksek',
+
+                  // ⬆️ GÜNCEL
+                  parentIds: [102, 1310],
+                  parentProjects: [
+                    { id: 102, code: 'PRJ-001-FE', name: 'Frontend Modülü', status: 'Devam Ediyor' },
+                    {
+                      id: 1310,
+                      code: 'UXP-310',
+                      name: 'Ön Uç Deneyim Mükemmellik Programı',
+                      description:
+                        'Kurumsal çapta UX/UI standartları, erişilebilirlik, performans ve bileşen ekosistemi olgunlaştırma programı.',
+                      status: 'Devam Ediyor',
+                      startDate: '2024-06-01',
+                      endDate: '2026-06-30',
+                      progress: 47,
+                      priority: 'Yüksek',
+                      parentIds: [], // kök, yeni hat
+                    },
+                  ],
+
+                  subprojects: [
+                    {
+                      id: 10211,
+                      code: 'PRJ-001-FE-WEB-DS',
+                      name: 'Design System (UI Kit)',
+                      status: 'Devam Ediyor',
+                      startDate: '2025-08-15',
+                      endDate: '2025-11-20',
+                      progress: 55,
+                      priority: 'Yüksek',
+                      parentIds: [1021],
+                      subprojects: [],
+                      tasks: [
+                        {
+                          id: 1021101,
+                          title: 'Bileşen kütüphanesi',
+                          status: 'Devam Ediyor',
+                          assignee: 'Ayşe Kaya',
+                          priority: 'Yüksek',
+                          dueDate: '2025-11-10',
+                          estimatedHours: 30,
+                          loggedHours: 19,
+                          subtasks: [{ id: 10211011, title: 'Button, Input, Modal', status: 'Devam Ediyor' }],
+                          activities: [
+                            { id: 102110101, description: 'UI token çalışması', duration: '2 saat', date: '2025-10-22' },
+                          ],
+                        },
+                      ],
+                      members: [{ id: 2, name: 'Ayşe Kaya', role: 'Frontend Developer', avatar: null }],
+                    },
+                  ],
+                  tasks: [
+                    {
+                      id: 102101,
+                      title: 'Tasarım Sistemi (Design System)',
+                      status: 'Devam Ediyor',
+                      assignee: 'Ayşe Kaya',
+                      priority: 'Yüksek',
+                      dueDate: '2025-11-10',
+                      estimatedHours: 30,
+                      loggedHours: 19,
+                      subtasks: [{ id: 1021011, title: 'Bileşen kütüphanesi', status: 'Devam Ediyor' }],
+                      activities: [{ id: 10210101, description: 'UI token çalışması', duration: '2 saat', date: '2025-10-22' }],
+                    },
+                  ],
+                  members: [{ id: 2, name: 'Ayşe Kaya', role: 'Frontend Developer', avatar: null }],
+                },
+              ],
+              tasks: [
+                {
+                  id: 10202,
+                  title: 'Task listesi bileşeni',
+                  status: 'Devam Ediyor',
+                  assignee: 'Ayşe Kaya',
+                  priority: 'Yüksek',
+                  dueDate: '2025-11-01',
+                  estimatedHours: 20,
+                  loggedHours: 9,
+                  subtasks: [{ id: 102021, title: 'Sıralama/ filtreleme', status: 'Devam Ediyor' }],
+                  activities: [{ id: 1020211, description: 'Performans profili', duration: '1 saat', date: '2025-10-23' }],
+                },
+              ],
+              members: [{ id: 2, name: 'Ayşe Kaya', role: 'Frontend Developer', avatar: null }],
+            },
+
+            // --- QA (⬆️ Ek parent QMS-420 ile güncellendi) ---
+            {
+              id: 103,
+              code: 'PRJ-001-QA',
+              name: 'Kalite ve Test Modülü',
+              status: 'Planlandı',
+              startDate: '2025-09-15',
+              endDate: '2025-12-20',
+              progress: 10,
+              priority: 'Orta',
+
+              // ⬆️ GÜNCEL
+              parentIds: [1, 1420],
+              parentProjects: [
+                { id: 1, code: 'PRJ-001', name: 'Proje Yönetim Modülü Geliştirme', status: 'Devam Ediyor' },
+                {
+                  id: 1420,
+                  code: 'QMS-420',
+                  name: 'Kalite Yönetim Sistemi Uyum Girişimi',
+                  description:
+                    'ISO 9001 / IEC uyumu, TMMi olgunluk arttırımı ve izlenebilirlik (traceability) iyileştirmeleri.',
+                  status: 'Devam Ediyor',
+                  startDate: '2024-03-01',
+                  endDate: '2026-03-31',
+                  progress: 51,
+                  priority: 'Yüksek',
+                  parentIds: [], // kök, yeni hat
+                },
+              ],
+
+              subprojects: [
+                {
+                  id: 1031,
+                  code: 'PRJ-001-QA-AUTO',
+                  name: 'Test Otomasyonu',
+                  status: 'Planlandı',
+                  startDate: '2025-10-30',
+                  endDate: '2025-12-20',
+                  progress: 0,
+                  priority: 'Orta',
+                  parentIds: [103],
+                  subprojects: [],
+                  tasks: [
+                    {
+                      id: 103101,
+                      title: 'E2E senaryoları',
+                      status: 'Planlandı',
+                      assignee: 'Fatma Çelik',
+                      priority: 'Orta',
+                      dueDate: '2025-11-25',
+                      estimatedHours: 24,
+                      loggedHours: 0,
+                      subtasks: [],
+                      activities: [],
+                    },
+                  ],
+                  members: [{ id: 4, name: 'Fatma Çelik', role: 'QA Engineer', avatar: null }],
+                },
+              ],
+              tasks: [
+                {
+                  id: 10301,
+                  title: 'Test stratejisi',
+                  status: 'Planlandı',
+                  assignee: 'Fatma Çelik',
+                  priority: 'Orta',
+                  dueDate: '2025-11-05',
+                  estimatedHours: 8,
+                  loggedHours: 0,
+                  subtasks: [],
+                  activities: [],
+                },
+              ],
+              members: [{ id: 4, name: 'Fatma Çelik', role: 'QA Engineer', avatar: null }],
+            },
+
+            // --- Mobil ---
+            {
+              id: 104,
+              code: 'PRJ-001-MOB',
+              name: 'Mobil Uygulama',
+              status: 'Planlandı',
+              startDate: '2025-09-01',
+              endDate: '2025-12-31',
+              progress: 5,
+              priority: 'Orta',
+              parentIds: [1],
+              subprojects: [],
+              tasks: [
+                {
+                  id: 10401,
+                  title: 'React Native temel çatı',
+                  status: 'Planlandı',
+                  assignee: 'Ayşe Kaya',
+                  priority: 'Orta',
+                  dueDate: '2025-11-18',
+                  estimatedHours: 18,
+                  loggedHours: 0,
+                  subtasks: [],
+                  activities: [],
+                },
+              ],
+              members: [{ id: 2, name: 'Ayşe Kaya', role: 'Frontend Developer', avatar: null }],
+            },
+
+            // --- Entegrasyonlar ---
+            {
+              id: 105,
+              code: 'PRJ-001-INT',
+              name: 'Entegrasyonlar',
+              status: 'Devam Ediyor',
+              startDate: '2025-06-01',
+              endDate: '2025-12-15',
+              progress: 40,
+              priority: 'Yüksek',
+              parentIds: [1],
+              subprojects: [
+                {
+                  id: 1051,
+                  code: 'PRJ-001-INT-ERP',
+                  name: 'ERP Entegrasyonu',
+                  status: 'Devam Ediyor',
+                  startDate: '2025-07-01',
+                  endDate: '2025-11-30',
+                  progress: 50,
+                  priority: 'Yüksek',
+                  parentIds: [105],
+                  subprojects: [],
+                  tasks: [
+                    {
+                      id: 105101,
+                      title: 'GL ve proje kod eşlemesi',
+                      status: 'Devam Ediyor',
+                      assignee: 'Caner Usta',
+                      priority: 'Yüksek',
+                      dueDate: '2025-11-12',
+                      estimatedHours: 22,
+                      loggedHours: 7,
+                      subtasks: [],
+                      activities: [],
+                    },
+                  ],
+                  members: [{ id: 5, name: 'Caner Usta', role: 'DevOps Engineer', avatar: null }],
+                },
+              ],
+              tasks: [
+                {
+                  id: 10501,
+                  title: 'SSO / IAM entegrasyonu',
+                  status: 'Beklemede',
+                  assignee: 'Ahmet Yılmaz',
+                  priority: 'Orta',
+                  dueDate: '2025-11-22',
+                  estimatedHours: 12,
+                  loggedHours: 0,
+                  subtasks: [],
+                  activities: [],
+                },
+              ],
+              members: [
+                { id: 1, name: 'Ahmet Yılmaz', role: 'Backend Developer', avatar: null },
+                { id: 5, name: 'Caner Usta', role: 'DevOps Engineer', avatar: null },
+              ],
+            },
+
+            // --- Raporlama & Analitik ---
+            {
+              id: 106,
+              code: 'PRJ-001-ANA',
+              name: 'Raporlama & Analitik',
+              status: 'Devam Ediyor',
+              startDate: '2025-08-01',
+              endDate: '2025-12-20',
+              progress: 35,
+              priority: 'Orta',
+              parentIds: [1],
+              subprojects: [
+                {
+                  id: 1061,
+                  code: 'PRJ-001-ANA-DWH',
+                  name: 'Veri Ambarı',
+                  status: 'Devam Ediyor',
+                  startDate: '2025-08-10',
+                  endDate: '2025-12-10',
+                  progress: 40,
+                  priority: 'Orta',
+                  parentIds: [106],
+                  subprojects: [
+                    {
+                      id: 10611,
+                      code: 'PRJ-001-ANA-ETL',
+                      name: 'ETL Boru Hattı',
+                      status: 'Devam Ediyor',
+                      startDate: '2025-09-01',
+                      endDate: '2025-11-30',
+                      progress: 45,
+                      priority: 'Orta',
+                      parentIds: [1061],
+                      subprojects: [],
+                      tasks: [
+                        {
+                          id: 1061101,
+                          title: 'Kaynak eşleme',
+                          status: 'Devam Ediyor',
+                          assignee: 'Mehmet Korkmaz',
+                          priority: 'Orta',
+                          dueDate: '2025-11-05',
+                          estimatedHours: 26,
+                          loggedHours: 12,
+                          subtasks: [],
+                          activities: [],
+                        },
+                      ],
+                      members: [{ id: 7, name: 'Mehmet Korkmaz', role: 'Data Engineer', avatar: null }],
+                    },
+                  ],
+                  tasks: [
+                    {
+                      id: 106101,
+                      title: 'Boyutsal modelleme',
+                      status: 'Planlandı',
+                      assignee: 'Mehmet Korkmaz',
+                      priority: 'Orta',
+                      dueDate: '2025-11-14',
+                      estimatedHours: 20,
+                      loggedHours: 0,
+                      subtasks: [],
+                      activities: [],
+                    },
+                  ],
+                  members: [{ id: 7, name: 'Mehmet Korkmaz', role: 'Data Engineer', avatar: null }],
+                },
+              ],
+              tasks: [
+                {
+                  id: 10601,
+                  title: 'BI raporları temel set',
+                  status: 'Planlandı',
+                  assignee: 'Fatma Çelik',
+                  priority: 'Orta',
+                  dueDate: '2025-11-28',
+                  estimatedHours: 18,
+                  loggedHours: 0,
+                  subtasks: [],
+                  activities: [],
+                },
+              ],
+              members: [
+                { id: 4, name: 'Fatma Çelik', role: 'QA Engineer', avatar: null },
+                { id: 7, name: 'Mehmet Korkmaz', role: 'Data Engineer', avatar: null },
+              ],
+            },
           ],
-        },
-        {
-          id: 1022,
-          code: 'PRJ-001-FE-ADMIN',
-          name: 'Admin Paneli',
-          status: 'Bekliyor',
-          startDate: '2025-11-10',
-          endDate: '2025-12-10',
-          progress: 0,
-          priority: 'Orta',
-          parentId: 102,
-          parentProject: null,
-          subprojects: [],
+
+          // PRJ-001 üst düzey görevler ve meta
           tasks: [
             {
-              id: 102201,
-              title: 'Rol & Yetki Ekranları',
-              status: 'Bekliyor',
-              assignee: 'Ayşe Kaya',
-              priority: 'Orta',
-              dueDate: '2025-12-05',
-              estimatedHours: 16,
-              loggedHours: 0,
+              id: 1,
+              title: 'Backend API Geliştirme',
+              status: 'Tamamlandı',
+              assignee: 'Ahmet Yılmaz',
               subtasks: [
-                { id: 1022011, title: 'Rol listesi', status: 'Bekliyor' },
-                { id: 1022012, title: 'Yetki matrisi', status: 'Bekliyor' },
+                { id: 11, title: 'User API endpoints', status: 'Tamamlandı' },
+                { id: 12, title: 'Project API endpoints', status: 'Tamamlandı' },
               ],
+              activities: [{ id: 111, description: 'API tasarım toplantısı', duration: '2 saat', date: '2025-10-20' }],
+            },
+            {
+              id: 2,
+              title: 'Frontend Tasarımı',
+              status: 'Devam Ediyor',
+              assignee: 'Ayşe Kaya',
+              subtasks: [
+                { id: 21, title: 'Dashboard tasarımı', status: 'Tamamlandı' },
+                { id: 22, title: 'Task listesi bileşeni', status: 'Devam Ediyor' },
+              ],
+              activities: [{ id: 221, description: 'UI mockup hazırlama', duration: '3 saat', date: '2025-10-22' }],
+            },
+            {
+              id: 3,
+              title: 'Güvenlik Gözden Geçirme',
+              status: 'Planlandı',
+              assignee: 'Zeynep Demir',
+              subtasks: [{ id: 31, title: 'Tehdit modellemesi', status: 'Planlandı' }],
               activities: [],
             },
           ],
-          members: [{ id: 2, name: 'Ayşe Kaya', role: 'Frontend Developer', avatar: null }],
+          members: [
+            { id: 1, name: 'Ahmet Yılmaz', role: 'Backend Developer', avatar: null },
+            { id: 2, name: 'Ayşe Kaya', role: 'Frontend Developer', avatar: null },
+            { id: 4, name: 'Fatma Çelik', role: 'QA Engineer', avatar: null },
+            { id: 5, name: 'Caner Usta', role: 'DevOps Engineer', avatar: null },
+            { id: 6, name: 'Elif Arslan', role: 'Product Owner', avatar: null },
+            { id: 7, name: 'Mehmet Korkmaz', role: 'Data Engineer', avatar: null },
+            { id: 8, name: 'Zeynep Demir', role: 'Security Engineer', avatar: null },
+            { id: 9, name: 'Burak Yıldız', role: 'Scrum Master', avatar: null },
+            { id: 10, name: 'Selin Acar', role: 'UX Designer', avatar: null },
+          ],
+          milestones: [
+            { id: 'M1', name: 'MVP hazır', date: '2025-11-30', status: 'Planlandı' },
+            { id: 'M2', name: 'Genel Kullanıma Açılış (GA)', date: '2025-12-20', status: 'Planlandı' },
+          ],
+          risks: [
+            {
+              id: 'R1',
+              title: 'SSO entegrasyonu gecikebilir',
+              probability: 'Orta',
+              impact: 'Yüksek',
+              status: 'Açık',
+              mitigation: 'Ön üretimde mock SSO ile ilerleme',
+            },
+            {
+              id: 'R2',
+              title: 'Design System kapsamı genişleyebilir',
+              probability: 'Yüksek',
+              impact: 'Orta',
+              status: 'Açık',
+              mitigation: 'Sprint başına kapsam kontrolü',
+            },
+          ],
+          issues: [
+            {
+              id: 'I1',
+              title: 'Staging ortamında throttling',
+              severity: 'Orta',
+              status: 'Açık',
+              owner: 'Caner Usta',
+              createdAt: '2025-10-21',
+            },
+          ],
+          dependencies: [
+            { id: 'D1', type: 'blockedBy', relatedCode: 'PRJ-062-SSO', description: 'Kurumsal SSO/IAM iyileştirmeleri tamamlanmalı' },
+            { id: 'D2', type: 'blocks', relatedCode: 'PRJ-081-CRM', description: 'CRM Yenileme, proje modülünün API’larına bağımlı' },
+            { id: 'D3', type: 'relatesTo', relatedCode: 'PRJ-045-FIN', description: 'Finans entegrasyon çerçevesi ile veri sözleşmesi' },
+          ],
+          budget: {
+            currency: 'TRY',
+            capex: 420000,
+            opex: 180000,
+            spent: 285000,
+            forecastEoY: 585000,
+          },
+          sprints: [
+            { id: 12, name: 'Sprint 12', start: '2025-10-20', end: '2025-11-03', goal: 'Auth + DS stabilizasyonu' },
+            { id: 13, name: 'Sprint 13', start: '2025-11-04', end: '2025-11-17', goal: 'Zaman takibi + raporlama temeli' },
+          ],
+          releases: [
+            { id: 'REL-1', name: 'v0.9.0-MVP', date: '2025-11-30', scope: ['BE-SVC', 'FE-WEB-DS'] },
+            { id: 'REL-2', name: 'v1.0.0-GA', date: '2025-12-20', scope: ['Auth', 'Timesheet', 'BI temel'] },
+          ],
+          tags: ['PMO', 'Portfolio', 'Program', 'OrtaKatman', 'Mikroservis', 'DesignSystem'],
+          documents: [
+            { id: 'DOC-ADR-01', title: 'ADR-01: Kimlik Doğrulama Kararları', type: 'ADR', url: '/docs/adr-01-auth' },
+            { id: 'DOC-ARCH', title: 'Mimari Diyagram', type: 'Diagram', url: '/docs/arch-diagram' },
+          ],
         },
       ],
+      // FE seviyesindeki görevler ve ekip
       tasks: [
-        {
-          id: 10201,
-          title: 'Dashboard tasarımı',
-          status: 'Tamamlandı',
-          assignee: 'Ayşe Kaya',
-          priority: 'Orta',
-          dueDate: '2025-07-15',
-          estimatedHours: 14,
-          loggedHours: 16,
-          subtasks: [
-            { id: 102011, title: 'Wireframe', status: 'Tamamlandı' },
-            { id: 102012, title: 'High-fidelity mockup', status: 'Tamamlandı' },
-          ],
-          activities: [
-            { id: 1020111, description: 'Kullanıcı görüşmeleri', duration: '2 saat', date: '2025-06-20' },
-          ],
-        },
         {
           id: 10202,
           title: 'Task listesi bileşeni',
@@ -377,170 +740,92 @@ const projectData = {
           dueDate: '2025-11-01',
           estimatedHours: 20,
           loggedHours: 9,
-          subtasks: [
-            { id: 102021, title: 'Sıralama/ filtreleme', status: 'Devam Ediyor' },
-            { id: 102022, title: 'Sanal listeleme (virtualization)', status: 'Bekliyor' },
-          ],
-          activities: [
-            { id: 1020211, description: 'Performans profili', duration: '1 saat', date: '2025-10-23' },
-          ],
-        },
-        {
-          id: 10203,
-          title: 'Calendar view',
-          status: 'Bekliyor',
-          assignee: 'Ayşe Kaya',
-          priority: 'Orta',
-          dueDate: '2025-11-15',
-          estimatedHours: 18,
-          loggedHours: 0,
-          subtasks: [
-            { id: 102031, title: 'Drag&drop etkileşimleri', status: 'Bekliyor' },
-            { id: 102032, title: 'Tatil/mesai takvimi', status: 'Bekliyor' },
-          ],
-          activities: [],
+          subtasks: [{ id: 102021, title: 'Sıralama/ filtreleme', status: 'Devam Ediyor' }],
+          activities: [{ id: 1020211, description: 'Performans profili', duration: '1 saat', date: '2025-10-23' }],
         },
       ],
       members: [{ id: 2, name: 'Ayşe Kaya', role: 'Frontend Developer', avatar: null }],
     },
+
+    // 🔼 Yeni, ikinci parent — kök bir hat:
     {
-      id: 103,
-      code: 'PRJ-001-ANL',
-      name: 'Raporlama ve Analitik',
+      id: 1310,
+      code: 'UXP-310',
+      name: 'Ön Uç Deneyim Mükemmellik Programı',
+      description:
+        'Kurumsal çapta UX/UI standartları, erişilebilirlik, performans ve bileşen ekosistemi olgunlaştırma programı.',
       status: 'Devam Ediyor',
-      startDate: '2025-06-01',
-      endDate: '2025-12-20',
-      progress: 55,
-      priority: 'Orta',
-      parentId: 1,
-      parentProject: null,
-      subprojects: [],
-      tasks: [
-        {
-          id: 10301,
-          title: 'BI Dashboardları',
-          status: 'Devam Ediyor',
-          assignee: 'Mehmet Demir',
-          priority: 'Orta',
-          dueDate: '2025-11-25',
-          estimatedHours: 26,
-          loggedHours: 12,
-          subtasks: [
-            { id: 103011, title: 'ETL akışları', status: 'Devam Ediyor' },
-            { id: 103012, title: 'KPI tanımları', status: 'Bekliyor' },
-          ],
-          activities: [
-            { id: 1030111, description: 'ETL PoC', duration: '2 saat', date: '2025-10-18' },
-          ],
-        },
-      ],
-      members: [{ id: 3, name: 'Mehmet Demir', role: 'Database Administrator', avatar: null }],
-    },
-    {
-      id: 104,
-      code: 'PRJ-001-MOB',
-      name: 'Mobil Uygulama',
-      status: 'Bekliyor',
-      startDate: '2025-11-01',
-      endDate: '2025-12-31',
-      progress: 0,
-      priority: 'Düşük',
-      parentId: 1,
-      parentProject: null,
-      subprojects: [],
-      tasks: [
-        {
-          id: 10401,
-          title: 'React Native Kurulum',
-          status: 'Bekliyor',
-          assignee: 'Zeynep Aksoy',
-          priority: 'Düşük',
-          dueDate: '2025-11-05',
-          estimatedHours: 8,
-          loggedHours: 0,
-          subtasks: [
-            { id: 104011, title: 'Proje iskeleti', status: 'Bekliyor' },
-            { id: 104012, title: 'CI entegrasyonu', status: 'Bekliyor' },
-          ],
-          activities: [],
-        },
-      ],
-      members: [{ id: 6, name: 'Zeynep Aksoy', role: 'Mobile Developer', avatar: null }],
+      startDate: '2024-06-01',
+      endDate: '2026-06-30',
+      progress: 47,
+      priority: 'Yüksek',
+      parentIds: [], // kök
     },
   ],
 
-  // Orijinal görevler (sende gelen mock veriden)
+  // ======================================
+  // ⬇️ Focus düğüm alt ağaç (tam)
+  // ======================================
+  subprojects: [
+    {
+      id: 10211,
+      code: 'PRJ-001-FE-WEB-DS',
+      name: 'Design System (UI Kit)',
+      status: 'Devam Ediyor',
+      startDate: '2025-08-15',
+      endDate: '2025-11-20',
+      progress: 55,
+      priority: 'Yüksek',
+      parentIds: [1021],
+      subprojects: [],
+      tasks: [
+        {
+          id: 1021101,
+          title: 'Bileşen kütüphanesi',
+          status: 'Devam Ediyor',
+          assignee: 'Ayşe Kaya',
+          priority: 'Yüksek',
+          dueDate: '2025-11-10',
+          estimatedHours: 30,
+          loggedHours: 19,
+          subtasks: [{ id: 10211011, title: 'Button, Input, Modal', status: 'Devam Ediyor' }],
+          activities: [{ id: 102110101, description: 'UI token çalışması', duration: '2 saat', date: '2025-10-22' }],
+        },
+      ],
+      members: [{ id: 2, name: 'Ayşe Kaya', role: 'Frontend Developer', avatar: null }],
+    },
+  ],
   tasks: [
     {
-      id: 1,
-      title: 'Backend API Geliştirme',
-      status: 'Tamamlandı',
-      assignee: 'Ahmet Yılmaz',
-      subtasks: [
-        { id: 11, title: 'User API endpoints', status: 'Tamamlandı' },
-        { id: 12, title: 'Project API endpoints', status: 'Tamamlandı' },
-        { id: 13, title: 'Task API endpoints', status: 'Tamamlandı' },
-      ],
-      activities: [
-        { id: 111, description: 'API tasarım toplantısı', duration: '2 saat', date: '2025-10-20' },
-        { id: 112, description: 'Endpoint implementasyonu', duration: '4 saat', date: '2025-10-21' },
-      ],
-    },
-    {
-      id: 2,
-      title: 'Frontend Tasarımı',
+      id: 102101,
+      title: 'Tasarım Sistemi (Design System)',
       status: 'Devam Ediyor',
       assignee: 'Ayşe Kaya',
-      subtasks: [
-        { id: 21, title: 'Dashboard tasarımı', status: 'Tamamlandı' },
-        { id: 22, title: 'Task listesi bileşeni', status: 'Devam Ediyor' },
-        { id: 23, title: 'Calendar view', status: 'Bekliyor' },
-      ],
-      activities: [
-        { id: 221, description: 'UI mockup hazırlama', duration: '3 saat', date: '2025-10-22' },
-        { id: 222, description: 'React bileşenleri geliştirme', duration: '6 saat', date: '2025-10-23' },
-      ],
-    },
-    {
-      id: 3,
-      title: 'Veritabanı Tasarımı',
-      status: 'Tamamlandı',
-      assignee: 'Mehmet Demir',
-      subtasks: [
-        { id: 31, title: 'Schema tasarımı', status: 'Tamamlandı' },
-        { id: 32, title: 'Migration scripts', status: 'Tamamlandı' },
-      ],
-      activities: [
-        { id: 331, description: 'Database schema planlama', duration: '2 saat', date: '2025-10-18' },
-        { id: 332, description: 'Migration yazma', duration: '3 saat', date: '2025-10-19' },
-      ],
-    },
-    {
-      id: 4,
-      title: 'Test ve Kalite Güvence',
-      status: 'Bekliyor',
-      assignee: 'Fatma Çelik',
-      subtasks: [
-        { id: 41, title: 'Unit test yazma', status: 'Bekliyor' },
-        { id: 42, title: 'Integration test', status: 'Bekliyor' },
-        { id: 43, title: 'E2E test', status: 'Bekliyor' },
-      ],
-      activities: [
-        { id: 441, description: 'Test planı hazırlama', duration: '1 saat', date: '2025-10-25' },
-      ],
+      priority: 'Yüksek',
+      dueDate: '2025-11-10',
+      estimatedHours: 30,
+      loggedHours: 19,
+      subtasks: [{ id: 1021011, title: 'Bileşen kütüphanesi', status: 'Devam Ediyor' }],
+      activities: [{ id: 10210101, description: 'UI token çalışması', duration: '2 saat', date: '2025-10-22' }],
     },
   ],
+  members: [{ id: 2, name: 'Ayşe Kaya', role: 'Frontend Developer', avatar: null }],
 
-  // Üyeler (ana projede genişletildi)
-  members: [
-    { id: 1, name: 'Ahmet Yılmaz', role: 'Backend Developer', avatar: null },
-    { id: 2, name: 'Ayşe Kaya', role: 'Frontend Developer', avatar: null },
-    { id: 3, name: 'Mehmet Demir', role: 'Database Administrator', avatar: null },
-    { id: 4, name: 'Fatma Çelik', role: 'QA Engineer', avatar: null },
-    { id: 5, name: 'Caner Usta', role: 'DevOps Engineer', avatar: null },
-    { id: 6, name: 'Zeynep Aksoy', role: 'Mobile Developer', avatar: null },
+  // ======================================
+  // 🧭 Yol işaretleri (kolay gezinim için)
+  // ======================================
+  focusPathCandidates: [
+    // ENT-100 → PGM-900 → PRJ-001 → PRJ-001-FE → PRJ-001-FE-WEB
+    [100, 900, 1, 102, 1021],
+    // ENT-100 → PRT-800 → PRJ-001 → PRJ-001-FE → PRJ-001-FE-WEB
+    [100, 800, 1, 102, 1021],
+    // UXP-310 → PRJ-001-FE-WEB (yeni hat)
+    [1310, 1021],
   ],
 };
+
+
+
 
 
 const buildProjectTree = (project: any) => {
@@ -689,10 +974,10 @@ export default function ProjectDetails() {
                     {projectData.priority}
                   </Tag>
                 </div>
-                {projectData.parentProject && (
+                {projectData.parentProjects && projectData.parentProjects.length > 0 && (
                   <div className="mb-2">
                     <span className="text-sm text-gray-500">Üst Proje: </span>
-                    <Tag color="purple" className="text-xs">{projectData.parentProject.code} - {projectData.parentProject.name}</Tag>
+                    <Tag color="purple" className="text-xs">{projectData.parentProjects[0].code} - {projectData.parentProjects[0].name}</Tag>
                   </div>
                 )}
                 <p className="text-gray-600 mb-4 max-w-3xl">{projectData.description}</p>

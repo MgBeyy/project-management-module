@@ -20,12 +20,28 @@ interface ChartNodeMeta {
   estimatedHours?: number;
   loggedHours?: number;
   isCurrent?: boolean;
+  originId?: string;
+  isAlias?: boolean;
 }
 
 interface ChartNode {
   id: string;
   data: ChartNodeMeta;
-  children?: ChartNode[];
+}
+
+interface ChartGraphResult {
+  nodes: Map<string, ChartNode>;
+  edges: Map<string, EdgeData>;
+  children: Map<string, Set<string>>;
+  parents: Map<string, Set<string>>;
+  currentNodeId?: string;
+}
+
+interface DisplayGraphData {
+  graphData: GraphData;
+  originToDisplays: Map<string, string[]>;
+  primaryDisplayIds: Map<string, string>;
+  expandedDisplayIds: Set<string>;
 }
 
 interface ProjectOrganizationDiagramProps {
@@ -61,6 +77,7 @@ const ProjectNodeCard = ({ datum }: { datum: G6NodeData }) => {
 
   const accentColor = config.color;
   const borderWidth = meta.isCurrent ? 3 : 1;
+  const borderStyle = meta.isAlias ? 'dashed' : 'solid';
   const baseShadow = '0 14px 30px rgba(15, 23, 42, 0.08)';
   const highlightShadow = `0 20px 40px rgba(15, 23, 42, 0.16), 0 0 0 4px ${accentColor}33`;
 
@@ -71,7 +88,7 @@ const ProjectNodeCard = ({ datum }: { datum: G6NodeData }) => {
         height: '100%',
         borderRadius: 16,
         background: meta.isCurrent ? 'linear-gradient(180deg, #f8fafc 0%, #ffffff 80%)' : '#ffffff',
-        border: `${borderWidth}px solid ${accentColor}`,
+        border: `${borderWidth}px ${borderStyle} ${accentColor}`,
         boxShadow: meta.isCurrent ? highlightShadow : baseShadow,
         display: 'flex',
         flexDirection: 'column',
@@ -111,176 +128,575 @@ const toProgress = (estimated?: number, logged?: number) => {
   return Number.isFinite(ratio) ? ratio : undefined;
 };
 
-const buildSubtaskNode = (subtask: any): ChartNode => ({
-  id: `subtask-${subtask.id}`,
-  data: { label: subtask.title, name: subtask.status, status: subtask.status, type: 'subtask' },
-});
+const PROJECT_ID_KEYS = ['id', 'code', 'projectCode', 'reference', 'externalId'];
 
-const buildTaskNode = (task: any): ChartNode => {
-  const children: ChartNode[] = [];
-  if (Array.isArray(task.subtasks) && task.subtasks.length) {
-    children.push(...task.subtasks.map((sub: any) => buildSubtaskNode(sub)));
+const getProjectIdentifier = (project: any): string | undefined => {
+  if (!project || typeof project !== 'object') return undefined;
+  for (const key of PROJECT_ID_KEYS) {
+    const value = project[key];
+    if (value !== undefined && value !== null && `${value}`.trim() !== '') {
+      return `${value}`;
+    }
   }
-  return {
-    id: `task-${task.id}`,
-    data: {
-      label: task.title,
-      name: task.assignee,
-      status: task.status,
-      priority: task.priority,
-      dueDate: task.dueDate,
-      progress: toProgress(task.estimatedHours, task.loggedHours),
-      estimatedHours: task.estimatedHours,
-      loggedHours: task.loggedHours,
-      type: 'task',
-    },
-    ...(children.length ? { children } : {}),
-  };
+  if (typeof project.name === 'string' && project.name.trim() !== '') {
+    return project.name.trim();
+  }
+  return undefined;
 };
 
-interface BuildProjectNodeOptions {
-  nodeType?: ChartNodeType;
-  isCurrent?: boolean;
-  extraChildren?: ChartNode[];
-}
-
-const buildProjectNode = (project: any, options: BuildProjectNodeOptions = {}) => {
-  const { nodeType, isCurrent = false, extraChildren = [] } = options;
-  const children: ChartNode[] = [];
-
-  if (Array.isArray(project.subprojects) && project.subprojects.length) {
-    children.push(...project.subprojects.map((sub: any) => buildProjectNode(sub, { nodeType: 'subproject' })));
+const makeProjectNodeId = (value: any): string | undefined => {
+  if (value === null || value === undefined) return undefined;
+  if (typeof value === 'string' || typeof value === 'number') {
+    const text = `${value}`.trim();
+    return text ? `project-${text}` : undefined;
   }
+  const identifier = getProjectIdentifier(value);
+  return identifier ? `project-${identifier}` : undefined;
+};
 
-  if (Array.isArray(project.tasks) && project.tasks.length) {
-    children.push(...project.tasks.map((task: any) => buildTaskNode(task)));
+const normalizeProjectRef = (value: any): any | undefined => {
+  if (value === null || value === undefined) return undefined;
+  if (typeof value === 'object') return value;
+  if (typeof value === 'string' || typeof value === 'number') {
+    return { id: value };
   }
+  return undefined;
+};
 
-  const combined = [...extraChildren, ...children];
-  const deduped: ChartNode[] = [];
-  const seen = new Set<string>();
-  combined.forEach((child) => {
-    if (!seen.has(child.id)) {
-      deduped.push(child);
-      seen.add(child.id);
+const collectParentRefs = (project: any): string[] => {
+  const refs = new Set<string>();
+  if (Array.isArray(project?.parentIds)) {
+    project.parentIds.forEach((pid: any) => {
+      if (pid !== null && pid !== undefined) refs.add(`${pid}`);
+    });
+  }
+  if (project?.parentId !== null && project?.parentId !== undefined) {
+    refs.add(`${project.parentId}`);
+  }
+  const appendParentProjectRefs = (parent: any) => {
+    const normalized = normalizeProjectRef(parent);
+    if (!normalized) return;
+    const identifier = getProjectIdentifier(normalized);
+    if (identifier) refs.add(identifier);
+  };
+  if (Array.isArray(project?.parentProjects)) {
+    project.parentProjects.forEach((parent: any) => appendParentProjectRefs(parent));
+  }
+  if (project?.parentProject) {
+    appendParentProjectRefs(project.parentProject);
+  }
+  return Array.from(refs);
+};
+
+const NODE_TYPE_PRIORITY: Record<ChartNodeType, number> = {
+  program: 1,
+  project: 2,
+  subproject: 3,
+  task: 4,
+  subtask: 5,
+  activity: 6,
+};
+
+const pickNodeType = (left?: ChartNodeType, right?: ChartNodeType): ChartNodeType | undefined => {
+  if (left && right) {
+    return NODE_TYPE_PRIORITY[left] <= NODE_TYPE_PRIORITY[right] ? left : right;
+  }
+  return left ?? right;
+};
+
+const mergeNodeMeta = (existing: ChartNodeMeta, incoming: ChartNodeMeta): ChartNodeMeta => {
+  const { type: incomingType, ...restIncoming } = incoming;
+  const merged: ChartNodeMeta = { ...existing };
+
+  (Object.entries(restIncoming) as Array<[keyof ChartNodeMeta, ChartNodeMeta[keyof ChartNodeMeta]]>).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      (merged as any)[key] = value;
     }
   });
 
-  const projectId = project?.id ?? project?.code ?? 'root';
+  merged.isCurrent = Boolean(existing.isCurrent || incoming.isCurrent);
+  merged.type = pickNodeType(existing.type, incomingType) ?? existing.type ?? incomingType ?? 'project';
+  return merged;
+};
+
+const createProjectMeta = (project: any, options: { nodeType?: ChartNodeType; isCurrent?: boolean }) => {
+  const identifier = getProjectIdentifier(project);
+  const label = project?.code || (identifier ? `PRJ-${identifier}` : 'PRJ-UNKNOWN');
 
   return {
-    id: `project-${projectId}`,
-    data: {
-      label: project.code || `PRJ-${projectId}`,
-      name: project.name,
-      type: nodeType ?? (project.parentProject ? 'project' : 'program'),
-      status: project.status,
-      priority: project.priority,
-      progress: typeof project.progress === 'number' ? project.progress : undefined,
-      startDate: project.startDate,
-      endDate: project.endDate,
-      owner: project.members?.[0]?.name,
-      isCurrent,
-    },
-    ...(deduped.length ? { children: deduped } : {}),
-  } as ChartNode;
+    label,
+    name: project?.name,
+    type: options.nodeType ?? (collectParentRefs(project).length ? 'project' : 'program'),
+    status: project?.status,
+    priority: project?.priority,
+    progress: typeof project?.progress === 'number' ? project.progress : undefined,
+    startDate: project?.startDate,
+    endDate: project?.endDate,
+    owner: project?.members?.[0]?.name,
+    isCurrent: options.isCurrent ?? Boolean(project?.isCurrent),
+  } as ChartNodeMeta;
 };
 
-const buildOrganizationChartData = (project: any): ChartNode => {
-  if (!project) {
-    return { id: 'empty-project', data: { label: 'Veri yok', name: 'Organizasyon icin veri tanimli degil', type: 'project' } as any };
+const createFallbackProjectMeta = (rawId: string): ChartNodeMeta => ({
+  label: `PRJ-${rawId}`,
+  type: 'program',
+});
+
+const createTaskMeta = (task: any): ChartNodeMeta => ({
+  label: task?.title ?? `Task-${task?.id ?? ''}`,
+  name: task?.assignee,
+  status: task?.status,
+  priority: task?.priority,
+  dueDate: task?.dueDate,
+  progress: toProgress(task?.estimatedHours, task?.loggedHours),
+  estimatedHours: task?.estimatedHours,
+  loggedHours: task?.loggedHours,
+  type: 'task',
+});
+
+const createSubtaskMeta = (subtask: any): ChartNodeMeta => ({
+  label: subtask?.title ?? `Subtask-${subtask?.id ?? ''}`,
+  name: subtask?.status,
+  status: subtask?.status,
+  type: 'subtask',
+});
+
+const createActivityMeta = (activity: any): ChartNodeMeta => ({
+  label: activity?.description ?? `Activity-${activity?.id ?? ''}`,
+  name: activity?.date,
+  info: activity?.duration,
+  type: 'activity',
+});
+
+class ChartGraphBuilder {
+  nodes = new Map<string, ChartNode>();
+  edges = new Map<string, EdgeData>();
+  children = new Map<string, Set<string>>();
+  parents = new Map<string, Set<string>>();
+  pendingParents = new Map<string, Set<string>>();
+  currentNodeId?: string;
+
+  upsertNode(node: ChartNode) {
+    const existing = this.nodes.get(node.id);
+    if (existing) {
+      this.nodes.set(node.id, { id: node.id, data: mergeNodeMeta(existing.data, node.data) });
+    } else {
+      this.nodes.set(node.id, node);
+    }
   }
 
-  let assembled = buildProjectNode(project, { nodeType: project.parentProject ? 'project' : 'program', isCurrent: true });
-  let cursor = project.parentProject;
-  while (cursor) {
-    assembled = buildProjectNode(cursor, { nodeType: cursor.parentProject ? 'project' : 'program', extraChildren: [assembled] });
-    cursor = cursor.parentProject;
+  addEdge(sourceId: string, targetId: string) {
+    if (!sourceId || !targetId || sourceId === targetId) return;
+    if (!this.nodes.has(sourceId) || !this.nodes.has(targetId)) return;
+    const edgeId = `${sourceId}-${targetId}`;
+    if (this.edges.has(edgeId)) return;
+
+    this.edges.set(edgeId, { id: edgeId, source: sourceId, target: targetId });
+
+    if (!this.children.has(sourceId)) this.children.set(sourceId, new Set());
+    this.children.get(sourceId)!.add(targetId);
+
+    if (!this.parents.has(targetId)) this.parents.set(targetId, new Set());
+    this.parents.get(targetId)!.add(sourceId);
   }
-  return assembled;
-};
 
-/** Kökten current düğüme giden yolu bulur */
-const findPathTo = (root: ChartNode, targetId?: string): ChartNode[] | null => {
-  if (!targetId) return null;
-  const stack: { node: ChartNode; path: ChartNode[] }[] = [{ node: root, path: [root] }];
-  while (stack.length) {
-    const { node, path } = stack.pop()!;
-    if (node.id === targetId) return path;
-    node.children?.forEach((ch) => stack.push({ node: ch, path: [...path, ch] }));
-  }
-  return null;
-};
-
-/** expandedIds içerisinde olanlar açık, diğer çocuklu düğümler kapalı başlar */
-const convertToGraphData = (root: ChartNode, expandedIds: Set<string>): GraphData => {
-  const nodes: G6NodeData[] = [];
-  const edges: EdgeData[] = [];
-
-  const walk = (node: ChartNode) => {
-    const children = node.children ?? [];
-    const childIds = children.map((c) => c.id);
-    const isExpanded = expandedIds.has(node.id);
-
-    const style = childIds.length ? { collapsed: !isExpanded } : undefined;
-
-    nodes.push({
-      id: node.id,
-      data: node.data as unknown as Record<string, unknown>,
-      children: childIds.length ? childIds : undefined,
-      ...(style ? { style } : {}),
-    } as unknown as G6NodeData);
-
-    children.forEach((child) => {
-      edges.push({ id: `${node.id}-${child.id}`, source: node.id, target: child.id });
-      walk(child);
+  queueParentLinks(childId: string, parentRefs: string[]) {
+    if (!childId || !parentRefs.length) return;
+    const bucket = this.pendingParents.get(childId) ?? new Set<string>();
+    parentRefs.forEach((ref) => {
+      if (ref !== undefined && ref !== null) bucket.add(ref);
     });
+    if (bucket.size) this.pendingParents.set(childId, bucket);
+  }
+
+  resolveParentLinks(resolveProject: (rawId: string) => any) {
+    this.pendingParents.forEach((parentIds, childId) => {
+      parentIds.forEach((rawId) => {
+        const parentNodeId = makeProjectNodeId(rawId);
+        if (!parentNodeId) return;
+
+        if (!this.nodes.has(parentNodeId)) {
+          const projectData = resolveProject(rawId);
+          if (projectData) {
+            this.upsertNode({ id: parentNodeId, data: createProjectMeta(projectData, { nodeType: collectParentRefs(projectData).length ? 'project' : 'program' }) });
+          } else {
+            this.upsertNode({ id: parentNodeId, data: createFallbackProjectMeta(rawId) });
+          }
+        }
+
+        this.addEdge(parentNodeId, childId);
+      });
+    });
+
+    this.pendingParents.clear();
+  }
+
+  toResult(): ChartGraphResult {
+    return {
+      nodes: this.nodes,
+      edges: this.edges,
+      children: this.children,
+      parents: this.parents,
+      currentNodeId: this.currentNodeId,
+    };
+  }
+}
+
+interface RegisterProjectOptions {
+  nodeType?: ChartNodeType;
+  isCurrent?: boolean;
+  visited: Set<string>;
+}
+
+const registerActivity = (builder: ChartGraphBuilder, activity: any, parentId: string) => {
+  if (!activity) return;
+  const key = activity?.id ?? `${parentId}-activity-${activity?.description ?? 'activity'}-${activity?.date ?? ''}`;
+  const nodeId = `activity-${key}`;
+  builder.upsertNode({
+    id: nodeId,
+    data: createActivityMeta(activity),
+  });
+  builder.addEdge(parentId, nodeId);
+};
+
+const registerSubtask = (builder: ChartGraphBuilder, subtask: any, parentId: string) => {
+  if (!subtask) return;
+  const identifier = subtask?.id ?? subtask?.code ?? subtask?.title;
+  if (identifier === undefined || identifier === null) return;
+  const nodeId = `subtask-${identifier}`;
+  builder.upsertNode({
+    id: nodeId,
+    data: createSubtaskMeta(subtask),
+  });
+  builder.addEdge(parentId, nodeId);
+};
+
+const registerTask = (builder: ChartGraphBuilder, task: any, parentId: string) => {
+  if (!task) return;
+  const identifier = task?.id ?? task?.code ?? task?.title;
+  if (identifier === undefined || identifier === null) return;
+  const nodeId = `task-${identifier}`;
+  builder.upsertNode({
+    id: nodeId,
+    data: createTaskMeta(task),
+  });
+  builder.addEdge(parentId, nodeId);
+
+  if (Array.isArray(task?.subtasks)) {
+    task.subtasks.forEach((sub: any) => registerSubtask(builder, sub, nodeId));
+  }
+
+  if (Array.isArray(task?.activities)) {
+    task.activities.forEach((activity: any) => registerActivity(builder, activity, nodeId));
+  }
+};
+
+const registerProject = (builder: ChartGraphBuilder, project: any, options: RegisterProjectOptions): string | undefined => {
+  const identifier = getProjectIdentifier(project);
+  if (!identifier) return undefined;
+  const nodeId = `project-${identifier}`;
+  const nodeType = options.nodeType ?? (collectParentRefs(project).length ? 'project' : 'program');
+
+  builder.upsertNode({
+    id: nodeId,
+    data: createProjectMeta(project, { nodeType, isCurrent: options.isCurrent }),
+  });
+
+  if (options.isCurrent) {
+    builder.currentNodeId = nodeId;
+  }
+
+  const alreadyVisited = options.visited.has(nodeId);
+  if (!alreadyVisited) {
+    options.visited.add(nodeId);
+
+    if (Array.isArray(project?.tasks)) {
+      project.tasks.forEach((task: any) => registerTask(builder, task, nodeId));
+    }
+  }
+
+  if (Array.isArray(project?.subprojects)) {
+    project.subprojects.forEach((sub: any) => {
+      const childId = registerProject(builder, sub, { nodeType: 'subproject', visited: options.visited });
+      if (childId) builder.addEdge(nodeId, childId);
+    });
+  }
+
+  builder.queueParentLinks(nodeId, collectParentRefs(project));
+  return nodeId;
+};
+
+const buildParentLookup = (project: any): Map<string, any> => {
+  const lookup = new Map<string, any>();
+  if (!project) return lookup;
+
+  const visited = new Set<string>();
+  const queue: Array<{ value: any; source: 'root' | 'sub' | 'parent' }> = [];
+
+  const enqueue = (value: any, source: 'root' | 'sub' | 'parent') => {
+    const normalized = normalizeProjectRef(value);
+    if (!normalized) return;
+    const identifier = getProjectIdentifier(normalized);
+    if (!identifier) return;
+    const key = `${source}::${identifier}`;
+    if (visited.has(key)) return;
+    visited.add(key);
+    queue.push({ value: normalized, source });
   };
 
-  walk(root);
-  return { nodes, edges };
+  const registerParentCandidate = (candidate: any) => {
+    const normalized = normalizeProjectRef(candidate);
+    if (!normalized) return;
+    const identifier = getProjectIdentifier(normalized);
+    if (!identifier) return;
+    const existing = lookup.get(identifier);
+    lookup.set(identifier, existing ? { ...existing, ...normalized } : normalized);
+    enqueue(normalized, 'parent');
+  };
+
+  enqueue(project, 'root');
+
+  while (queue.length) {
+    const { value } = queue.shift()!;
+    if (!value || typeof value !== 'object') continue;
+
+    if (Array.isArray(value?.subprojects)) {
+      value.subprojects.forEach((sub: any) => enqueue(sub, 'sub'));
+    }
+
+    if (Array.isArray(value?.parentProjects)) {
+      value.parentProjects.forEach((parent: any) => registerParentCandidate(parent));
+    }
+
+    if (value?.parentProject) {
+      registerParentCandidate(value.parentProject);
+    }
+  }
+
+  const rootIdentifier = getProjectIdentifier(project);
+  if (rootIdentifier) {
+    lookup.delete(rootIdentifier);
+  }
+
+  return lookup;
+};
+
+const buildOrganizationChartGraph = (project: any): ChartGraphResult => {
+  const builder = new ChartGraphBuilder();
+
+  if (!project) {
+    builder.upsertNode({
+      id: 'empty-project',
+      data: { label: 'Veri yok', name: 'Organizasyon icin veri tanimli degil', type: 'project' } as ChartNodeMeta,
+    });
+    return builder.toResult();
+  }
+
+  const parentLookup = buildParentLookup(project);
+  const visitedProjects = new Set<string>();
+
+  parentLookup.forEach((parentProject) => {
+    registerProject(builder, parentProject, { visited: visitedProjects });
+  });
+
+  registerProject(builder, project, {
+    visited: visitedProjects,
+    isCurrent: true,
+    nodeType: collectParentRefs(project).length ? 'project' : 'program',
+  });
+
+  builder.resolveParentLinks((rawId) => parentLookup.get(rawId));
+
+  return builder.toResult();
+};
+
+const collectAncestors = (graph: ChartGraphResult, startId?: string): Set<string> => {
+  const result = new Set<string>();
+  if (!startId) return result;
+
+  const stack = [...(graph.parents.get(startId) ?? [])];
+  while (stack.length) {
+    const nodeId = stack.pop()!;
+    if (result.has(nodeId)) continue;
+    result.add(nodeId);
+
+    const parents = graph.parents.get(nodeId);
+    if (parents) {
+      parents.forEach((parentId) => stack.push(parentId));
+    }
+  }
+
+  return result;
+};
+
+const collectDescendants = (graph: ChartGraphResult, startId?: string): Set<string> => {
+  const result = new Set<string>();
+  if (!startId) return result;
+
+  const stack = [...(graph.children.get(startId) ?? [])];
+  while (stack.length) {
+    const nodeId = stack.pop()!;
+    if (result.has(nodeId)) continue;
+    result.add(nodeId);
+
+    const children = graph.children.get(nodeId);
+    if (children) {
+      children.forEach((childId) => stack.push(childId));
+    }
+  }
+
+  return result;
+};
+
+const buildDisplayGraphData = (graph: ChartGraphResult, expandedOriginIds: Set<string>): DisplayGraphData => {
+  const originToDisplays = new Map<string, string[]>();
+  const primaryDisplayIds = new Map<string, string>();
+  const expandedDisplayIds = new Set<string>();
+  const primaryParent = new Map<string, string | undefined>();
+  const displayNodes = new Map<string, G6NodeData>();
+
+  const assignPrimaryParents = (startIds: string[]) => {
+    const queue: string[] = [];
+    startIds.forEach((startId) => {
+      if (!graph.nodes.has(startId)) return;
+      if (!primaryParent.has(startId)) {
+        primaryParent.set(startId, undefined);
+        queue.push(startId);
+      }
+    });
+
+    while (queue.length) {
+      const parentId = queue.shift()!;
+      const childSet = graph.children.get(parentId);
+      if (!childSet) continue;
+
+      childSet.forEach((childId) => {
+        if (!graph.nodes.has(childId)) return;
+        if (!primaryParent.has(childId)) {
+          primaryParent.set(childId, parentId);
+          queue.push(childId);
+        }
+      });
+    }
+  };
+
+  const roots: string[] = [];
+  graph.nodes.forEach((_, nodeId) => {
+    if ((graph.parents.get(nodeId)?.size ?? 0) === 0) {
+      roots.push(nodeId);
+    }
+  });
+
+  if (!roots.length && graph.currentNodeId) {
+    roots.push(graph.currentNodeId);
+  }
+
+  if (!roots.length) {
+    roots.push(...Array.from(graph.nodes.keys()));
+  }
+
+  assignPrimaryParents(roots);
+
+  graph.nodes.forEach((_, nodeId) => {
+    if (!primaryParent.has(nodeId)) {
+      assignPrimaryParents([nodeId]);
+    }
+  });
+
+  graph.nodes.forEach((node, originId) => {
+    const data = { ...node.data, originId } as unknown as Record<string, unknown>;
+    const displayNode: G6NodeData = { id: originId, data };
+    displayNodes.set(originId, displayNode);
+    originToDisplays.set(originId, [originId]);
+    primaryDisplayIds.set(originId, originId);
+    if (expandedOriginIds.has(originId)) {
+      expandedDisplayIds.add(originId);
+    }
+  });
+
+  primaryParent.forEach((parentId, childId) => {
+    if (!parentId) return;
+    const parentNode = displayNodes.get(parentId);
+    const childNode = displayNodes.get(childId);
+    if (!parentNode || !childNode) return;
+
+    const children = Array.isArray(parentNode.children) ? [...(parentNode.children as string[])] : [];
+    children.push(childId);
+    parentNode.children = children;
+  });
+
+  displayNodes.forEach((node, originId) => {
+    if (Array.isArray(node.children) && node.children.length) {
+      node.style = { ...(node.style ?? {}), collapsed: !expandedOriginIds.has(originId) };
+    }
+  });
+
+  const edges: EdgeData[] = [];
+  let edgeIndex = 0;
+
+  primaryParent.forEach((parentId, childId) => {
+    if (!parentId) return;
+    edges.push({
+      id: `edge-${parentId}-${childId}-${edgeIndex++}`,
+      source: parentId,
+      target: childId,
+    });
+  });
+
+  const seenExtra = new Set<string>();
+  graph.parents.forEach((parentSet, childId) => {
+    parentSet.forEach((parentId) => {
+      if (primaryParent.get(childId) === parentId) return;
+      if (!displayNodes.has(parentId) || !displayNodes.has(childId)) return;
+      const key = `${parentId}-${childId}`;
+      if (seenExtra.has(key)) return;
+      seenExtra.add(key);
+      edges.push({
+        id: `edge-extra-${key}-${edgeIndex++}`,
+        source: parentId,
+        target: childId,
+        style: { stroke: '#94a3b8', lineDash: [6, 4], endArrow: true, opacity: 0.8 },
+      });
+    });
+  });
+
+  return {
+    graphData: { nodes: Array.from(displayNodes.values()), edges },
+    originToDisplays,
+    primaryDisplayIds,
+    expandedDisplayIds,
+  };
 };
 
 const ProjectOrganizationDiagram = ({ project }: ProjectOrganizationDiagramProps) => {
-  const chartTree = useMemo(() => buildOrganizationChartData(project), [project]);
+  const chartGraph = useMemo(() => buildOrganizationChartGraph(project), [project]);
+  const currentNodeId = chartGraph.currentNodeId;
+  const focusPathCandidates = project?.focusPathCandidates;
 
-  // current id ve yol
-  const currentNodeId = useMemo(() => {
-    const dfs = (n: ChartNode): string | undefined => {
-      if (n.data?.isCurrent) return n.id;
-      for (const c of n.children ?? []) {
-        const h = dfs(c);
-        if (h) return h;
-      }
-      return undefined;
-    };
-    return dfs(chartTree);
-  }, [chartTree]);
+  const ancestors = useMemo(() => collectAncestors(chartGraph, currentNodeId), [chartGraph, currentNodeId]);
+  const descendants = useMemo(() => collectDescendants(chartGraph, currentNodeId), [chartGraph, currentNodeId]);
 
-  const currentPath = useMemo<ChartNode[]>(() => {
-    if (!currentNodeId) return [];
-    return findPathTo(chartTree, currentNodeId) || [];
-  }, [chartTree, currentNodeId]);
-
-  const pathExpanded = useMemo(() => {
-    const s = new Set<string>();
-    s.add(chartTree.id); // kok
-
-    currentPath.forEach((n) => s.add(n.id));
-
-    const addDescendants = (node?: ChartNode) => {
-      if (!node?.children) return;
-      node.children.forEach((child) => {
-        s.add(child.id);
-        addDescendants(child);
+  const expandedOriginIds = useMemo(() => {
+    const expanded = new Set<string>();
+    ancestors.forEach((id) => expanded.add(id));
+    if (currentNodeId) expanded.add(currentNodeId);
+    descendants.forEach((id) => expanded.add(id));
+    if (Array.isArray(focusPathCandidates)) {
+      focusPathCandidates.forEach((path: any) => {
+        if (!Array.isArray(path)) return;
+        path.forEach((ref) => {
+          const nodeId = makeProjectNodeId(ref);
+          if (nodeId) expanded.add(nodeId);
+        });
       });
-    };
+    }
+    return expanded;
+  }, [ancestors, descendants, currentNodeId, focusPathCandidates]);
 
-    addDescendants(currentPath[currentPath.length - 1]);
-    return s;
-  }, [chartTree, currentPath]);
-
-  const baseData = useMemo<GraphData>(() => convertToGraphData(chartTree, pathExpanded), [chartTree, pathExpanded]);
+  const displayGraph = useMemo(() => buildDisplayGraphData(chartGraph, expandedOriginIds), [chartGraph, expandedOriginIds]);
+  const baseData = displayGraph.graphData;
+  const expandedDisplayIds = displayGraph.expandedDisplayIds;
+  const currentDisplayId = currentNodeId ? displayGraph.primaryDisplayIds.get(currentNodeId) : undefined;
   const graphRef = useRef<any>(null);
 
   const applyPathExpansion = useCallback(
@@ -298,7 +714,7 @@ const ProjectOrganizationDiagram = ({ project }: ProjectOrganizationDiagramProps
           const hasChildren = Array.isArray(model.children) && model.children.length > 0;
           if (!hasChildren) return;
 
-          const targetCollapsed = !pathExpanded.has(nodeId);
+          const targetCollapsed = !expandedDisplayIds.has(nodeId);
           const currentCollapsed = model?.style?.collapsed === true;
           if (currentCollapsed === targetCollapsed) return;
 
@@ -322,7 +738,7 @@ const ProjectOrganizationDiagram = ({ project }: ProjectOrganizationDiagramProps
         }
       } catch { }
     },
-    [pathExpanded],
+    [expandedDisplayIds],
   );
 
   // helper: current düğümü tam ekran merkezine getir
@@ -342,12 +758,14 @@ const ProjectOrganizationDiagram = ({ project }: ProjectOrganizationDiagramProps
     const graph = graphRef.current;
     if (!graph) return;
     applyPathExpansion(graph);
-  }, [applyPathExpansion]);
+  }, [applyPathExpansion, baseData]);
 
   const config = useMemo<OrganizationChartOptions>(
     () => ({
       data: baseData,
       direction: 'vertical',
+      animate: false,
+      animation: false,
       layout: { type: 'dagre', rankdir: 'TB', ranksep: 80, nodesep: 32 },
       node: {
         type: 'react',
@@ -394,15 +812,9 @@ const ProjectOrganizationDiagram = ({ project }: ProjectOrganizationDiagramProps
       ],
       onReady: (graph: any) => {
         graphRef.current = graph;
-        const applyAndCenter = () => {
-          applyPathExpansion(graph);
-          centerOnItem(graph, currentNodeId);
-        };
-        graph.once('afterlayout', applyAndCenter);
-        setTimeout(applyAndCenter, 0);
       },
     }),
-    [baseData, currentNodeId, centerOnItem, applyPathExpansion],
+    [baseData, expandedDisplayIds, applyPathExpansion, centerOnItem],
   );
 
   return (
@@ -413,7 +825,6 @@ const ProjectOrganizationDiagram = ({ project }: ProjectOrganizationDiagramProps
           <p className="text-sm text-slate-500">Program, proje, gorev ve ekip agacinin tamami</p>
         </div>
       </div>
-
       <div className="px-4 py-4">
         <OrganizationChart {...config} />
       </div>
