@@ -1,4 +1,5 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using PMM.API.Converters;
 using PMM.API.Extensions;
 using PMM.API.Filters;
@@ -49,7 +50,14 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
+    app.UseSwagger(c =>
+    {
+        c.PreSerializeFilters.Add((swaggerDoc, httpReq) =>
+        {
+            var serverUrl = $"{httpReq.Scheme}://{httpReq.Host.Value}";
+            swaggerDoc.Servers = new List<OpenApiServer> { new() { Url = serverUrl } };
+        });
+    });
     app.UseSwaggerUI(options =>
     {
         options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
