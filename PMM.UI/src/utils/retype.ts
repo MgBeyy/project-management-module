@@ -80,7 +80,7 @@ export const formatDate = (dateValue: string | number | null) => {
           return "Aktif";
         case "Completed":
           return "Tamamlandı";
-        case "InActive":
+        case "Inactive":
           return "Pasif";
         default:
           return "Belirtilmemiş";
