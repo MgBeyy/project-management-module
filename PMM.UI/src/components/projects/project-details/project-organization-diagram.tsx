@@ -292,15 +292,31 @@ const ProjectOrganizationDiagram = ({ project }: ProjectOrganizationDiagramProps
       transforms: [
         'translate-react-node-origin',
         {
-          type: 'collapse-expand-react-node',
-          key: 'collapse-expand-react-node',
-          trigger: 'icon',
-          iconType: 'plus-minus',
-          iconPlacement: 'bottom',
-          iconOffsetX: 8,
-          iconOffsetY: 0,
-          enable: (datum: any) => Array.isArray(datum.children) && datum.children.length > 0,
+        type: 'collapse-expand-react-node',
+        trigger: 'icon',
+        direction: 'out',
+        iconType: 'plus-minus',
+        iconPlacement: 'bottom',
+        iconOffsetX: 8,
+        iconOffsetY: 0,
+        enable: (model: any) => Array.isArray(model?.children) && model.children.length > 0,
+        refreshLayout: true,
+        // G6 tipleri bu alanı bilmiyor olabilir; bu yüzden as any gerekebilir.
+        // Aç/kapa sonrası yeniden yerleşim + fit
+        onChange: (item: any, collapsed: boolean, graph: any) => {
+          try {
+            graph.updateItem(item, { collapsed });
+          } catch {}
+          // küçük bir microtask sonra layout + fit (daha stabil)
+          setTimeout(() => {
+            try {
+              graph.layout();
+              graph.fitView?.({ padding: 24 });
+            } catch {}
+          }, 0);
+          return true; // refreshLayout ile birlikte çalışsın
         },
+      } as any,
       ],
       onReady: (graph: any) => {
         graphRef.current = graph;
@@ -321,7 +337,7 @@ const ProjectOrganizationDiagram = ({ project }: ProjectOrganizationDiagramProps
   // --- UI ---
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
-      <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+      <div className="border-b border-slate-200 px-6 py-1 flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Organizasyon Semasi</h2>
           <p className="text-sm text-slate-500">Program, proje, gorev ve ekip agacinin tamami</p>

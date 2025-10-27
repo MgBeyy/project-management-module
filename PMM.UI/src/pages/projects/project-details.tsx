@@ -894,7 +894,7 @@ export default function ProjectDetails() {
       key: 'organization',
       label: 'Organizasyon Semasi',
       children: (
-        <div className="py-4">
+        <div className="py-1">
           <ProjectOrganizationDiagram project={projectData} />
         </div>
       ),
@@ -902,7 +902,7 @@ export default function ProjectDetails() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 px-4">
       {/* Compact Header */}
 
       <Tabs
