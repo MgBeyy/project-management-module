@@ -17,6 +17,8 @@ RUN dotnet publish "PMM.API.csproj" -c Release -o /app/publish --no-restore
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /app/publish .
+RUN mkdir -p /app/wwwroot
+
 ENTRYPOINT ["dotnet", "PMM.API.dll"]
 
 

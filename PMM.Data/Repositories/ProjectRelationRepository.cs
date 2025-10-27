@@ -43,5 +43,92 @@ namespace PMM.Data.Repositories
                 _dbSet.Remove(relation);
             }
         }
+
+        public async Task<HashSet<int>> GetAllRelatedProjectIdsAsync(int projectId)
+        {
+            var allRelations = await _dbSet.ToListAsync();
+            var parents = new Dictionary<int, List<int>>();
+            var children = new Dictionary<int, List<int>>();
+
+            foreach (var rel in allRelations)
+            {
+                if (!parents.ContainsKey(rel.ChildProjectId))
+                    parents[rel.ChildProjectId] = new List<int>();
+                parents[rel.ChildProjectId].Add(rel.ParentProjectId);
+
+                if (!children.ContainsKey(rel.ParentProjectId))
+                    children[rel.ParentProjectId] = new List<int>();
+                children[rel.ParentProjectId].Add(rel.ChildProjectId);
+            }
+
+            var visited = new HashSet<int>();
+            var queue = new Queue<int>();
+            queue.Enqueue(projectId);
+            visited.Add(projectId);
+
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+
+                // Add parents
+                if (parents.ContainsKey(current))
+                {
+                    foreach (var parent in parents[current])
+                    {
+                        if (!visited.Contains(parent))
+                        {
+                            visited.Add(parent);
+                            queue.Enqueue(parent);
+                        }
+                    }
+                }
+
+                // Add children
+                if (children.ContainsKey(current))
+                {
+                    foreach (var child in children[current])
+                    {
+                        if (!visited.Contains(child))
+                        {
+                            visited.Add(child);
+                            queue.Enqueue(child);
+                        }
+                    }
+                }
+            }
+
+            return visited;
+        }
+
+        public async Task<bool> HasCircularDependencyAsync(int childProjectId, int parentProjectId)
+        {
+            var visited = new HashSet<int>();
+            return await CheckCircularDependencyRecursive(childProjectId, parentProjectId, visited);
+        }
+
+        private async Task<bool> CheckCircularDependencyRecursive(int currentProjectId, int targetProjectId, HashSet<int> visited)
+        {
+            if (currentProjectId == targetProjectId)
+                return true;
+
+            if (visited.Contains(currentProjectId))
+                return false;
+
+            visited.Add(currentProjectId);
+
+            // Get all parents of currentProjectId
+            var parentRelations = await _dbSet
+                .Where(pr => pr.ChildProjectId == currentProjectId)
+                .Select(pr => pr.ParentProjectId)
+                .ToListAsync();
+
+            foreach (var parentId in parentRelations)
+            {
+                if (await CheckCircularDependencyRecursive(parentId, targetProjectId, visited))
+                    return true;
+            }
+
+            return false;
+        }
     }
 }

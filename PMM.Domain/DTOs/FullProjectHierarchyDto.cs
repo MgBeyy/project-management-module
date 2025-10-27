@@ -1,8 +1,8 @@
-﻿using PMM.Domain.Enums;
+using PMM.Domain.Enums;
 
 namespace PMM.Domain.DTOs
 {
-    public class DetailedProjectDto
+    public class FullProjectHierarchyDto
     {
         public int Id { get; set; }
         public string Code { get; set; }
@@ -16,8 +16,8 @@ namespace PMM.Domain.DTOs
         public EProjectStatus Status { get; set; }
         public EProjectPriority Priority { get; set; }
 
-        public List<ProjectDto>? ParentProjects { get; set; }
-        public List<ProjectDto>? ChildProjects { get; set; }
+        public List<object>? ParentProjects { get; set; }
+        public List<object>? ChildProjects { get; set; }
 
         public int? ClientId { get; set; }
         public ClientDto? Client { get; set; }

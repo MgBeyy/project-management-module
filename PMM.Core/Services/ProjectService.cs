@@ -129,6 +129,74 @@ namespace PMM.Core.Services
             _projectRepository.Create(project);
             await _projectRepository.SaveChangesAsync();
 
+            existing = await _projectRepository.GetByCodeAsync(form.Code);
+            if (existing != null && existing.Id != project.Id)
+                throw new BusinessException("Bu kod ile kayıtlı bir proje bulunmaktadır.");
+
+            if (form.PlannedDeadline is not null)
+            {
+                if (form.PlannedDeadline < form.PlannedStartDate)
+                    throw new BusinessException("Planlanan bitirme tarihi başlama tarihinden önce olamaz.");
+            }
+            if (form.StartedAt is not null && form.EndAt is not null)
+            {
+                if (form.EndAt < form.StartedAt)
+                    throw new BusinessException("Proje bitirme tarihi başlama tarihinden önce olamaz.");
+            }
+            if (form.Status is null)
+            {
+                if (form.PlannedStartDate != null && form.PlannedStartDate < DateOnly.FromDateTime(DateTime.UtcNow))
+                {
+                    form.Status = EProjectStatus.Active;
+                }
+                else
+                {
+                    form.Status = EProjectStatus.Planned;
+                }
+            }
+
+            if (form.Status == EProjectStatus.Completed)
+            {
+                if (form.StartedAt == null || form.EndAt == null || form.PlannedStartDate == null || form.PlannedDeadline == null || form.PlannedHours == null)
+                    throw new BusinessException("Tamamlanmış bir proje için başlangıç, bitiş, planlanan başlangıç, planlanan bitiş tarihleri ve planlanan saat zorunludur.");
+            }
+
+            if (form.ParentProjectIds != null && form.ParentProjectIds.Count != 0)
+            {
+                foreach (var parentId in form.ParentProjectIds)
+                {
+                    _ = await _projectRepository.GetByIdAsync(parentId) ?? throw new NotFoundException($"ID {parentId} ile ebeveyn proje bulunamadı!");
+                }
+            }
+
+            if (form.ClientId is not null)
+                _ = await _clientRepository.GetByIdAsync(form.ClientId) ?? throw new NotFoundException("Müşteri Bulunamadı!");
+
+            if (form.LabelIds != null && form.LabelIds.Count != 0)
+            {
+                foreach (var labelId in form.LabelIds)
+                    _ = await _labelRepository.GetByIdAsync(labelId) ?? throw new NotFoundException($"ID {labelId} ile etiket bulunamadı!");
+            }
+
+            if (form.AssignedUsers != null && form.AssignedUsers.Count != 0)
+            {
+                var userIds = form.AssignedUsers.Select(au => au.UserId).ToList();
+                var duplicateUserIds = userIds.GroupBy(x => x).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+                if (duplicateUserIds.Any())
+                    throw new BusinessException($"Aynı kullanıcı birden fazla kez atanamaz. Tekrarlanan kullanıcı ID'leri: {string.Join(", ", duplicateUserIds)}");
+
+                foreach (var assignedUser in form.AssignedUsers)
+                {
+                    _ = await _userRepository.GetByIdAsync(assignedUser.UserId) ?? throw new NotFoundException($"ID {assignedUser.UserId} ile kullanıcı bulunamadı!");
+
+                    if (assignedUser.EndAt is not null && assignedUser.StartedAt is not null)
+                    {
+                        if (assignedUser.EndAt < assignedUser.StartedAt)
+                            throw new BusinessException($"Kullanıcı {assignedUser.UserId} için projeden ayrılma tarihi başlama tarihinden önce olamaz.");
+                    }
+                }
+            }
+
             // Parent relations oluşturma
             if (form.ParentProjectIds != null && form.ParentProjectIds.Count != 0)
             {
@@ -227,6 +295,10 @@ namespace PMM.Core.Services
                     var childProjects = await _projectRelationRepository.GetByParentProjectIdAsync(projectId);
                     if (childProjects.Any(c => c.ChildProjectId == parentId))
                         throw new BusinessException("Bir proje, kendi alt projelerinden birine üst proje olarak atanamaz.");
+
+                    var hasCircularDependency = await _projectRelationRepository.HasCircularDependencyAsync(projectId, parentId);
+                    if (hasCircularDependency)
+                        throw new BusinessException($"Proje {parentId} ile döngüsel bağımlılık oluşturulamaz!");
                 }
             }
 
@@ -535,6 +607,28 @@ namespace PMM.Core.Services
                     .ToList();
             }
 
+            // Fetch child projects
+            var childRelations = await _projectRelationRepository.GetByParentProjectIdAsync(projectId);
+            if (childRelations.Any())
+            {
+                detailedProjectDto.ChildProjects = childRelations
+                    .Select(cr => ProjectMapper.Map(cr.ChildProject))
+                    .ToList();
+            }
+
+            // Fetch tasks
+            var allTasks = await _taskRepository.GetByProjectIdAsync(projectId);
+            var taskDtos = TaskMapper.Map(allTasks);
+
+            // Build hierarchy: top-level tasks and their subtasks
+            var topLevelTasks = taskDtos.Where(t => t.ParentTaskId == null).ToList();
+            foreach (var task in topLevelTasks)
+            {
+                task.SubTasks = taskDtos.Where(t => t.ParentTaskId == task.Id).ToList();
+            }
+
+            detailedProjectDto.Tasks = topLevelTasks;
+
             detailedProjectDto.Client = project.ClientId.HasValue
                 ? ClientMapper.Map(await _clientRepository.GetByIdAsync(project.ClientId.Value))
                 : null;
@@ -554,6 +648,136 @@ namespace PMM.Core.Services
             }
 
             return detailedProjectDto;
+        }
+
+        public async Task<FullProjectHierarchyDto> GetFullProjectHierarchyAsync(int projectId)
+        {
+            // Get all related project IDs
+            var relatedProjectIds = await _projectRelationRepository.GetAllRelatedProjectIdsAsync(projectId);
+
+            // Fetch all related projects with includes
+            var projects = await _projectRepository.Query(p => relatedProjectIds.Contains(p.Id))
+                .Include(p => p.ParentRelations)
+                    .ThenInclude(pr => pr.ParentProject)
+                .Include(p => p.ChildRelations)
+                    .ThenInclude(cr => cr.ChildProject)
+                .Include(p => p.ProjectLabels)
+                    .ThenInclude(pl => pl.Label)
+                .Include(p => p.Assignments)
+                    .ThenInclude(a => a.User)
+                .ToListAsync();
+
+            // Fetch all tasks for related projects
+            var allTasks = await _taskRepository.Query(t => relatedProjectIds.Contains(t.ProjectId))
+                .Include(t => t.Project)
+                .Include(t => t.TaskLabels)
+                    .ThenInclude(tl => tl.Label)
+                .Include(t => t.TaskAssignments)
+                    .ThenInclude(ta => ta.User)
+                .ToListAsync();
+
+            // Create a dictionary for project objects
+            var projectObjects = new Dictionary<int, object>();
+            var referencedProjects = new HashSet<int>();
+
+            // Function to get project object
+            async Task<object> GetProjectObject(int id)
+            {
+                if (projectObjects.ContainsKey(id))
+                {
+                    var proj = projects.First(p => p.Id == id);
+                    return new IdNameCodeDto { Id = proj.Id, Name = proj.Title, Code = proj.Code };
+                }
+                else
+                {
+                    // Create full DTO
+                    var proj = projects.First(p => p.Id == id);
+                    var dto = ProjectMapper.MapToFullHierarchy(proj);
+                    projectObjects[id] = dto;
+                    referencedProjects.Add(id);
+
+                    // Set client, assigned users, etc.
+                    dto.Client = proj.ClientId.HasValue
+                        ? ClientMapper.Map(await _clientRepository.GetByIdAsync(proj.ClientId.Value))
+                        : null;
+
+                    if (proj.Assignments != null && proj.Assignments.Any())
+                    {
+                        dto.AssignedUsers = ProjectAssignmentMapper.MapWithUser(proj.Assignments.ToList());
+                    }
+
+                    var createdBy = await _userRepository.GetByIdAsync(proj.CreatedById);
+                    dto.CreatedByUser = createdBy != null ? IdNameMapper.Map(createdBy.Id, createdBy.Name) : null;
+
+                    if (proj.UpdatedById.HasValue)
+                    {
+                        var updatedBy = await _userRepository.GetByIdAsync(proj.UpdatedById);
+                        dto.UpdatedByUser = updatedBy != null ? IdNameMapper.Map(updatedBy.Id, updatedBy.Name) : null;
+                    }
+
+                    return dto;
+                }
+            }
+
+            // Start with the root
+            var rootDto = (FullProjectHierarchyDto)await GetProjectObject(projectId);
+
+            // Set parents (always flat)
+            var rootProject = projects.First(p => p.Id == projectId);
+            if (rootProject.ParentRelations != null && rootProject.ParentRelations.Any())
+            {
+                rootDto.ParentProjects = rootProject.ParentRelations
+                    .Where(pr => relatedProjectIds.Contains(pr.ParentProjectId))
+                    .Select(pr => (object)ProjectMapper.Map(pr.ParentProject))
+                    .ToList();
+            }
+
+            // Set children recursively
+            async Task SetChildren(FullProjectHierarchyDto dto, Project project)
+            {
+                if (project.ChildRelations != null && project.ChildRelations.Any())
+                {
+                    dto.ChildProjects = new List<object>();
+                    foreach (var cr in project.ChildRelations.Where(cr => relatedProjectIds.Contains(cr.ChildProjectId) && cr.ChildProjectId != projectId))
+                    {
+                        dto.ChildProjects.Add(await GetProjectObject(cr.ChildProjectId));
+                    }
+
+                    // For full DTOs, set their children
+                    foreach (var childObj in dto.ChildProjects)
+                    {
+                        if (childObj is FullProjectHierarchyDto childDto)
+                        {
+                            var childProject = projects.First(p => p.Id == childDto.Id);
+                            await SetChildren(childDto, childProject);
+                        }
+                    }
+                }
+            }
+
+            await SetChildren(rootDto, rootProject);
+
+            // Set tasks for all full DTOs
+            foreach (var obj in projectObjects.Values)
+            {
+                if (obj is FullProjectHierarchyDto dto)
+                {
+                    var proj = projects.First(p => p.Id == dto.Id);
+                    var projectTasks = allTasks.Where(t => t.ProjectId == proj.Id).ToList();
+                    var taskDtos = TaskMapper.Map(projectTasks);
+
+                    // Build task hierarchy
+                    var topLevelTasks = taskDtos.Where(t => t.ParentTaskId == null).ToList();
+                    foreach (var task in topLevelTasks)
+                    {
+                        task.SubTasks = taskDtos.Where(t => t.ParentTaskId == task.Id).ToList();
+                    }
+
+                    dto.Tasks = topLevelTasks;
+                }
+            }
+
+            return rootDto;
         }
 
         public async Task DeleteProjectAsync(int projectId)

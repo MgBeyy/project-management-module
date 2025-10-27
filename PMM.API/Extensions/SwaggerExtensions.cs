@@ -11,7 +11,7 @@ namespace PMM.API.Extensions
             c.SwaggerDoc("v1", new OpenApiInfo
             {
                 Title = "Proje Yönetimi Modülü API",
-                Version = "v0.1 alpa",
+                Version = "v0.1 alpha",
                 Description = "Kurumsal Proje Yönetimi Servisleri",
                 Contact = new OpenApiContact
                 {

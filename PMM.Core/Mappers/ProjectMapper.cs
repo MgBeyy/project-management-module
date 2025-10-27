@@ -96,5 +96,31 @@ namespace PMM.Core.Mappers
             project.Priority = form.Priority;
             return project;
         }
+
+        public static FullProjectHierarchyDto MapToFullHierarchy(Project project)
+        {
+            return new FullProjectHierarchyDto
+            {
+                Id = project.Id,
+                Code = project.Code,
+                Title = project.Title,
+                PlannedStartDate = project.PlannedStartDate,
+                PlannedDeadline = project.PlannedDeadline,
+                PlannedHours = project.PlannedHours,
+                ActualHours = project.ActualHours,
+                StartedAt = project.StartedAt,
+                EndAt = project.EndAt,
+                Status = project.Status,
+                Priority = project.Priority,
+                ClientId = project.ClientId,
+                Labels = project.ProjectLabels?
+                    .Select(pl => LabelMapper.Map(pl.Label))
+                    .ToList(),
+                CreatedAt = project.CreatedAt,
+                CreatedById = project.CreatedById,
+                UpdatedAt = project.UpdatedAt,
+                UpdatedById = project.UpdatedById,
+            };
+        }
     }
 }
