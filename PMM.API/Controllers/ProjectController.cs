@@ -76,5 +76,15 @@ namespace PMM.API.Controllers
             await _projectService.DeleteProjectAsync(projectId);
             return new ApiResponse("Proje başarıyla silindi.", StatusCodes.Status200OK);
         }
+        [ProducesResponseType(typeof(FullProjectHierarchyDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [HttpGet("hierarchy/{projectId:int}")]
+        public async Task<ApiResponse> GetFullProjectHierarchyById(int projectId)
+        {
+            var project = await _projectService.GetFullProjectHierarchyAsync(projectId);
+            return new ApiResponse(project, StatusCodes.Status200OK);
+        }
     }
 }
