@@ -34,5 +34,6 @@ namespace PMM.Domain.Forms
         public DateTime? UpdatedAtMax { get; set; }
         public int? UpdatedById { get; set; }
         public string? LabelIds { get; set; }
+        public int? AssignedUserId { get; set; }
     }
 }
