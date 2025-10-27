@@ -53,9 +53,16 @@ namespace PMM.Core.Services
             if (form.EndTime <= form.StartTime)
                 throw new BusinessException("Bitiş zamanı başlangıç zamanından sonra olmalıdır!");
 
+            if (form.EndTime > DateTime.UtcNow)
+                throw new BusinessException("İleriye dönük etkinlik girilemez!");
+
             var task = await _taskRepository.GetByIdAsync(form.TaskId) ?? throw new NotFoundException("Görev Bulunamadı!");
             if (task.Status == ETaskStatus.Done || task.Status == ETaskStatus.Inactive || task.Status == ETaskStatus.WaitingForApproval)
                 throw new BusinessException("Bu görev durumu nedeniyle aktivite eklenemez. Görev durumu Tamamlandı, Pasif veya Onay Bekliyor ise aktivite eklenemez.");
+
+            var project = await _projectRepository.GetByIdAsync(task.ProjectId) ?? throw new NotFoundException("Proje Bulunamadı!");
+            if (project.Status == EProjectStatus.Inactive)
+                throw new BusinessException("Proje pasif durumda olduğu için aktivite eklenemez.");
 
             _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("Kullanıcı Bulunamadı!");
 
@@ -65,6 +72,41 @@ namespace PMM.Core.Services
             var isUserAssigned = await _taskAssignmentRepository.IsUserAssignedToTaskAsync(form.UserId, form.TaskId);
             if (!isUserAssigned)
                 throw new BusinessException("Bu kullanıcı belirtilen göreve atanmamıştır. Sadece göreve atanmış kullanıcılar aktivite ekleyebilir.");
+
+            var isFirstActivity = !await _activityRepository.Query(a => a.TaskId == form.TaskId).AnyAsync();
+            if (isFirstActivity)
+            {
+                bool taskUpdated = false;
+                bool projectUpdated = false;
+
+                if (task.Status == ETaskStatus.Todo)
+                {
+                    task.Status = ETaskStatus.InProgress;
+                    taskUpdated = true;
+                }
+
+                if (project.Status == EProjectStatus.Planned)
+                {
+                    project.Status = EProjectStatus.Active;
+                    projectUpdated = true;
+                }
+
+                if (taskUpdated || projectUpdated)
+                {
+                    if (taskUpdated)
+                    {
+                        _taskRepository.Update(task);
+                    }
+
+                    if (projectUpdated)
+                    {
+                        _projectRepository.Update(project);
+                    }
+
+                    await _taskRepository.SaveChangesAsync();
+                    await _projectRepository.SaveChangesAsync();
+                }
+            }
 
             var activity = ActivityMapper.Map(form);
 
@@ -198,6 +240,9 @@ namespace PMM.Core.Services
 
             if (form.EndTime <= form.StartTime)
                 throw new BusinessException("Bitiş zamanı başlangıç zamanından sonra olmalıdır!");
+
+            if (form.EndTime > DateTime.UtcNow)
+                throw new BusinessException("İleriye dönük etkinlik girilemez!");
 
             var activity = await _activityRepository.GetByIdAsync(activityId) ?? throw new NotFoundException("Aktivite Bulunamadı!");
 
