@@ -220,13 +220,15 @@ const convertToGraphData = (root: ChartNode, expandedIds: Set<string>): GraphDat
   const walk = (node: ChartNode) => {
     const children = node.children ?? [];
     const childIds = children.map((c) => c.id);
-    const isExpanded = expandedIds.has(node.id) || Boolean(node.data?.isCurrent);
+    const isExpanded = expandedIds.has(node.id);
+
+    const style = childIds.length ? { collapsed: !isExpanded } : undefined;
 
     nodes.push({
       id: node.id,
       data: node.data as unknown as Record<string, unknown>,
       children: childIds.length ? childIds : undefined,
-      ...(childIds.length ? { collapsed: !isExpanded } : {}),
+      ...(style ? { style } : {}),
     } as unknown as G6NodeData);
 
     children.forEach((child) => {
@@ -255,19 +257,92 @@ const ProjectOrganizationDiagram = ({ project }: ProjectOrganizationDiagramProps
     return dfs(chartTree);
   }, [chartTree]);
 
-  const pathExpanded = useMemo(() => {
-    const s = new Set<string>();
-    if (currentNodeId) {
-      (findPathTo(chartTree, currentNodeId) || []).forEach((n) => s.add(n.id));
-    }
-    s.add(chartTree.id); // kök
-    return s;
+  const currentPath = useMemo<ChartNode[]>(() => {
+    if (!currentNodeId) return [];
+    return findPathTo(chartTree, currentNodeId) || [];
   }, [chartTree, currentNodeId]);
 
-  // İlk veri (current’a kadar açık)
-  const baseData = useMemo<GraphData>(() => convertToGraphData(chartTree, pathExpanded), [chartTree, pathExpanded]);
+  const pathExpanded = useMemo(() => {
+    const s = new Set<string>();
+    s.add(chartTree.id); // kok
 
+    currentPath.forEach((n) => s.add(n.id));
+
+    const addDescendants = (node?: ChartNode) => {
+      if (!node?.children) return;
+      node.children.forEach((child) => {
+        s.add(child.id);
+        addDescendants(child);
+      });
+    };
+
+    addDescendants(currentPath[currentPath.length - 1]);
+    return s;
+  }, [chartTree, currentPath]);
+
+  const baseData = useMemo<GraphData>(() => convertToGraphData(chartTree, pathExpanded), [chartTree, pathExpanded]);
   const graphRef = useRef<any>(null);
+
+  const applyPathExpansion = useCallback(
+    (graph: any) => {
+      if (!graph) return;
+      try {
+        const nodes = graph.getNodes?.() ?? [];
+        let changed = false;
+
+        nodes.forEach((node: any) => {
+          const model = node.getModel?.() ?? {};
+          const nodeId = model.id;
+          if (!nodeId) return;
+
+          const hasChildren = Array.isArray(model.children) && model.children.length > 0;
+          if (!hasChildren) return;
+
+          const targetCollapsed = !pathExpanded.has(nodeId);
+          const currentCollapsed = model?.style?.collapsed === true;
+          if (currentCollapsed === targetCollapsed) return;
+
+          try {
+            if (targetCollapsed) {
+              graph.collapseElement?.(nodeId);
+            } else {
+              graph.expandElement?.(nodeId);
+            }
+          } catch { }
+          try {
+            const nextStyle = { ...(model.style ?? {}), collapsed: targetCollapsed };
+            graph.updateItem?.(node, { style: nextStyle });
+          } catch { }
+          changed = true;
+        });
+
+        if (changed) {
+          graph.layout?.();
+          graph.fitView?.({ padding: 24 });
+        }
+      } catch { }
+    },
+    [pathExpanded],
+  );
+
+  // helper: current düğümü tam ekran merkezine getir
+  const centerOnItem = useCallback((graph: any, itemId?: string) => {
+    graph.fitView?.({ padding: 24 });
+    if (!itemId) return;
+    try {
+      graph.focusItem(itemId, false); // zoom'u değiştirmeden odaklan
+      const item = graph.findById(itemId);
+      const { x, y } = item.getModel();
+      const p = graph.getCanvasByPoint(x, y);
+      graph.translate(graph.getWidth() / 2 - p.x, graph.getHeight() / 2 - p.y);
+    } catch { }
+  }, []);
+
+  useEffect(() => {
+    const graph = graphRef.current;
+    if (!graph) return;
+    applyPathExpansion(graph);
+  }, [applyPathExpansion]);
 
   const config = useMemo<OrganizationChartOptions>(
     () => ({
@@ -292,49 +367,44 @@ const ProjectOrganizationDiagram = ({ project }: ProjectOrganizationDiagramProps
       transforms: [
         'translate-react-node-origin',
         {
-        type: 'collapse-expand-react-node',
-        trigger: 'icon',
-        direction: 'out',
-        iconType: 'plus-minus',
-        iconPlacement: 'bottom',
-        iconOffsetX: 8,
-        iconOffsetY: 0,
-        enable: (model: any) => Array.isArray(model?.children) && model.children.length > 0,
-        refreshLayout: true,
-        // G6 tipleri bu alanı bilmiyor olabilir; bu yüzden as any gerekebilir.
-        // Aç/kapa sonrası yeniden yerleşim + fit
-        onChange: (item: any, collapsed: boolean, graph: any) => {
-          try {
-            graph.updateItem(item, { collapsed });
-          } catch {}
-          // küçük bir microtask sonra layout + fit (daha stabil)
-          setTimeout(() => {
+          type: 'collapse-expand-react-node',
+          trigger: 'icon',
+          direction: 'out',
+          iconType: 'plus-minus',
+          iconPlacement: 'bottom',
+          iconOffsetX: 8,
+          iconOffsetY: 0,
+          enable: (model: any) => Array.isArray(model?.children) && model.children.length > 0,
+          refreshLayout: true,
+          onChange: (item: any, collapsed: boolean, graph: any) => {
             try {
-              graph.layout();
-              graph.fitView?.({ padding: 24 });
-            } catch {}
-          }, 0);
-          return true; // refreshLayout ile birlikte çalışsın
-        },
-      } as any,
+              const model = item?.getModel?.() ?? {};
+              const nextStyle = { ...(model.style ?? {}), collapsed };
+              graph.updateItem(item, { style: nextStyle });
+            } catch { }
+            setTimeout(() => {
+              try {
+                graph.layout();
+                graph.fitView?.({ padding: 24 });
+              } catch { }
+            }, 0);
+            return true;
+          },
+        } as any,
       ],
       onReady: (graph: any) => {
         graphRef.current = graph;
-        const refitAndFocus = () => {
-          if (currentNodeId) {
-            try {
-              graph.focusItem(currentNodeId, false);
-            } catch { /* ignore */ }
-          }
+        const applyAndCenter = () => {
+          applyPathExpansion(graph);
+          centerOnItem(graph, currentNodeId);
         };
-        graph.on('afterlayout', refitAndFocus);
-        refitAndFocus();
+        graph.once('afterlayout', applyAndCenter);
+        setTimeout(applyAndCenter, 0);
       },
     }),
-    [baseData, currentNodeId],
+    [baseData, currentNodeId, centerOnItem, applyPathExpansion],
   );
 
-  // --- UI ---
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
       <div className="border-b border-slate-200 px-6 py-1 flex items-center justify-between">
