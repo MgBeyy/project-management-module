@@ -129,6 +129,74 @@ namespace PMM.Core.Services
             _projectRepository.Create(project);
             await _projectRepository.SaveChangesAsync();
 
+            existing = await _projectRepository.GetByCodeAsync(form.Code);
+            if (existing != null && existing.Id != project.Id)
+                throw new BusinessException("Bu kod ile kayıtlı bir proje bulunmaktadır.");
+
+            if (form.PlannedDeadline is not null)
+            {
+                if (form.PlannedDeadline < form.PlannedStartDate)
+                    throw new BusinessException("Planlanan bitirme tarihi başlama tarihinden önce olamaz.");
+            }
+            if (form.StartedAt is not null && form.EndAt is not null)
+            {
+                if (form.EndAt < form.StartedAt)
+                    throw new BusinessException("Proje bitirme tarihi başlama tarihinden önce olamaz.");
+            }
+            if (form.Status is null)
+            {
+                if (form.PlannedStartDate != null && form.PlannedStartDate < DateOnly.FromDateTime(DateTime.UtcNow))
+                {
+                    form.Status = EProjectStatus.Active;
+                }
+                else
+                {
+                    form.Status = EProjectStatus.Planned;
+                }
+            }
+
+            if (form.Status == EProjectStatus.Completed)
+            {
+                if (form.StartedAt == null || form.EndAt == null || form.PlannedStartDate == null || form.PlannedDeadline == null || form.PlannedHours == null)
+                    throw new BusinessException("Tamamlanmış bir proje için başlangıç, bitiş, planlanan başlangıç, planlanan bitiş tarihleri ve planlanan saat zorunludur.");
+            }
+
+            if (form.ParentProjectIds != null && form.ParentProjectIds.Count != 0)
+            {
+                foreach (var parentId in form.ParentProjectIds)
+                {
+                    _ = await _projectRepository.GetByIdAsync(parentId) ?? throw new NotFoundException($"ID {parentId} ile ebeveyn proje bulunamadı!");
+                }
+            }
+
+            if (form.ClientId is not null)
+                _ = await _clientRepository.GetByIdAsync(form.ClientId) ?? throw new NotFoundException("Müşteri Bulunamadı!");
+
+            if (form.LabelIds != null && form.LabelIds.Count != 0)
+            {
+                foreach (var labelId in form.LabelIds)
+                    _ = await _labelRepository.GetByIdAsync(labelId) ?? throw new NotFoundException($"ID {labelId} ile etiket bulunamadı!");
+            }
+
+            if (form.AssignedUsers != null && form.AssignedUsers.Count != 0)
+            {
+                var userIds = form.AssignedUsers.Select(au => au.UserId).ToList();
+                var duplicateUserIds = userIds.GroupBy(x => x).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+                if (duplicateUserIds.Any())
+                    throw new BusinessException($"Aynı kullanıcı birden fazla kez atanamaz. Tekrarlanan kullanıcı ID'leri: {string.Join(", ", duplicateUserIds)}");
+
+                foreach (var assignedUser in form.AssignedUsers)
+                {
+                    _ = await _userRepository.GetByIdAsync(assignedUser.UserId) ?? throw new NotFoundException($"ID {assignedUser.UserId} ile kullanıcı bulunamadı!");
+
+                    if (assignedUser.EndAt is not null && assignedUser.StartedAt is not null)
+                    {
+                        if (assignedUser.EndAt < assignedUser.StartedAt)
+                            throw new BusinessException($"Kullanıcı {assignedUser.UserId} için projeden ayrılma tarihi başlama tarihinden önce olamaz.");
+                    }
+                }
+            }
+
             // Parent relations oluşturma
             if (form.ParentProjectIds != null && form.ParentProjectIds.Count != 0)
             {
@@ -227,6 +295,10 @@ namespace PMM.Core.Services
                     var childProjects = await _projectRelationRepository.GetByParentProjectIdAsync(projectId);
                     if (childProjects.Any(c => c.ChildProjectId == parentId))
                         throw new BusinessException("Bir proje, kendi alt projelerinden birine üst proje olarak atanamaz.");
+
+                    var hasCircularDependency = await _projectRelationRepository.HasCircularDependencyAsync(projectId, parentId);
+                    if (hasCircularDependency)
+                        throw new BusinessException($"Proje {parentId} ile döngüsel bağımlılık oluşturulamaz!");
                 }
             }
 
@@ -613,7 +685,6 @@ namespace PMM.Core.Services
             {
                 if (projectObjects.ContainsKey(id))
                 {
-                    // Already referenced, return IdNameCodeDto
                     var proj = projects.First(p => p.Id == id);
                     return new IdNameCodeDto { Id = proj.Id, Name = proj.Title, Code = proj.Code };
                 }
