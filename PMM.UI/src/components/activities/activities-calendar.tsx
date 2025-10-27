@@ -672,6 +672,7 @@ export default function ActivitiesCalendar() {
                             );
                             const columnWidth = 100 / totalColumns;
                             const leftOffset = columnWidth * columnIndex;
+                            const isRightmost = columnIndex === totalColumns - 1;
 
                             const startTime = dayjs(activity.StartTime);
                             const endTime = dayjs(activity.EndTime);
@@ -696,7 +697,7 @@ export default function ActivitiesCalendar() {
                                   position: "absolute",
                                   top: "2px",
                                   left: `calc(2px + ${leftOffset}%)`,
-                                  width: `calc(${columnWidth}% - 4px)`,
+                                  width: `calc(${columnWidth}% - ${isRightmost ? 14 : 2}px)`,
                                   height: `${activityHeight}px`,
                                   display: "flex",
                                   flexDirection: "column",
