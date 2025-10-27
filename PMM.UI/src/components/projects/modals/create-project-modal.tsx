@@ -1696,7 +1696,7 @@ export default function CreateProjectModal({
                               <div className="flex items-center justify-center">
                                 {imagePreview ? (
                                   <Image
-                                    src={file.file}
+                                    src={`${import.meta.env.VITE_APP_API_URL}${file.file}`}
                                     alt={displayName}
                                     width={48}
                                     height={48}
