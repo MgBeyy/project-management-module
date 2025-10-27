@@ -535,6 +535,28 @@ namespace PMM.Core.Services
                     .ToList();
             }
 
+            // Fetch child projects
+            var childRelations = await _projectRelationRepository.GetByParentProjectIdAsync(projectId);
+            if (childRelations.Any())
+            {
+                detailedProjectDto.ChildProjects = childRelations
+                    .Select(cr => ProjectMapper.Map(cr.ChildProject))
+                    .ToList();
+            }
+
+            // Fetch tasks
+            var allTasks = await _taskRepository.GetByProjectIdAsync(projectId);
+            var taskDtos = TaskMapper.Map(allTasks);
+
+            // Build hierarchy: top-level tasks and their subtasks
+            var topLevelTasks = taskDtos.Where(t => t.ParentTaskId == null).ToList();
+            foreach (var task in topLevelTasks)
+            {
+                task.SubTasks = taskDtos.Where(t => t.ParentTaskId == task.Id).ToList();
+            }
+
+            detailedProjectDto.Tasks = topLevelTasks;
+
             detailedProjectDto.Client = project.ClientId.HasValue
                 ? ClientMapper.Map(await _clientRepository.GetByIdAsync(project.ClientId.Value))
                 : null;
@@ -554,6 +576,137 @@ namespace PMM.Core.Services
             }
 
             return detailedProjectDto;
+        }
+
+        public async Task<FullProjectHierarchyDto> GetFullProjectHierarchyAsync(int projectId)
+        {
+            // Get all related project IDs
+            var relatedProjectIds = await _projectRelationRepository.GetAllRelatedProjectIdsAsync(projectId);
+
+            // Fetch all related projects with includes
+            var projects = await _projectRepository.Query(p => relatedProjectIds.Contains(p.Id))
+                .Include(p => p.ParentRelations)
+                    .ThenInclude(pr => pr.ParentProject)
+                .Include(p => p.ChildRelations)
+                    .ThenInclude(cr => cr.ChildProject)
+                .Include(p => p.ProjectLabels)
+                    .ThenInclude(pl => pl.Label)
+                .Include(p => p.Assignments)
+                    .ThenInclude(a => a.User)
+                .ToListAsync();
+
+            // Fetch all tasks for related projects
+            var allTasks = await _taskRepository.Query(t => relatedProjectIds.Contains(t.ProjectId))
+                .Include(t => t.Project)
+                .Include(t => t.TaskLabels)
+                    .ThenInclude(tl => tl.Label)
+                .Include(t => t.TaskAssignments)
+                    .ThenInclude(ta => ta.User)
+                .ToListAsync();
+
+            // Create a dictionary for project objects
+            var projectObjects = new Dictionary<int, object>();
+            var referencedProjects = new HashSet<int>();
+
+            // Function to get project object
+            async Task<object> GetProjectObject(int id)
+            {
+                if (projectObjects.ContainsKey(id))
+                {
+                    // Already referenced, return IdNameCodeDto
+                    var proj = projects.First(p => p.Id == id);
+                    return new IdNameCodeDto { Id = proj.Id, Name = proj.Title, Code = proj.Code };
+                }
+                else
+                {
+                    // Create full DTO
+                    var proj = projects.First(p => p.Id == id);
+                    var dto = ProjectMapper.MapToFullHierarchy(proj);
+                    projectObjects[id] = dto;
+                    referencedProjects.Add(id);
+
+                    // Set client, assigned users, etc.
+                    dto.Client = proj.ClientId.HasValue
+                        ? ClientMapper.Map(await _clientRepository.GetByIdAsync(proj.ClientId.Value))
+                        : null;
+
+                    if (proj.Assignments != null && proj.Assignments.Any())
+                    {
+                        dto.AssignedUsers = ProjectAssignmentMapper.MapWithUser(proj.Assignments.ToList());
+                    }
+
+                    var createdBy = await _userRepository.GetByIdAsync(proj.CreatedById);
+                    dto.CreatedByUser = createdBy != null ? IdNameMapper.Map(createdBy.Id, createdBy.Name) : null;
+
+                    if (proj.UpdatedById.HasValue)
+                    {
+                        var updatedBy = await _userRepository.GetByIdAsync(proj.UpdatedById);
+                        dto.UpdatedByUser = updatedBy != null ? IdNameMapper.Map(updatedBy.Id, updatedBy.Name) : null;
+                    }
+
+                    return dto;
+                }
+            }
+
+            // Start with the root
+            var rootDto = (FullProjectHierarchyDto)await GetProjectObject(projectId);
+
+            // Set parents (always flat)
+            var rootProject = projects.First(p => p.Id == projectId);
+            if (rootProject.ParentRelations != null && rootProject.ParentRelations.Any())
+            {
+                rootDto.ParentProjects = rootProject.ParentRelations
+                    .Where(pr => relatedProjectIds.Contains(pr.ParentProjectId))
+                    .Select(pr => (object)ProjectMapper.Map(pr.ParentProject))
+                    .ToList();
+            }
+
+            // Set children recursively
+            async Task SetChildren(FullProjectHierarchyDto dto, Project project)
+            {
+                if (project.ChildRelations != null && project.ChildRelations.Any())
+                {
+                    dto.ChildProjects = new List<object>();
+                    foreach (var cr in project.ChildRelations.Where(cr => relatedProjectIds.Contains(cr.ChildProjectId) && cr.ChildProjectId != projectId))
+                    {
+                        dto.ChildProjects.Add(await GetProjectObject(cr.ChildProjectId));
+                    }
+
+                    // For full DTOs, set their children
+                    foreach (var childObj in dto.ChildProjects)
+                    {
+                        if (childObj is FullProjectHierarchyDto childDto)
+                        {
+                            var childProject = projects.First(p => p.Id == childDto.Id);
+                            await SetChildren(childDto, childProject);
+                        }
+                    }
+                }
+            }
+
+            await SetChildren(rootDto, rootProject);
+
+            // Set tasks for all full DTOs
+            foreach (var obj in projectObjects.Values)
+            {
+                if (obj is FullProjectHierarchyDto dto)
+                {
+                    var proj = projects.First(p => p.Id == dto.Id);
+                    var projectTasks = allTasks.Where(t => t.ProjectId == proj.Id).ToList();
+                    var taskDtos = TaskMapper.Map(projectTasks);
+
+                    // Build task hierarchy
+                    var topLevelTasks = taskDtos.Where(t => t.ParentTaskId == null).ToList();
+                    foreach (var task in topLevelTasks)
+                    {
+                        task.SubTasks = taskDtos.Where(t => t.ParentTaskId == task.Id).ToList();
+                    }
+
+                    dto.Tasks = topLevelTasks;
+                }
+            }
+
+            return rootDto;
         }
 
         public async Task DeleteProjectAsync(int projectId)
