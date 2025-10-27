@@ -99,5 +99,36 @@ namespace PMM.Data.Repositories
 
             return visited;
         }
+
+        public async Task<bool> HasCircularDependencyAsync(int childProjectId, int parentProjectId)
+        {
+            var visited = new HashSet<int>();
+            return await CheckCircularDependencyRecursive(childProjectId, parentProjectId, visited);
+        }
+
+        private async Task<bool> CheckCircularDependencyRecursive(int currentProjectId, int targetProjectId, HashSet<int> visited)
+        {
+            if (currentProjectId == targetProjectId)
+                return true;
+
+            if (visited.Contains(currentProjectId))
+                return false;
+
+            visited.Add(currentProjectId);
+
+            // Get all parents of currentProjectId
+            var parentRelations = await _dbSet
+                .Where(pr => pr.ChildProjectId == currentProjectId)
+                .Select(pr => pr.ParentProjectId)
+                .ToListAsync();
+
+            foreach (var parentId in parentRelations)
+            {
+                if (await CheckCircularDependencyRecursive(parentId, targetProjectId, visited))
+                    return true;
+            }
+
+            return false;
+        }
     }
 }

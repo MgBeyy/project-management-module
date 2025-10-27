@@ -9,5 +9,6 @@ namespace PMM.Domain.Interfaces.Repositories
         Task<ProjectRelation?> GetRelationAsync(int parentProjectId, int childProjectId);
         Task DeleteRelationAsync(int parentProjectId, int childProjectId);
         Task<HashSet<int>> GetAllRelatedProjectIdsAsync(int projectId);
+        Task<bool> HasCircularDependencyAsync(int childProjectId, int parentProjectId);
     }
 }
