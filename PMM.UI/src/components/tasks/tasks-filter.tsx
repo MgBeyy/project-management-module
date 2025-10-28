@@ -66,22 +66,40 @@ export default function TasksFilter() {
   const [defaultProjectOptions, setDefaultProjectOptions] = useState<SelectOption[]>([]);
   const [projectLoading, setProjectLoading] = useState(false);
 
-  const loadInitialProjectData = useCallback(async () => {
-    setProjectLoading(true);
-    try {
-      const projectsRaw = await getMultiSelectSearch("", "/Project");
-      const projectList = extractArrayFromResponse(projectsRaw)
-        .map(normalizeProjectOption)
-        .filter((option): option is SelectOption => Boolean(option));
+  const fetchProjects = useCallback(
+    async (
+      searchTerm: string,
+      options: { updateDefaults?: boolean; errorMessage?: string } = {}
+    ) => {
+      const { updateDefaults = false, errorMessage = "Proje arama hatası:" } = options;
 
-      setProjectOptions(projectList);
-      setDefaultProjectOptions(projectList);
-    } catch (error) {
-      console.error("Proje seçenekleri yüklenirken hata:", error);
-    } finally {
-      setProjectLoading(false);
-    }
-  }, []);
+      setProjectLoading(true);
+      try {
+        const projectsRaw = await getMultiSelectSearch(searchTerm, "/Project");
+        const projectList = extractArrayFromResponse(projectsRaw)
+          .map(normalizeProjectOption)
+          .filter((option): option is SelectOption => Boolean(option));
+
+        setProjectOptions(projectList);
+
+        if (updateDefaults) {
+          setDefaultProjectOptions(projectList);
+        }
+      } catch (error) {
+        console.error(errorMessage, error);
+      } finally {
+        setProjectLoading(false);
+      }
+    },
+    []
+  );
+
+  const loadInitialProjectData = useCallback(async () => {
+    await fetchProjects("", {
+      updateDefaults: true,
+      errorMessage: "Proje seçenekleri yüklenirken hata:",
+    });
+  }, [fetchProjects]);
 
   useEffect(() => {
     loadInitialProjectData();
@@ -91,34 +109,28 @@ export default function TasksFilter() {
     async (searchText: string) => {
       const trimmed = searchText.trim();
 
-      if (!trimmed || trimmed.length < MIN_SEARCH_LENGTH) {
+      if (trimmed === "") {
+        await fetchProjects("", { updateDefaults: true });
+        return;
+      }
+
+      if (trimmed.length > 0 && trimmed.length < MIN_SEARCH_LENGTH) {
         setProjectOptions(defaultProjectOptions);
         return;
       }
 
-      setProjectLoading(true);
-      try {
-        const projectsRaw = await getMultiSelectSearch(trimmed, "/Project");
-        const projectList = extractArrayFromResponse(projectsRaw)
-          .map(normalizeProjectOption)
-          .filter((option): option is SelectOption => Boolean(option));
-
-        setProjectOptions(projectList);
-      } catch (error) {
-        console.error("Proje arama hatası:", error);
-      } finally {
-        setProjectLoading(false);
-      }
+      await fetchProjects(trimmed);
     },
-    [defaultProjectOptions]
+    [defaultProjectOptions, fetchProjects]
   );
 
   const handleProjectChange = useCallback(
-    (value: number | undefined) => {
-      // Filter için project değiştiğinde herhangi bir işlem yapmıyoruz
-      console.log("Project changed:", value);
+    async (value: number | undefined) => {
+      if (value === undefined) {
+        await fetchProjects("", { updateDefaults: true });
+      }
     },
-    []
+    [fetchProjects]
   );
 
   const ensureProjectOptions = useCallback(
