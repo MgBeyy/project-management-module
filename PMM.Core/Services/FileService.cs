@@ -35,7 +35,7 @@ namespace PMM.Core.Services
                 throw new ArgumentNullException("CreateFileForm is empty");
             _ = await _projectRepository.GetByIdAsync(form.ProjectId) ?? throw new NotFoundException("Proje Bulunamadı!");
             if (form.FileContent == null || form.FileContent.Length == 0)
-                throw new ArgumentException("Dosya içeriği boş!");
+                throw new BusinessException("Dosya içeriği boş!");
 
             if (!Directory.Exists(physicalSaveBasePath))
                 Directory.CreateDirectory(physicalSaveBasePath);
