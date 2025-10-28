@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import type { CSSProperties, MouseEvent } from "react";
 import { Modal, Form, Input, InputNumber, Select, AutoComplete, Button, Spin, Tag } from "antd";
 import type { SelectProps } from "antd";
+import { AiOutlinePlus, AiOutlineEdit } from "react-icons/ai";
+
 import { useNotification } from "@/hooks/useNotification";
 import { useTasksStore } from "@/store/zustand/tasks-store";
 import getMultiSelectSearch from "@/services/projects/get-multi-select-search";
@@ -10,15 +12,15 @@ import { createTask } from "@/services/tasks/create-task";
 import { TaskStatus } from "@/services/tasks/get-tasks";
 import { updateTask } from "@/services/tasks/update-task";
 import type { TaskModalProps } from "@/types/tasks";
-import { AiOutlinePlus, AiOutlineEdit } from "react-icons/ai";
-import { MultiSelectOption } from "@/types";
-import MultiSelectSearch, { MultiSelectOption as MultiSelectSearchOption } from "../../projects/multi-select-search";
-import CreateLabelModal from "../../projects/modals/create-label-modal";
+import type { MultiSelectOption } from "@/types";
 
+import MultiSelectSearch, {
+  MultiSelectOption as MultiSelectSearchOption,
+} from "../../projects/multi-select-search";
+import CreateLabelModal from "../../projects/modals/create-label-modal";
 
 const { TextArea } = Input;
 const MIN_SEARCH_LENGTH = 2;
-
 const formItemNoMarginStyle: CSSProperties = { marginBottom: 0 };
 
 type BaseSelectOption = NonNullable<SelectProps["options"]>[number];
@@ -30,22 +32,33 @@ interface SelectOption extends BaseSelectOption {
   raw?: any;
 }
 
+const parseNumericId = (value: unknown): number | undefined => {
+  if (value === null || value === undefined || value === "") return undefined;
+  const numericValue = Number(value);
+  return Number.isNaN(numericValue) ? undefined : numericValue;
+};
+
 const mergeOptions = <T extends { value: string | number }>(existing: T[], incoming: T[]) => {
   const map = new Map<string, T>();
-  existing.forEach(option => map.set(String(option.value), option));
-  incoming.forEach(option => map.set(String(option.value), option));
+  existing.forEach(o => map.set(String(o.value), o));
+  incoming.forEach(o => map.set(String(o.value), o));
   return Array.from(map.values());
 };
 
+const areSelectOptionArraysEqual = (a: SelectOption[], b: SelectOption[]) => {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    const A = a[i];
+    const B = b[i];
+    if (!B || A.value !== B.value || A.label !== B.label || A.key !== B.key) return false;
+  }
+  return true;
+};
+
 const extractArrayFromResponse = (payload: any): any[] => {
-  if (!payload) {
-    return [];
-  }
-
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
   const candidates = [
     payload?.result?.data,
     payload?.data?.result?.data,
@@ -53,38 +66,19 @@ const extractArrayFromResponse = (payload: any): any[] => {
     payload?.data,
     payload?.result,
   ];
-
-  for (const candidate of candidates) {
-    if (Array.isArray(candidate)) {
-      return candidate;
-    }
-  }
-
+  for (const c of candidates) if (Array.isArray(c)) return c;
   return [];
 };
 
 const normalizeProjectOption = (project: any): SelectOption | null => {
-  if (!project) {
-    return null;
-  }
-
-  const rawId = project?.id
-
+  if (!project) return null;
+  const rawId = project?.id;
   const numericId = Number(rawId);
-
-  if (!rawId || Number.isNaN(numericId)) {
-    return null;
-  }
+  if (!rawId || Number.isNaN(numericId)) return null;
 
   const projectCode = project?.code;
   const projectTitle = project?.title;
-
-  const composedLabel = [projectCode, projectTitle]
-    .filter(Boolean)
-    .join(" - ")
-    .trim();
-
-  const label = composedLabel;
+  const label = [projectCode, projectTitle].filter(Boolean).join(" - ").trim();
 
   return {
     value: numericId,
@@ -95,62 +89,42 @@ const normalizeProjectOption = (project: any): SelectOption | null => {
 };
 
 const normalizeTaskOption = (task: any): SelectOption | null => {
-  if (!task) {
-    return null;
-  }
-
-  const rawId =
-    task?.id ??
-    task?.Id ??
-    task?.taskId ??
-    task?.value ??
-    task?.key;
-
+  if (!task) return null;
+  const rawId = task?.id ?? task?.Id ?? task?.taskId ?? task?.value ?? task?.key;
   const numericId = Number(rawId);
-
-  if (!rawId || Number.isNaN(numericId)) {
-    return null;
-  }
+  if (!rawId || Number.isNaN(numericId)) return null;
 
   const taskCode = task?.code || task?.Code;
   const taskTitle = task?.title;
   const projectCode = task?.projectCode || task?.ProjectCode;
-
-  const labelParts = [
-    taskCode,
-    taskTitle,
-    projectCode ? `(Proje: ${projectCode})` : undefined,
-  ].filter(Boolean);
+  const resolvedLabel =
+    [taskCode, taskTitle, projectCode ? `(Proje: ${projectCode})` : undefined]
+      .filter(Boolean)
+      .join(" - ") || `Görev #${numericId}`;
 
   return {
     value: numericId,
-    label: labelParts.join(" - "),
+    label: resolvedLabel,
     key: String(numericId),
     raw: task,
   };
 };
 
-const resolveLabelColor = (label: any): string | undefined => {
-  return (
-    label?.color ??
-    label?.Color ??
-    label?.hexColor ??
-    label?.HexColor ??
-    label?.hex ??
-    label?.Hex ??
-    label?.colour ??
-    label?.Colour
-  );
-};
+const resolveLabelColor = (label: any): string | undefined =>
+  label?.color ??
+  label?.Color ??
+  label?.hexColor ??
+  label?.HexColor ??
+  label?.hex ??
+  label?.Hex ??
+  label?.colour ??
+  label?.Colour;
 
-const resolveLabelDescription = (label: any): string | undefined => {
-  return label?.description ?? label?.Description ?? label?.desc ?? label?.Desc;
-};
+const resolveLabelDescription = (label: any): string | undefined =>
+  label?.description ?? label?.Description ?? label?.desc ?? label?.Desc;
 
 const extractLabelIdentifier = (candidate: any): string | null => {
-  if (candidate === null || candidate === undefined) {
-    return null;
-  }
+  if (candidate === null || candidate === undefined) return null;
 
   if (typeof candidate === "object" && !Array.isArray(candidate)) {
     const value =
@@ -160,32 +134,19 @@ const extractLabelIdentifier = (candidate: any): string | null => {
       candidate?.LabelId ??
       candidate?.value ??
       candidate?.key;
-
-    if (value === null || value === undefined) {
-      return null;
-    }
-
+    if (value === null || value === undefined) return null;
     return String(value);
   }
 
-  const stringified = String(candidate);
-  if (!stringified || stringified === "null" || stringified === "undefined") {
-    return null;
-  }
-
-  return stringified;
+  const s = String(candidate);
+  if (!s || s === "null" || s === "undefined") return null;
+  return s;
 };
 
 const normalizeLabelOption = (label: any): MultiSelectSearchOption | null => {
-  if (!label) {
-    return null;
-  }
-
+  if (!label) return null;
   const identifier = extractLabelIdentifier(label);
-
-  if (!identifier) {
-    return null;
-  }
+  if (!identifier) return null;
 
   const resolvedName =
     label?.name ??
@@ -207,48 +168,29 @@ const normalizeLabelOption = (label: any): MultiSelectSearchOption | null => {
   };
 };
 
-const resolveTaskLabelData = (task: any): {
-  ids: string[];
-  options: MultiSelectSearchOption[];
-} => {
-  const derivedIds: string[] = [];
-  const normalizedOptions: MultiSelectSearchOption[] = [];
+const resolveTaskLabelData = (task: any): { ids: string[]; options: MultiSelectSearchOption[] } => {
+  const ids: string[] = [];
+  const options: MultiSelectSearchOption[] = [];
 
-  const pushId = (value: any) => {
-    const identifier = extractLabelIdentifier(value);
-    if (!identifier) {
-      return;
-    }
-
-    if (!derivedIds.includes(identifier)) {
-      derivedIds.push(identifier);
-    }
+  const pushId = (v: any) => {
+    const id = extractLabelIdentifier(v);
+    if (id && !ids.includes(id)) ids.push(id);
   };
 
-  const processSource = (source: any) => {
-    if (!source) {
-      return;
-    }
-
-    const evaluate = (item: any) => {
+  const processSource = (src: any) => {
+    if (!src) return;
+    const evalOne = (item: any) => {
       if (item && typeof item === "object" && !Array.isArray(item)) {
-        const normalized = normalizeLabelOption(item);
-        if (normalized) {
-          normalizedOptions.push(normalized);
-          pushId(normalized.value);
+        const norm = normalizeLabelOption(item);
+        if (norm) {
+          options.push(norm);
+          pushId(norm.value);
           return;
         }
       }
-
       pushId(item);
     };
-
-    if (Array.isArray(source)) {
-      source.forEach(evaluate);
-      return;
-    }
-
-    evaluate(source);
+    Array.isArray(src) ? src.forEach(evalOne) : evalOne(src);
   };
 
   processSource(task?.LabelIds);
@@ -256,10 +198,7 @@ const resolveTaskLabelData = (task: any): {
   processSource((task as any)?.Labels);
   processSource((task as any)?.labels);
 
-  return {
-    ids: derivedIds,
-    options: mergeOptions([], normalizedOptions),
-  };
+  return { ids, options: mergeOptions([], options) };
 };
 
 export default function CreateTaskModal({
@@ -272,213 +211,31 @@ export default function CreateTaskModal({
   const [form] = Form.useForm();
   const { triggerRefresh, selectedTask } = useTasksStore();
 
-  // Use selectedTask from zustand if available, otherwise use prop
   const currentTaskData = selectedTask;
 
+  // Project
   const [projectOptions, setProjectOptions] = useState<SelectOption[]>([]);
   const [defaultProjectOptions, setDefaultProjectOptions] = useState<SelectOption[]>([]);
   const [projectLoading, setProjectLoading] = useState(false);
 
+  // Parent Task
   const [parentTaskOptions, setParentTaskOptions] = useState<SelectOption[]>([]);
   const [defaultParentTaskOptions, setDefaultParentTaskOptions] = useState<SelectOption[]>([]);
   const [parentTaskLoading, setParentTaskLoading] = useState(false);
+  const [parentTaskCache, setParentTaskCache] = useState<Record<number, SelectOption[]>>({});
 
-
-  // User assignment state
+  // Users
   const [selectedUsers, setSelectedUsers] = useState<{ id: string; name: string }[]>([]);
   const [userOptions, setUserOptions] = useState<MultiSelectOption[]>([]);
   const [userLoading, setUserLoading] = useState(false);
   const [userSearchValue, setUserSearchValue] = useState("");
 
-  // Label state
+  // Labels
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [labelSelectOptions, setLabelSelectOptions] = useState<MultiSelectSearchOption[]>([]);
   const [isLabelModalVisible, setIsLabelModalVisible] = useState(false);
-  const [labelModalMode, setLabelModalMode] = useState<'create' | 'edit'>('create');
+  const [labelModalMode, setLabelModalMode] = useState<"create" | "edit">("create");
   const [editingLabelData, setEditingLabelData] = useState<MultiSelectSearchOption | null>(null);
-
-  console.log(currentTaskData);
-  
-  const handleRemoveUser = (userId: string) => {
-    if (isViewMode) return;
-    setSelectedUsers(prev => prev.filter(user => user.id !== userId));
-  };
-
-  const handleAddUser = (userId: string) => {
-    if (isViewMode) return;
-
-    const userOption = userOptions.find(option => option.value === userId);
-    if (!userOption) return;
-
-    // Kullanıcı zaten ekli mi kontrol et
-    if (selectedUsers.some(user => user.id === userId)) {
-      return;
-    }
-
-    const newUser = {
-      id: userId,
-      name: typeof userOption.label === 'string' ? userOption.label : String(userOption.label),
-    };
-
-    setSelectedUsers(prev => [...prev, newUser]);
-  };
-
-  const handleUserSearch = async (searchText: string) => {
-    if (!searchText || searchText.trim().length === 0) {
-      // Boş arama için tüm listeyi yükle
-      setUserLoading(true);
-      try {
-        const response = await getMultiSelectSearch("", "/User");
-        const apiResult = extractArrayFromResponse(response.data);
-
-        const formattedOptions: MultiSelectOption[] = apiResult.map((item: any) => {
-          const id = item.id?.toString() || Math.random().toString();
-          const name = item.name || item.title || `${item.firstName || ""} ${item.lastName || ""}`.trim() || `User ${id}`;
-
-          return {
-            value: id,
-            label: name,
-            key: id,
-            ...item,
-          };
-        });
-
-        setUserOptions(formattedOptions);
-      } catch (error) {
-        console.error("Kullanıcı listesi yükleme hatası:", error);
-        setUserOptions([]);
-      } finally {
-        setUserLoading(false);
-      }
-      return;
-    }
-
-    setUserLoading(true);
-
-    try {
-      const response = await getMultiSelectSearch(searchText, "/User");
-      const apiResult = extractArrayFromResponse(response.data);
-
-      const formattedOptions: MultiSelectOption[] = apiResult.map((item: any) => {
-        const id = item.id?.toString() || Math.random().toString();
-        const name = item.name || item.title || `${item.firstName || ""} ${item.lastName || ""}`.trim() || `User ${id}`;
-
-        return {
-          value: id,
-          label: name,
-          key: id,
-          ...item,
-        };
-      });
-
-      setUserOptions(formattedOptions);
-    } catch (error) {
-      console.error("Kullanıcı arama hatası:", error);
-      setUserOptions([]);
-    } finally {
-      setUserLoading(false);
-    }
-  };
-
-  const handleLabelsChange = (values: string[]) => {
-    if (isViewMode) {
-      return;
-    }
-
-    setSelectedLabels(values);
-    form.setFieldValue("labels", values);
-  };
-
-  const handleLabelCreateButtonClick = () => {
-    setLabelModalMode('create');
-    setEditingLabelData(null);
-    setIsLabelModalVisible(true);
-  };
-
-  const handleLabelModalSuccess = (labelOption: MultiSelectSearchOption) => {
-    // Update label options
-    setLabelSelectOptions(prev => mergeOptions(prev, [labelOption]));
-
-    // Add to selected labels if it's a new label
-    if (labelModalMode === 'create') {
-      const newId = String(labelOption.value);
-      const updatedLabels = Array.from(new Set([...selectedLabels, newId]));
-      setSelectedLabels(updatedLabels);
-      form.setFieldValue("labels", updatedLabels);
-    }
-
-    setIsLabelModalVisible(false);
-    setEditingLabelData(null);
-  };
-
-  const handleLabelModalCancel = () => {
-    setIsLabelModalVisible(false);
-    setEditingLabelData(null);
-  };
-
-  const handleLabelOptionsSync = (options: MultiSelectSearchOption[]) => {
-    setLabelSelectOptions(options);
-  };
-
-  const labelTagRender: SelectProps["tagRender"] = tagProps => {
-    const { label, value, closable, onClose } = tagProps;
-
-    const option = (tagProps as any)?.option;
-
-    const handleMouseDown = (event: MouseEvent<HTMLSpanElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-    };
-
-    const handleEditClick = (event: MouseEvent<HTMLButtonElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      // Find the label data from labelSelectOptions
-      const labelOption = labelSelectOptions.find(opt => opt.value === String(value));
-
-      const labelData: MultiSelectSearchOption = {
-        value: String(value),
-        label: labelOption?.name || labelOption?.label || '',
-        key: String(value),
-        name: labelOption?.name || labelOption?.label || '',
-        description: (labelOption as any)?.description || '',
-        color: (labelOption as any)?.color || '#1890ff',
-      };
-
-      setLabelModalMode('edit');
-      setEditingLabelData(labelData);
-      setIsLabelModalVisible(true);
-    };
-
-    const resolvedColor = (option as any)?.color || "#4a90e2";
-
-    return (
-      <Tag
-        color={resolvedColor}
-        onMouseDown={handleMouseDown}
-        closable={!isViewMode && closable}
-        onClose={onClose}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 4,
-          marginInlineEnd: 4,
-          paddingInlineEnd: isViewMode ? 8 : 4,
-        }}
-      >
-        <span>{label}</span>
-        {!isViewMode && (
-          <Button
-            type="text"
-            size="small"
-            icon={<AiOutlineEdit />}
-            onClick={handleEditClick}
-          />
-        )}
-      </Tag>
-    );
-  };
 
   const isEditMode = mode === "edit" && !!currentTaskData;
   const isViewMode = mode === "view" && !!currentTaskData;
@@ -496,7 +253,6 @@ export default function CreateTaskModal({
   const loadInitialSelectData = useCallback(async () => {
     setProjectLoading(true);
     setParentTaskLoading(true);
-
     try {
       const [projectsRaw, tasksRaw] = await Promise.all([
         getMultiSelectSearch("", "/Project"),
@@ -505,19 +261,19 @@ export default function CreateTaskModal({
 
       const projectList = extractArrayFromResponse(projectsRaw)
         .map(normalizeProjectOption)
-        .filter((option): option is SelectOption => Boolean(option));
+        .filter((o): o is SelectOption => Boolean(o));
 
       setProjectOptions(projectList);
       setDefaultProjectOptions(projectList);
 
       const taskList = extractArrayFromResponse(tasksRaw)
         .map(normalizeTaskOption)
-        .filter((option): option is SelectOption => Boolean(option));
+        .filter((o): o is SelectOption => Boolean(o));
 
       setParentTaskOptions(taskList);
       setDefaultParentTaskOptions(taskList);
-    } catch (error) {
-      console.error("Görev oluşturma modalı seçenekleri yüklenirken hata:", error);
+    } catch (e) {
+      console.error("Seçenekler yüklenirken hata:", e);
     } finally {
       setProjectLoading(false);
       setParentTaskLoading(false);
@@ -525,9 +281,7 @@ export default function CreateTaskModal({
   }, []);
 
   useEffect(() => {
-    if (visible) {
-      loadInitialSelectData();
-    }
+    if (visible) loadInitialSelectData();
   }, [visible, loadInitialSelectData]);
 
   const handleSubmit = async (values: any) => {
@@ -538,7 +292,7 @@ export default function CreateTaskModal({
 
     const normalizedValues = {
       ...values,
-      assignedUserIds: selectedUsers.map(user => user.id),
+      assignedUserIds: selectedUsers.map(u => u.id),
       labelIds: selectedLabels,
       parentTaskId: values.parentTaskId ?? null,
       plannedHours: values.plannedHours ?? null,
@@ -554,49 +308,35 @@ export default function CreateTaskModal({
         await createTask(normalizedValues);
         notification.success("Görev Oluşturuldu", "Görev başarıyla oluşturuldu!");
       }
-
       triggerRefresh();
       onSuccess?.();
       closeModal();
     } catch (error: any) {
-      console.error(
-        `Görev ${isEditMode ? "güncelleme" : "oluşturma"} hatası:`,
-        error
-      );
-
-      if (error.response?.data) {
-        console.error("Backend hata detayı:", error.response.data);
-      }
+      console.error(`Görev ${isEditMode ? "güncelleme" : "oluşturma"} hatası:`, error);
+      if (error.response?.data) console.error("Backend hata detayı:", error.response.data);
     }
   };
 
-  const handleCancel = () => {
-    closeModal();
-  };
+  const handleCancel = () => closeModal();
 
+  // --- Project search ---
   const handleProjectSearch = useCallback(
     async (searchText: string) => {
-      if (isViewMode) {
-        return;
-      }
-
+      if (isViewMode) return;
       const trimmed = searchText.trim();
-
       if (!trimmed || trimmed.length < MIN_SEARCH_LENGTH) {
         setProjectOptions(defaultProjectOptions);
         return;
       }
-
       setProjectLoading(true);
       try {
         const projectsRaw = await getMultiSelectSearch(trimmed, "/Project");
-        const projectList = extractArrayFromResponse(projectsRaw)
+        const list = extractArrayFromResponse(projectsRaw)
           .map(normalizeProjectOption)
-          .filter((option): option is SelectOption => Boolean(option));
-
-        setProjectOptions(projectList);
-      } catch (error) {
-        console.error("Proje arama hatası:", error);
+          .filter((o): o is SelectOption => Boolean(o));
+        setProjectOptions(list);
+      } catch (e) {
+        console.error("Proje arama hatası:", e);
       } finally {
         setProjectLoading(false);
       }
@@ -604,13 +344,15 @@ export default function CreateTaskModal({
     [defaultProjectOptions, isViewMode]
   );
 
+  // --- Parent task search (project-aware) ---
   const fetchParentTasks = useCallback(
     async (searchText: string, projectId?: number) => {
       const trimmed = searchText.trim();
       const shouldSearch = trimmed.length >= MIN_SEARCH_LENGTH;
+      const resolvedProjectId = projectId ?? parseNumericId(form.getFieldValue("projectId"));
 
-      if (!shouldSearch && !projectId) {
-        setParentTaskOptions(defaultParentTaskOptions);
+      if (!shouldSearch && !resolvedProjectId) {
+        setParentTaskOptions([]);
         return;
       }
 
@@ -618,37 +360,46 @@ export default function CreateTaskModal({
       try {
         const tasksRaw = await getTasksForSelect({
           searchText: shouldSearch ? trimmed : "",
-          projectId,
+          projectId: resolvedProjectId,
           pageSize: 20,
         });
 
         const taskList = extractArrayFromResponse(tasksRaw)
           .map(normalizeTaskOption)
-          .filter((option): option is SelectOption => Boolean(option));
+          .filter((o): o is SelectOption => Boolean(o));
 
-        setParentTaskOptions(taskList);
+        if (resolvedProjectId) {
+          let mergedForProject: SelectOption[] | null = null;
 
-        if (!shouldSearch && !projectId) {
-          setDefaultParentTaskOptions(prev =>
-            mergeOptions(prev, taskList)
-          );
+          setParentTaskCache(prev => {
+            const prevExisting = prev[resolvedProjectId] ?? [];
+            const merged = mergeOptions(prevExisting, taskList);
+            mergedForProject = merged;
+            if (areSelectOptionArraysEqual(prevExisting, merged)) return prev;
+            return { ...prev, [resolvedProjectId]: merged };
+          });
+
+          setParentTaskOptions(shouldSearch ? taskList : (mergedForProject ?? taskList));
+        } else {
+          const mergedDefaults = shouldSearch ? taskList : mergeOptions(defaultParentTaskOptions, taskList);
+          setParentTaskOptions(mergedDefaults);
+          if (!shouldSearch) {
+            setDefaultParentTaskOptions(prev => mergeOptions(prev, taskList));
+          }
         }
-      } catch (error) {
-        console.error("Üst görev seçenekleri alınırken hata:", error);
+      } catch (e) {
+        console.error("Üst görev seçenekleri alınırken hata:", e);
       } finally {
         setParentTaskLoading(false);
       }
     },
-    [defaultParentTaskOptions]
+    [defaultParentTaskOptions, form]
   );
 
   const handleParentTaskSearch = useCallback(
     (searchText: string) => {
-      if (isViewMode) {
-        return;
-      }
-
-      const projectId = form.getFieldValue("projectId") as number | undefined;
+      if (isViewMode) return;
+      const projectId = parseNumericId(form.getFieldValue("projectId"));
       fetchParentTasks(searchText, projectId);
     },
     [fetchParentTasks, form, isViewMode]
@@ -656,20 +407,26 @@ export default function CreateTaskModal({
 
   const handleProjectChange = useCallback(
     (value: number | undefined) => {
-      if (isViewMode) {
-        return;
-      }
+      if (isViewMode) return;
 
       form.setFieldValue("parentTaskId", undefined);
 
-      if (value === undefined || value === null) {
-        setParentTaskOptions(defaultParentTaskOptions);
+      const numericValue = parseNumericId(value);
+      if (numericValue === undefined) {
+        setParentTaskOptions([]);
         return;
       }
 
-      fetchParentTasks("", value);
+      const cachedOptions = parentTaskCache[numericValue];
+      if (cachedOptions && cachedOptions.length > 0) {
+        setParentTaskOptions(cachedOptions);
+      } else {
+        setParentTaskOptions([]);
+      }
+
+      fetchParentTasks("", numericValue);
     },
-    [defaultParentTaskOptions, fetchParentTasks, form, isViewMode]
+    [fetchParentTasks, form, isViewMode, parentTaskCache]
   );
 
   const ensureProjectOptions = useCallback(
@@ -683,45 +440,43 @@ export default function CreateTaskModal({
 
   const ensureParentTaskOptions = useCallback(
     (open: boolean) => {
-      if (open) {
-        const projectId = form.getFieldValue("projectId") as number | undefined;
-        if (projectId) {
-          fetchParentTasks("", projectId);
+      if (!open) return;
+
+      const projectId = parseNumericId(form.getFieldValue("projectId"));
+      if (projectId) {
+        const cached = parentTaskCache[projectId];
+        if (cached && cached.length > 0) {
+          setParentTaskOptions(cached);
           return;
         }
-
-        if (parentTaskOptions.length === 0 && defaultParentTaskOptions.length > 0) {
-          setParentTaskOptions(defaultParentTaskOptions);
-        }
+        fetchParentTasks("", projectId);
+        return;
       }
+
+      if (parentTaskOptions.length > 0) setParentTaskOptions([]);
     },
-    [
-      defaultParentTaskOptions,
-      fetchParentTasks,
-      form,
-      parentTaskOptions.length,
-    ]
+    [fetchParentTasks, form, parentTaskCache, parentTaskOptions.length]
   );
 
+  // --- Populate form in edit/view ---
   useEffect(() => {
-    if (!visible) {
-      return;
-    }
+    if (!visible) return;
 
     if ((isEditMode || isViewMode) && currentTaskData) {
       const { ids: resolvedLabelIds, options: resolvedLabelOptions } = resolveTaskLabelData(currentTaskData);
       const currentStatus = (currentTaskData as any)?.Status;
       let statusValue = TaskStatus.TODO;
-      if (currentStatus === "InProgress") {
-        statusValue = TaskStatus.IN_PROGRESS;
-      } else if (currentStatus === "Done") {
-        statusValue = TaskStatus.DONE;
-      }
+      if (currentStatus === "InProgress") statusValue = TaskStatus.IN_PROGRESS;
+      else if (currentStatus === "Done") statusValue = TaskStatus.DONE;
+      else if (currentStatus === "InActive") statusValue = TaskStatus.INACTIVE;
+
+      const resolvedProjectId = parseNumericId(currentTaskData?.ProjectId);
+      const resolvedParentTaskId = parseNumericId(currentTaskData?.ParentTaskId);
 
       form.setFieldsValue({
         code: currentTaskData?.Code ?? "",
-        projectId: currentTaskData?.ProjectId ?? undefined,
-        parentTaskId: currentTaskData?.ParentTaskId ?? undefined,
+        projectId: resolvedProjectId,
+        parentTaskId: resolvedParentTaskId,
         title: currentTaskData?.Title ?? "",
         description: currentTaskData?.Description ?? "",
         status: statusValue,
@@ -734,112 +489,113 @@ export default function CreateTaskModal({
       if (resolvedLabelOptions.length > 0 || resolvedLabelIds.length > 0) {
         setLabelSelectOptions(prev => {
           const fallbackOptions = resolvedLabelIds
-            .filter(id => !resolvedLabelOptions.some(option => String(option.value) === id))
+            .filter(id => !resolvedLabelOptions.some(o => String(o.value) === id))
             .map(id => {
-              const existing = prev.find(option => String(option.value) === id);
-              if (existing) {
-                return existing;
-              }
-
-              return {
-                value: id,
-                label: id,
-                key: id,
-                name: id,
-              } as MultiSelectSearchOption;
+              const existing = prev.find(o => String(o.value) === id);
+              return (
+                existing || ({ value: id, label: id, key: id, name: id } as MultiSelectSearchOption)
+              );
             });
 
-          const next = mergeOptions(
-            prev,
-            mergeOptions(resolvedLabelOptions, fallbackOptions)
-          );
+          const next = mergeOptions(prev, mergeOptions(resolvedLabelOptions, fallbackOptions));
 
           if (next.length === prev.length) {
-            const prevMap = new Map(
-              prev.map(option => [String(option.value), option])
-            );
-
-            let hasDifference = false;
-
-            for (const option of next) {
-              const key = String(option.value);
-              const existing = prevMap.get(key);
-              if (!existing) {
-                hasDifference = true;
+            const prevMap = new Map(prev.map(o => [String(o.value), o]));
+            let changed = false;
+            for (const o of next) {
+              const ex = prevMap.get(String(o.value));
+              if (!ex) {
+                changed = true;
                 break;
               }
-
               if (
-                existing.label !== option.label ||
-                (existing as any).color !== (option as any).color ||
-                (existing as any).description !== (option as any).description
+                ex.label !== o.label ||
+                (ex as any).color !== (o as any).color ||
+                (ex as any).description !== (o as any).description
               ) {
-                hasDifference = true;
+                changed = true;
                 break;
               }
             }
-
-            if (!hasDifference) {
-              return prev;
-            }
+            if (!changed) return prev;
           }
 
           return next;
         });
       }
 
+      // Ensure Project option exists
       if (currentTaskData?.ProjectId) {
         const option: SelectOption = {
           value: Number(currentTaskData?.ProjectId),
-          label: String(
-            projectOptions.find(opt => opt.value === currentTaskData?.ProjectId)?.label ??
-            currentTaskData?.ProjectCode ??
-            ""
-          ),
+          label:
+            String(
+              projectOptions.find(o => o.value === currentTaskData?.ProjectId)?.label ??
+                currentTaskData?.ProjectCode ??
+                ""
+            ) || `Proje #${currentTaskData?.ProjectId}`,
           key: String(currentTaskData?.ProjectId),
-          raw: {
-            Id: currentTaskData?.ProjectId,
-            Code: currentTaskData?.ProjectCode,
-          },
+          raw: { Id: currentTaskData?.ProjectId, Code: currentTaskData?.ProjectCode },
         };
 
         setProjectOptions(prev => mergeOptions(prev, [option]));
-        setDefaultProjectOptions(prev => {
-          const exists = prev.some(existing => existing.value === option.value);
-          return exists ? prev : [...prev, option];
-        });
-        setSelectedUsers(
-          Array.isArray(currentTaskData?.AssignedUsers)
-            ? currentTaskData.AssignedUsers
-            : []
-        );
-
-        // fetchParentTasks("", Number((currentTaskData as any).ProjectId)); // Removed to avoid API call in modal
+        setDefaultProjectOptions(prev => (prev.some(e => e.value === option.value) ? prev : [...prev, option]));
+        setSelectedUsers(Array.isArray(currentTaskData?.AssignedUsers) ? currentTaskData.AssignedUsers : []);
       }
 
+      // Ensure Parent Task option exists
       if (currentTaskData?.ParentTaskId) {
+        const resolvedParentId = Number(currentTaskData?.ParentTaskId);
+        const found =
+          parentTaskOptions.find(o => o.value === resolvedParentId) ??
+          defaultParentTaskOptions.find(o => o.value === resolvedParentId);
+        const parentLabel =
+          found?.label ||
+          currentTaskData?.ParentTaskCode ||
+          currentTaskData?.ParentTaskTitle ||
+          `Görev #${resolvedParentId}`;
+
         const parentOption: SelectOption = {
-          value: Number(currentTaskData?.ParentTaskId),
-          label: String(currentTaskData?.ParentTaskCode ?? currentTaskData?.ParentTaskTitle ?? ""),
-          key: String(currentTaskData?.ParentTaskId),
-          raw: {
-            Id: currentTaskData?.ParentTaskId,
-            Code: currentTaskData?.ParentTaskCode,
-            Title: currentTaskData?.ParentTaskTitle,
-          },
+          value: resolvedParentId,
+          label: String(parentLabel),
+          key: String(resolvedParentId),
+          raw:
+            found?.raw ?? {
+              Id: resolvedParentId,
+              Code: currentTaskData?.ParentTaskCode,
+              Title: currentTaskData?.ParentTaskTitle,
+            },
         };
 
-        setParentTaskOptions(prev => mergeOptions(prev, [parentOption]));
-        setDefaultParentTaskOptions(prev => {
-          const exists = prev.some(existing => existing.value === parentOption.value);
-          return exists ? prev : [...prev, parentOption];
+        setParentTaskOptions(prev => {
+          const idx = prev.findIndex(o => o.value === parentOption.value);
+          if (idx === -1) return mergeOptions(prev, [parentOption]);
+          const ex = prev[idx];
+          if (ex.label === parentOption.label && ex.key === parentOption.key) return prev;
+          const next = [...prev];
+          next[idx] = { ...ex, ...parentOption };
+          return next;
         });
+
+        setDefaultParentTaskOptions(prev => {
+          const idx = prev.findIndex(o => o.value === parentOption.value);
+          if (idx === -1) return [...prev, parentOption];
+          const ex = prev[idx];
+          if (ex.label === parentOption.label && ex.key === parentOption.key) return prev;
+          const next = [...prev];
+          next[idx] = { ...ex, ...parentOption };
+          return next;
+        });
+
+        if (resolvedProjectId !== undefined) {
+          setParentTaskCache(prev => {
+            const ex = prev[resolvedProjectId] ?? [];
+            const merged = mergeOptions(ex, [parentOption]);
+            if (areSelectOptionArraysEqual(ex, merged)) return prev;
+            return { ...prev, [resolvedProjectId]: merged };
+          });
+        }
       }
-    } else if (visible) {
-      form.resetFields();
-      setSelectedUsers([]);
-      setSelectedLabels([]);
-      setLabelSelectOptions([]);
     }
   }, [
     visible,
@@ -847,262 +603,402 @@ export default function CreateTaskModal({
     isViewMode,
     currentTaskData,
     form,
-    fetchParentTasks,
+    parentTaskOptions,
+    defaultParentTaskOptions,
+    projectOptions,
   ]);
+
+  useEffect(() => {
+    if (!visible) return;
+    if (!isEditMode && !isViewMode) {
+      form.resetFields();
+      setSelectedUsers([]);
+      setSelectedLabels([]);
+      setLabelSelectOptions([]);
+    }
+  }, [visible, isEditMode, isViewMode, form]);
+
+  const handleRemoveUser = (userId: string) => {
+    if (isViewMode) return;
+    setSelectedUsers(prev => prev.filter(u => u.id !== userId));
+  };
+
+  const handleAddUser = (userId: string) => {
+    if (isViewMode) return;
+    const userOption = userOptions.find(o => o.value === userId);
+    if (!userOption) return;
+    if (selectedUsers.some(u => u.id === userId)) return;
+    const newUser = {
+      id: userId,
+      name: typeof userOption.label === "string" ? userOption.label : String(userOption.label),
+    };
+    setSelectedUsers(prev => [...prev, newUser]);
+  };
+
+  const handleUserSearch = async (searchText: string) => {
+    if (!searchText || searchText.trim().length === 0) {
+      setUserLoading(true);
+      try {
+        const response = await getMultiSelectSearch("", "/User");
+        const apiResult = extractArrayFromResponse(response.data);
+        const opts: MultiSelectOption[] = apiResult.map((item: any) => {
+          const id = item.id?.toString() || Math.random().toString();
+          const name =
+            item.name ||
+            item.title ||
+            `${item.firstName || ""} ${item.lastName || ""}`.trim() ||
+            `User ${id}`;
+          return { value: id, label: name, key: id, ...item };
+        });
+        setUserOptions(opts);
+      } catch (e) {
+        console.error("Kullanıcı listesi yükleme hatası:", e);
+        setUserOptions([]);
+      } finally {
+        setUserLoading(false);
+      }
+      return;
+    }
+
+    setUserLoading(true);
+    try {
+      const response = await getMultiSelectSearch(searchText, "/User");
+      const apiResult = extractArrayFromResponse(response.data);
+      const opts: MultiSelectOption[] = apiResult.map((item: any) => {
+        const id = item.id?.toString() || Math.random().toString();
+        const name =
+          item.name ||
+          item.title ||
+          `${item.firstName || ""} ${item.lastName || ""}`.trim() ||
+          `User ${id}`;
+        return { value: id, label: name, key: id, ...item };
+      });
+      setUserOptions(opts);
+    } catch (e) {
+      console.error("Kullanıcı arama hatası:", e);
+      setUserOptions([]);
+    } finally {
+      setUserLoading(false);
+    }
+  };
+
+  const handleLabelsChange = (values: string[]) => {
+    if (isViewMode) return;
+    setSelectedLabels(values);
+    form.setFieldValue("labels", values);
+  };
+
+  const handleLabelCreateButtonClick = () => {
+    setLabelModalMode("create");
+    setEditingLabelData(null);
+    setIsLabelModalVisible(true);
+  };
+
+  const handleLabelModalSuccess = (labelOption: MultiSelectSearchOption) => {
+    setLabelSelectOptions(prev => mergeOptions(prev, [labelOption]));
+    if (labelModalMode === "create") {
+      const newId = String(labelOption.value);
+      const updated = Array.from(new Set([...selectedLabels, newId]));
+      setSelectedLabels(updated);
+      form.setFieldValue("labels", updated);
+    }
+    setIsLabelModalVisible(false);
+    setEditingLabelData(null);
+  };
+
+  const handleLabelModalCancel = () => {
+    setIsLabelModalVisible(false);
+    setEditingLabelData(null);
+  };
+
+  const handleLabelOptionsSync = (options: MultiSelectSearchOption[]) => {
+    setLabelSelectOptions(options);
+  };
+
+  const labelTagRender: SelectProps["tagRender"] = tagProps => {
+    const { label, value, closable, onClose } = tagProps;
+    const option = (tagProps as any)?.option;
+
+    const handleMouseDown = (e: MouseEvent<HTMLSpanElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    const handleEditClick = (e: MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const found = labelSelectOptions.find(opt => opt.value === String(value));
+      const data: MultiSelectSearchOption = {
+        value: String(value),
+        label: found?.name || found?.label || "",
+        key: String(value),
+        name: found?.name || found?.label || "",
+        description: (found as any)?.description || "",
+        color: (found as any)?.color || "#1890ff",
+      };
+      setLabelModalMode("edit");
+      setEditingLabelData(data);
+      setIsLabelModalVisible(true);
+    };
+
+    const resolvedColor = (option as any)?.color || "#4a90e2";
+
+    return (
+      <Tag
+        color={resolvedColor}
+        onMouseDown={handleMouseDown}
+        closable={!isViewMode && closable}
+        onClose={onClose}
+        style={{ display: "inline-flex", alignItems: "center", gap: 4, marginInlineEnd: 4, paddingInlineEnd: isViewMode ? 8 : 4 }}
+      >
+        <span>{label}</span>
+        {!isViewMode && <Button type="text" size="small" icon={<AiOutlineEdit />} onClick={handleEditClick} />}
+      </Tag>
+    );
+  };
 
   const modalTitle = isViewMode
     ? `Görev Detayları${currentTaskData?.Code ? ` (${currentTaskData?.Code})` : ""}`
     : isEditMode
-      ? `Görev Güncelle${currentTaskData?.Code ? ` (${currentTaskData?.Code})` : ""}`
-      : "Yeni Görev Oluştur";
+    ? `Görev Güncelle${currentTaskData?.Code ? ` (${currentTaskData?.Code})` : ""}`
+    : "Yeni Görev Oluştur";
 
   return (
     <>
       <Modal
-      title={modalTitle}
-      open={visible}
-      onCancel={handleCancel}
-      footer={null}
-      width={1200}
-      destroyOnClose={true}
-      styles={{
-        body: {
-          maxHeight: "70vh",
-          overflowY: "auto",
-        },
-      }}
-    >
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleSubmit}
-        initialValues={{
-          status: TaskStatus.TODO,
-        }}
+        title={modalTitle}
+        open={visible}
+        onCancel={handleCancel}
+        footer={null}
+        width={1200}
+        destroyOnClose
+        styles={{ body: { maxHeight: "70vh", overflowY: "auto" } }}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-2 gap-y-1">
-          <Form.Item
-            label="Görev Kodu"
-            name="code"
-            rules={[{ required: true, message: "Görev kodu gereklidir" }]}
-            style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}
-          >
-            <Input placeholder="Görev kodu girin..." disabled={isEditMode} />
-          </Form.Item>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+          initialValues={{ status: TaskStatus.TODO }}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-2 gap-y-1">
+            <Form.Item
+              label="Görev Kodu"
+              name="code"
+              rules={[{ required: true, message: "Görev kodu gereklidir" }]}
+              style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? "none" : "auto" }}
+            >
+              <Input placeholder="Görev kodu girin..." disabled={isEditMode} />
+            </Form.Item>
 
-          <Form.Item
-            label="Proje"
-            name="projectId"
-            rules={[{ required: true, message: "Proje seçimi gereklidir" }]}
-            style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}
-          >
-            <Select
-              showSearch
-              placeholder="Proje seçin..."
-              options={projectOptions}
-              onSearch={handleProjectSearch}
-              onChange={handleProjectChange}
-              onDropdownVisibleChange={ensureProjectOptions}
-              filterOption={false}
-              allowClear={!isViewMode}
-              loading={projectLoading}
-              disabled={isEditMode}
-            />
-          </Form.Item>
-
-          <Form.Item label="Üst Görev" name="parentTaskId" style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}>
-            <Select
-              showSearch
-              placeholder="Üst görev seçin..."
-              options={parentTaskOptions}
-              onSearch={handleParentTaskSearch}
-              onDropdownVisibleChange={ensureParentTaskOptions}
-              filterOption={false}
-              allowClear={!isViewMode}
-              loading={parentTaskLoading}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="Başlık"
-            name="title"
-            rules={[{ required: true, message: "Başlık gereklidir" }]}
-            style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item label="Durum" name="status" style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}>
-            <Select>
-              <Select.Option value={TaskStatus.TODO}>Yapılacak</Select.Option>
-              <Select.Option value={TaskStatus.IN_PROGRESS}>
-                Devam Ediyor
-              </Select.Option>
-              <Select.Option value={TaskStatus.INACTIVE}>Pasif</Select.Option>
-              <Select.Option value={TaskStatus.DONE}>Tamamlandı</Select.Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Planlanan Çalışma Saati" name="plannedHours" style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}>
-            <InputNumber
-              style={{ width: "100%" }}
-              min={0}
-              step={0.5}
-            />
-          </Form.Item>
-
-          <Form.Item label="Gerçekleşen Çalışma Saati" name="actualHours" style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}>
-            <InputNumber
-              style={{ width: "100%" }}
-              min={0}
-              step={0.5}
-            />
-          </Form.Item>
-           <Form.Item label="Etiketler" name="labels" style={formItemNoMarginStyle}>
-          <div className="space-y-2 flex flex-row gap-2">
-            <MultiSelectSearch
-              placeholder="Etiket ara ve seç..."
-              onChange={handleLabelsChange}
-              value={selectedLabels}
-              apiUrl="/Label"
-              size="middle"
-              className="w-full flex-1"
-              disabled={isViewMode}
-              style={{
-                width: "100%",
-              }}
-              initialOptions={labelSelectOptions}
-              tagRender={labelTagRender}
-              onOptionsChange={handleLabelOptionsSync}
-            />
-
-            {!isViewMode && (
-              <Button
-                type="dashed"
-                icon={<AiOutlinePlus />}
-                onClick={handleLabelCreateButtonClick}
-                size="middle"
-                className="w-full h-[32px] flex items-center justify-center gap-1"
-                style={{
-                  borderStyle: "dashed",
-                  color: "#52c41a",
-                  borderColor: "#52c41a",
-                }}
-              >
-              </Button>
-            )}
-          </div>
-        </Form.Item>
-        </div>
-
-        <Form.Item label="Açıklama" required name="description" style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}>
-          <TextArea rows={4} />
-        </Form.Item>
-
-        <Form.Item label="Görev Ekibi" style={formItemNoMarginStyle}>
-          <div className="space-y-3">
-            {!isViewMode && (
-              <AutoComplete
-                value={userSearchValue}
-                options={userOptions}
-                onSearch={handleUserSearch}
-                onSelect={(value) => {
-                  handleAddUser(value);
-                  setUserSearchValue("");
-                }}
-                onChange={setUserSearchValue}
-                onFocus={() => handleUserSearch("")}
-                placeholder="Kullanıcı ara ve ekle..."
-                notFoundContent={
-                  userLoading ? (
-                    <div className="flex justify-center items-center py-2">
-                      <Spin size="small" />
-                      <span className="ml-2">Kullanıcılar aranıyor...</span>
-                    </div>
-                  ) : (
-                    "Kullanıcı bulunamadı"
-                  )
-                }
-                allowClear
-                size="middle"
-                style={{
-                  width: "100%",
-                }}
+            <Form.Item
+              label="Proje"
+              name="projectId"
+              rules={[{ required: true, message: "Proje seçimi gereklidir" }]}
+              style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? "none" : "auto" }}
+            >
+              <Select
+                showSearch
+                placeholder="Proje seçin..."
+                options={projectOptions}
+                onSearch={handleProjectSearch}
+                onChange={handleProjectChange}
+                onDropdownVisibleChange={ensureProjectOptions}
                 filterOption={false}
-                showSearch={true}
+                allowClear={!isViewMode}
+                loading={projectLoading}
+                disabled={isEditMode}
               />
-            )}
+            </Form.Item>
 
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {selectedUsers.map((user) => {
-                const userOption = userOptions.find(option => option.value === user.id);
-                const userName = userOption?.label || user.name || `User ${user.id}`;
+            <Form.Item
+              label="Üst Görev"
+              name="parentTaskId"
+              style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? "none" : "auto" }}
+            >
+              <Select
+                showSearch
+                placeholder="Üst görev seçin..."
+                options={parentTaskOptions}
+                onSearch={handleParentTaskSearch}
+                onDropdownVisibleChange={ensureParentTaskOptions}
+                filterOption={false}
+                allowClear={!isViewMode}
+                loading={parentTaskLoading}
+              />
+            </Form.Item>
 
-                return (
-                  <div
-                    key={user.id}
-                    className="flex items-center mt-1 p-1 pl-3 rounded-lg border border-gray-200 bg-white"
-                  >
-                    <div className="flex-1">
-                      <span className="font-sm text-gray-900">{userName}</span>
+            <Form.Item
+              label="Başlık"
+              name="title"
+              rules={[{ required: true, message: "Başlık gereklidir" }]}
+              style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? "none" : "auto" }}
+            >
+              <Input />
+            </Form.Item>
+
+            <Form.Item
+              label="Durum"
+              name="status"
+              style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? "none" : "auto" }}
+            >
+              <Select
+                options={[
+                  { value: TaskStatus.TODO, label: "Yapılacak" },
+                  { value: TaskStatus.IN_PROGRESS, label: "Devam Ediyor" },
+                  { value: TaskStatus.INACTIVE, label: "Pasif" },
+                  { value: TaskStatus.DONE, label: "Tamamlandı" },
+                ]}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="Planlanan Çalışma Saati"
+              name="plannedHours"
+              style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? "none" : "auto" }}
+            >
+              <InputNumber style={{ width: "100%" }} min={0} step={0.5} />
+            </Form.Item>
+
+            <Form.Item
+              label="Gerçekleşen Çalışma Saati"
+              name="actualHours"
+              style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? "none" : "auto" }}
+            >
+              <InputNumber style={{ width: "100%" }} min={0} step={0.5} />
+            </Form.Item>
+
+            <Form.Item label="Etiketler" name="labels" style={formItemNoMarginStyle}>
+              <div className="space-y-2 flex flex-row gap-2">
+                <MultiSelectSearch
+                  placeholder="Etiket ara ve seç..."
+                  onChange={handleLabelsChange}
+                  value={selectedLabels}
+                  apiUrl="/Label"
+                  size="middle"
+                  className="w-full flex-1"
+                  disabled={isViewMode}
+                  style={{ width: "100%" }}
+                  initialOptions={labelSelectOptions}
+                  tagRender={labelTagRender}
+                  onOptionsChange={handleLabelOptionsSync}
+                />
+                {!isViewMode && (
+                  <Button
+                    type="dashed"
+                    icon={<AiOutlinePlus />}
+                    onClick={handleLabelCreateButtonClick}
+                    size="middle"
+                    className="w-full h-[32px] flex items-center justify-center gap-1"
+                    style={{ borderStyle: "dashed", color: "#52c41a", borderColor: "#52c41a" }}
+                  />
+                )}
+              </div>
+            </Form.Item>
+          </div>
+
+          <Form.Item
+            label="Açıklama"
+            required
+            name="description"
+            style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? "none" : "auto" }}
+          >
+            <TextArea rows={4} />
+          </Form.Item>
+
+          <Form.Item label="Görev Ekibi" style={formItemNoMarginStyle}>
+            <div className="space-y-3">
+              {!isViewMode && (
+                <AutoComplete
+                  value={userSearchValue}
+                  options={userOptions}
+                  onSearch={handleUserSearch}
+                  onSelect={value => {
+                    handleAddUser(value);
+                    setUserSearchValue("");
+                  }}
+                  onChange={setUserSearchValue}
+                  onFocus={() => handleUserSearch("")}
+                  placeholder="Kullanıcı ara ve ekle..."
+                  notFoundContent={
+                    userLoading ? (
+                      <div className="flex justify-center items-center py-2">
+                        <Spin size="small" />
+                        <span className="ml-2">Kullanıcılar aranıyor...</span>
+                      </div>
+                    ) : (
+                      "Kullanıcı bulunamadı"
+                    )
+                  }
+                  allowClear
+                  size="middle"
+                  style={{ width: "100%" }}
+                  filterOption={false}
+                  showSearch
+                />
+              )}
+
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {selectedUsers.map(user => {
+                  const userOption = userOptions.find(o => o.value === user.id);
+                  const userName = userOption?.label || user.name || `User ${user.id}`;
+                  return (
+                    <div
+                      key={user.id}
+                      className="flex items-center mt-1 p-1 pl-3 rounded-lg border border-gray-200 bg-white"
+                    >
+                      <div className="flex-1">
+                        <span className="font-sm text-gray-900">{userName}</span>
+                      </div>
+                      {!isViewMode && (
+                        <Button
+                          type="text"
+                          danger
+                          icon={<AiOutlinePlus style={{ transform: "rotate(45deg)" }} />}
+                          onClick={() => handleRemoveUser(user.id)}
+                          size="small"
+                        />
+                      )}
                     </div>
-                    {!isViewMode && (
-                      <Button
-                        type="text"
-                        danger
-                        icon={<AiOutlinePlus style={{ transform: 'rotate(45deg)' }} />}
-                        onClick={() => handleRemoveUser(user.id)}
-                        size="small"
-                      />
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })}
+                {selectedUsers.length === 0 && (
+                  <div className="text-center py-2 text-gray-500">Henüz ekip üyesi eklenmemiş</div>
+                )}
+              </div>
+            </div>
+          </Form.Item>
 
-              {selectedUsers.length === 0 && (
-                <div className="text-center py-2 text-gray-500">
-                  Henüz ekip üyesi eklenmemiş
-                </div>
+          <Form.Item style={formItemNoMarginStyle}>
+            <div className="flex justify-end w-full gap-3 pt-3">
+              <Button onClick={handleCancel} size="middle" className="min-w-[100px]">
+                {isViewMode ? "Kapat" : "İptal"}
+              </Button>
+              {!isViewMode && (
+                <Button type="primary" htmlType="submit" size="middle" className="min-w-[100px]">
+                  {isEditMode ? "Güncelle" : "Oluştur"}
+                </Button>
               )}
             </div>
-          </div>
-        </Form.Item>
+          </Form.Item>
+        </Form>
+      </Modal>
 
-        <Form.Item style={formItemNoMarginStyle}>
-          <div className="flex justify-end w-full gap-3 pt-3">
-            <Button
-              onClick={handleCancel}
-              size="middle"
-              className="min-w-[100px]"
-            >
-              {isViewMode ? "Kapat" : "İptal"}
-            </Button>
-            {!isViewMode && (
-              <Button
-                type="primary"
-                htmlType="submit"
-                size="middle"
-                className="min-w-[100px]"
-              >
-                {isEditMode ? "Güncelle" : "Oluştur"}
-              </Button>
-            )}
-          </div>
-        </Form.Item>
-      </Form>
-    </Modal>
-    <CreateLabelModal
-      visible={isLabelModalVisible}
-      mode={labelModalMode}
-      initialData={editingLabelData ? {
-        id: editingLabelData.value.toString(),
-        name: editingLabelData.label,
-        description: (editingLabelData as any).description || '',
-        color: (editingLabelData as any).color || ''
-      } : undefined}
-      onSuccess={handleLabelModalSuccess}
-      onCancel={handleLabelModalCancel}
-    />
+      <CreateLabelModal
+        visible={isLabelModalVisible}
+        mode={labelModalMode}
+        initialData={
+          editingLabelData
+            ? {
+                id: editingLabelData.value.toString(),
+                name: editingLabelData.label,
+                description: (editingLabelData as any).description || "",
+                color: (editingLabelData as any).color || "",
+              }
+            : undefined
+        }
+        onSuccess={handleLabelModalSuccess}
+        onCancel={handleLabelModalCancel}
+      />
     </>
   );
 }
