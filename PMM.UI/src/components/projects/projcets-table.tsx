@@ -279,7 +279,7 @@ export default function CustomTable() {
       render: (text: string) => <span title={text}>{text}</span>,
     },
     {
-      title: <SortableHeader title="Planlanan Saat" maxWidth={120} dataIndex="PlannedHours" />,
+      title: <SortableHeader title="Planlanan Çalışma Saati" maxWidth={120} dataIndex="PlannedHours" />,
       dataIndex: "PlannedHours",
       key: "PlannedHours",
       width: 120,

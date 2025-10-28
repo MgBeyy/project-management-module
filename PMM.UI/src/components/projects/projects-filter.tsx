@@ -88,7 +88,7 @@ export default function ProjectsFilter() {
         </Form.Item>
 
         <Form.Item
-          label="Planlanan Başlangıç"
+          label="Planlanan Başlangıç Tarihi"
           name="plannedStartDate"
           className="mb-3"
         >
@@ -101,7 +101,7 @@ export default function ProjectsFilter() {
         </Form.Item>
 
         <Form.Item
-          label="Planlanan Bitiş"
+          label="Planlanan Bitiş Tarihi"
           name="plannedEndDate"
           className="mb-3"
         >
@@ -113,7 +113,7 @@ export default function ProjectsFilter() {
           />
         </Form.Item>
 
-        <Form.Item label="Planlanan Saat" name="plannedHours" className="mb-3">
+        <Form.Item label="Planlanan Çalışma Saati" name="plannedHours" className="mb-3">
           <InputNumber
             min={0}
             max={10000}
@@ -124,7 +124,7 @@ export default function ProjectsFilter() {
           />
         </Form.Item>
 
-        <Form.Item label="Başlangıç Zamanı" name="startedAt" className="mb-3">
+        <Form.Item label="Gerçekleşen Başlangıç Tarihi" name="startedAt" className="mb-3">
           <DatePicker
             showTime
             placeholder="Başlangıç zamanı"
@@ -134,7 +134,7 @@ export default function ProjectsFilter() {
           />
         </Form.Item>
 
-        <Form.Item label="Bitiş Zamanı" name="endAt" className="mb-3">
+        <Form.Item label="Gerçekleşen Bitiş Zamanı" name="endAt" className="mb-3">
           <DatePicker
             showTime
             placeholder="Bitiş zamanı"

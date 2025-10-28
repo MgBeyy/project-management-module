@@ -87,7 +87,7 @@ namespace PMM.Core.Services
             if (form.Status == EProjectStatus.Completed)
             {
                 if (form.StartedAt == null || form.EndAt == null || form.PlannedStartDate == null || form.PlannedDeadline == null || form.PlannedHours == null)
-                    throw new BusinessException("Tamamlanmış bir proje için başlangıç, bitiş, planlanan başlangıç, planlanan bitiş tarihleri ve planlanan saat zorunludur.");
+                    throw new BusinessException("Tamamlanmış bir proje için başlangıç, bitiş, planlanan başlangıç, planlanan bitiş tarihleri ve planlanan çalışma saati zorunludur.");
             }
 
             if (form.ParentProjectIds != null && form.ParentProjectIds.Count != 0)
@@ -158,7 +158,7 @@ namespace PMM.Core.Services
             if (form.Status == EProjectStatus.Completed)
             {
                 if (form.StartedAt == null || form.EndAt == null || form.PlannedStartDate == null || form.PlannedDeadline == null || form.PlannedHours == null)
-                    throw new BusinessException("Tamamlanmış bir proje için başlangıç, bitiş, planlanan başlangıç, planlanan bitiş tarihleri ve planlanan saat zorunludur.");
+                    throw new BusinessException("Tamamlanmış bir proje için başlangıç, bitiş, planlanan başlangıç, planlanan bitiş tarihleri ve planlanan çalışma saati zorunludur.");
             }
 
             if (form.ParentProjectIds != null && form.ParentProjectIds.Count != 0)
@@ -333,7 +333,7 @@ namespace PMM.Core.Services
             if (project.Status == EProjectStatus.Completed)
             {
                 if (project.StartedAt == null || project.EndAt == null || project.PlannedStartDate == null || project.PlannedDeadline == null || project.PlannedHours == null)
-                    throw new BusinessException("Tamamlanmış bir proje için başlangıç, bitiş, planlanan başlangıç, planlanan bitiş tarihleri ve planlanan saat zorunludur.");
+                    throw new BusinessException("Tamamlanmış bir proje için başlangıç, bitiş, planlanan başlangıç, planlanan bitiş tarihleri ve planlanan çalışma saati zorunludur.");
             }
 
             _projectRepository.Update(project);

@@ -218,7 +218,7 @@ export default function TasksCustomTable() {
       },
     },
     {
-      title: <HeaderWithTooltip title="Planlanan Saat" maxWidth={130} />,
+      title: <HeaderWithTooltip title="Planlanan Çalışma Saati" maxWidth={130} />,
       dataIndex: "PlannedHours",
       key: "PlannedHours",
       width: 130,
@@ -230,7 +230,7 @@ export default function TasksCustomTable() {
       ),
     },
     {
-      title: <HeaderWithTooltip title="Gerçek Saat" maxWidth={120} />,
+      title: <HeaderWithTooltip title="Gerçek Çalışma Saati" maxWidth={120} />,
       dataIndex: "ActualHours",
       key: "ActualHours",
       width: 120,
