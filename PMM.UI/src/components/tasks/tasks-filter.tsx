@@ -168,6 +168,7 @@ export default function TasksFilter() {
   const statusOptions = [
     { value: TaskStatus.TODO, label: "Yapılacak" },
     { value: TaskStatus.IN_PROGRESS, label: "Devam Ediyor" },
+    { value: TaskStatus.INACTIVE, label: "Pasif" },
     { value: TaskStatus.DONE, label: "Tamamlandı" },
   ];
 
