@@ -12,6 +12,7 @@ services:
     depends_on:
       - db
     volumes:
+      - pmm_files:/app/wwwroot/files
       - ./PMM.API:/src/PMM.API
       - ./PMM.Core:/src/PMM.Core
       - ./PMM.Data:/src/PMM.Data
@@ -20,22 +21,18 @@ services:
   frontend:
     build:
       context: ./PMM.UI
-      dockerfile: dockerfile # "dockerfile" yerine tam adı "Dockerfile" ise onu kullanın
+      dockerfile: dockerfile
     ports:
       - "3000:3000"
     stdin_open: true
     tty: true
-    # Önemli: Vite'ın dışarıdan erişilebilir olması için host'u 0.0.0.0 yapın
     command: npm run dev -- --host 0.0.0.0
     environment:
-      # Backend servisine doğru Docker ağ adı ile erişim
       - VITE_APP_API_URL=https://api-pmm.engzaid.tech
     depends_on:
       - backend
     volumes:
-      # Local kodunuzu container'a bağlar
       - ./PMM.UI:/app
-      # node_modules'in localden override edilmesini engeller
       - /app/node_modules
 
   db:
@@ -51,3 +48,4 @@ services:
 
 volumes:
   db_data:
+  pmm_files:
