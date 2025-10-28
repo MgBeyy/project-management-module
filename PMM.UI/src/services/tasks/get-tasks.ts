@@ -31,6 +31,7 @@ type TaskQuery = {
   UpdatedAtMin?: number;
   UpdatedAtMax?: number;
   UpdatedById?: number;
+  AssignedUserId?: number;
   Search?: string;
   SortBy?: string;
   SortDesc?: boolean;
