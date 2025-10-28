@@ -20,6 +20,13 @@ interface TaskData {
     id: string;
     name: string;
   }>;
+  Labels: Array<{
+    id: string | number;
+    name: string;
+    color?: string;
+    description?: string;
+  }>;
+  LabelIds: string[];
   ParentTaskCode: string | null;
   ParentTaskTitle: string | null;
 }
