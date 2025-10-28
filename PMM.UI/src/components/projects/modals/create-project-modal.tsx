@@ -58,21 +58,14 @@ const IMAGE_EXTENSIONS = new Set([
 ]);
 
 const extractExtension = (value?: string | null): string | null => {
-  if (!value || typeof value !== "string") {
-    return null;
-  }
-
+  if (!value || typeof value !== "string") return null;
   const sanitized = value.split(/[?#]/)[0];
   const match = /\.([a-zA-Z0-9]+)$/.exec(sanitized);
   return match ? match[1].toLowerCase() : null;
 };
 
 const resolveFileExtension = (file: ProjectFileDto): string | null => {
-  return (
-    extractExtension(file.file) ??
-    extractExtension(file.title) ??
-    null
-  );
+  return extractExtension(file.file) ?? extractExtension(file.title) ?? null;
 };
 
 const isImageFile = (file: ProjectFileDto): boolean => {
@@ -82,7 +75,6 @@ const isImageFile = (file: ProjectFileDto): boolean => {
 
 const getFileIconByExtension = (extension: string | null) => {
   const baseClass = "h-8 w-8";
-
   switch (extension) {
     case "pdf":
       return <AiOutlineFilePdf className={baseClass} />;
@@ -105,52 +97,35 @@ const getFileIconByExtension = (extension: string | null) => {
       return <AiOutlineFile className={baseClass} />;
   }
 };
-const mergeOptions = (
-  existing: MultiSelectOption[],
-  incoming: MultiSelectOption[]
-) => {
+
+const mergeOptions = (existing: MultiSelectOption[], incoming: MultiSelectOption[]) => {
   const map = new Map<string, MultiSelectOption>();
-  existing.forEach(option => map.set(String(option.value), option));
-  incoming.forEach(option => map.set(String(option.value), option));
+  existing.forEach(o => map.set(String(o.value), o));
+  incoming.forEach(o => map.set(String(o.value), o));
   return Array.from(map.values());
 };
 
-const resolveLabelColor = (label: any): string | undefined => {
-  return (
-    label?.color ??
-    label?.Color ??
-    label?.hexColor ??
-    label?.HexColor ??
-    label?.hex ??
-    label?.Hex ??
-    label?.colour ??
-    label?.Colour
-  );
-};
+const resolveLabelColor = (label: any): string | undefined =>
+  label?.color ??
+  label?.Color ??
+  label?.hexColor ??
+  label?.HexColor ??
+  label?.hex ??
+  label?.Hex ??
+  label?.colour ??
+  label?.Colour;
 
-const resolveLabelDescription = (label: any): string | undefined => {
-  return label?.description ?? label?.Description ?? label?.desc ?? label?.Desc;
-};
+const resolveLabelDescription = (label: any): string | undefined =>
+  label?.description ?? label?.Description ?? label?.desc ?? label?.Desc;
 
 const normalizeLabelOption = (label: any): MultiSelectOption | null => {
-  if (!label) {
-    return null;
-  }
-
-  const id =
-    label?.id ?? label?.Id ?? label?.labelId ?? label?.value ?? label?.key;
-
-  if (id === undefined || id === null) {
-    return null;
-  }
+  if (!label) return null;
+  const id = label?.id ?? label?.Id ?? label?.labelId ?? label?.value ?? label?.key;
+  if (id === undefined || id === null) return null;
 
   const stringId = String(id);
   const resolvedName =
-    label?.name ||
-    label?.title ||
-    label?.label ||
-    label?.Label ||
-    `Label ${stringId}`;
+    label?.name || label?.title || label?.label || label?.Label || `Label ${stringId}`;
 
   return {
     value: stringId,
@@ -164,9 +139,7 @@ const normalizeLabelOption = (label: any): MultiSelectOption | null => {
 };
 
 const normalizeProjectOption = (project: any): MultiSelectOption | null => {
-  if (!project) {
-    return null;
-  }
+  if (!project) return null;
 
   const id =
     project?.id ??
@@ -176,12 +149,9 @@ const normalizeProjectOption = (project: any): MultiSelectOption | null => {
     project?.value ??
     project?.key;
 
-  if (id === undefined || id === null) {
-    return null;
-  }
+  if (id === undefined || id === null) return null;
 
   const stringId = String(id);
-
   const resolvedCode =
     project?.code ??
     project?.Code ??
@@ -221,115 +191,65 @@ const resolveProjectId = (project: any): string | null => {
     project?.ProjectId ??
     project?.value ??
     project?.key;
-
-  if (rawId === null || rawId === undefined) {
-    return null;
-  }
-
+  if (rawId == null) return null;
   return String(rawId);
 };
 
 const extractIdsFromArray = (rawIds: any): string[] => {
-  if (!Array.isArray(rawIds)) {
-    return [];
-  }
-
+  if (!Array.isArray(rawIds)) return [];
   const unique = new Set<string>();
-
-  rawIds.forEach((value: string | number | null | undefined) => {
-    if (value === null || value === undefined) {
-      return;
-    }
-    unique.add(String(value));
+  rawIds.forEach((v: string | number | null | undefined) => {
+    if (v == null) return;
+    unique.add(String(v));
   });
-
   return Array.from(unique);
 };
 
 const extractIdsFromProjects = (projects: any): string[] => {
-  if (!Array.isArray(projects)) {
-    return [];
-  }
-
+  if (!Array.isArray(projects)) return [];
   const unique = new Set<string>();
-
-  projects.forEach(project => {
-    const id = resolveProjectId(project);
-    if (id) {
-      unique.add(id);
-    }
+  projects.forEach(p => {
+    const id = resolveProjectId(p);
+    if (id) unique.add(id);
   });
-
   return Array.from(unique);
 };
 
 const resolveParentProjectsArray = (source: any): any[] => {
-  if (!source) {
-    return [];
-  }
-
+  if (!source) return [];
   const candidates = [
     source?.ParentProjects,
     source?.parentProjects,
     source?.ParentProjectList,
     source?.parentProjectList,
   ];
-
-  for (const candidate of candidates) {
-    if (Array.isArray(candidate) && candidate.length > 0) {
-      return candidate;
-    }
-  }
-
+  for (const c of candidates) if (Array.isArray(c) && c.length > 0) return c;
   return [];
 };
 
 const resolveParentProjectIds = (source: any): string[] => {
-  if (!source) {
-    return [];
+  if (!source) return [];
+  const candidates = [source?.ParentProjectIds, source?.parentProjectIds, source?.parent_project_ids];
+  for (const c of candidates) {
+    const ids = extractIdsFromArray(c);
+    if (ids.length > 0) return ids;
   }
-
-  const candidates = [
-    source?.ParentProjectIds,
-    source?.parentProjectIds,
-    source?.parent_project_ids,
-  ];
-
-  for (const candidate of candidates) {
-    const ids = extractIdsFromArray(candidate);
-    if (ids.length > 0) {
-      return ids;
-    }
-  }
-
-  const projectArray = resolveParentProjectsArray(source);
-  if (projectArray.length > 0) {
-    return extractIdsFromProjects(projectArray);
-  }
-
+  const arr = resolveParentProjectsArray(source);
+  if (arr.length > 0) return extractIdsFromProjects(arr);
   return [];
 };
 
 const resolveParentProjectOptions = (source: any): MultiSelectOption[] => {
   const projects = resolveParentProjectsArray(source);
-  if (projects.length === 0) {
-    return [];
-  }
-
+  if (projects.length === 0) return [];
   return projects
     .map(normalizeProjectOption)
-    .filter((option): option is MultiSelectOption => Boolean(option));
+    .filter((o): o is MultiSelectOption => Boolean(o));
 };
 
 const extractArrayFromResponse = (payload: any): any[] => {
-  if (!payload) {
-    return [];
-  }
-
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
   const candidates = [
     payload?.result?.data,
     payload?.data?.result?.data,
@@ -337,13 +257,7 @@ const extractArrayFromResponse = (payload: any): any[] => {
     payload?.data,
     payload?.result,
   ];
-
-  for (const candidate of candidates) {
-    if (Array.isArray(candidate)) {
-      return candidate;
-    }
-  }
-
+  for (const c of candidates) if (Array.isArray(c)) return c;
   return [];
 };
 
@@ -352,36 +266,30 @@ export default function CreateProjectModal({
   onClose,
   onSuccess,
   projectData,
-  mode = 'create',
+  mode = "create",
 }: ProjectModalProps) {
   const [form] = Form.useForm();
 
-  const [customerOptions, setCustomerOptions] = useState<
-    { value: string; label: string; key: string }[]
-  >([]);
-  const [defaultCustomerOptions, setDefaultCustomerOptions] = useState<
-    { value: string; label: string; key: string }[]
-  >([]);
-  const [customerValue, setCustomerValue] = useState("");
+  // --- CUSTOMER (CLIENT) STATE: searchable Select with numeric id values ---
+  const [customerOptions, setCustomerOptions] = useState<Array<{ value: number; label: string }>>([]);
+  const [defaultCustomerOptions, setDefaultCustomerOptions] = useState<Array<{ value: number; label: string }>>([]);
   const [customerLoading, setCustomerLoading] = useState(false);
 
-  const [selectedParentProjects, setSelectedParentProjects] = useState<
-    string[]
-  >([]);
+  const [selectedParentProjects, setSelectedParentProjects] = useState<string[]>([]);
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [parentProjectOptions, setParentProjectOptions] = useState<MultiSelectOption[]>([]);
   const [labelSelectOptions, setLabelSelectOptions] = useState<MultiSelectOption[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // User assignment state
-  const [selectedUsers, setSelectedUsers] = useState<{ userId: string; role: string, name: string }[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<{ userId: string; role: string; name: string }[]>([]);
   const [userOptions, setUserOptions] = useState<MultiSelectOption[]>([]);
   const [userLoading, setUserLoading] = useState(false);
   const [userSearchValue, setUserSearchValue] = useState("");
 
   // Label modal state
   const [isLabelModalVisible, setIsLabelModalVisible] = useState(false);
-  const [labelModalMode, setLabelModalMode] = useState<'create' | 'edit'>('create');
+  const [labelModalMode, setLabelModalMode] = useState<"create" | "edit">("create");
   const [editingLabelData, setEditingLabelData] = useState<any>(null);
 
   // Project details state
@@ -393,44 +301,25 @@ export default function CreateProjectModal({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const isEditMode = mode === 'edit' && !!projectData;
-  const isViewMode = mode === 'view' && !!projectData;
+  const isEditMode = mode === "edit" && !!projectData;
+  const isViewMode = mode === "view" && !!projectData;
   const resolvedProjectId = fullProjectDetails?.Id ?? projectData?.Id ?? null;
 
   const viewModeFieldStyle: CSSProperties | undefined = isViewMode
-    ? {
-      backgroundColor: "#f7f9fc",
-      color: "#1f1f1f",
-      borderColor: "#d9d9d9",
-    }
+    ? { backgroundColor: "#f7f9fc", color: "#1f1f1f", borderColor: "#d9d9d9" }
     : undefined;
   const formItemNoMarginStyle: CSSProperties = { marginBottom: 0 };
 
-
-  const areOptionsEqual = (
-    first: MultiSelectOption[],
-    second: MultiSelectOption[]
-  ) => {
-    if (first.length !== second.length) {
-      return false;
-    }
-
+  const areOptionsEqual = (first: MultiSelectOption[], second: MultiSelectOption[]) => {
+    if (first.length !== second.length) return false;
     const map = new Map<string, MultiSelectOption>();
-    first.forEach(option => map.set(String(option.value), option));
-
+    first.forEach(o => map.set(String(o.value), o));
     return second.every(option => {
       const key = String(option.value);
       const matched = map.get(key);
-
-      if (!matched) {
-        return false;
-      }
-
-      const matchedLabel =
-        typeof matched.label === "string" ? matched.label : String(matched.label);
-      const optionLabel =
-        typeof option.label === "string" ? option.label : String(option.label);
-
+      if (!matched) return false;
+      const matchedLabel = typeof matched.label === "string" ? matched.label : String(matched.label);
+      const optionLabel = typeof option.label === "string" ? option.label : String(option.label);
       return (
         matchedLabel === optionLabel &&
         (matched as any)?.color === (option as any)?.color &&
@@ -439,37 +328,43 @@ export default function CreateProjectModal({
     });
   };
 
-  const handleLabelOptionsSync = useCallback(
-    (options: MultiSelectOption[]) => {
-      if (options.length === 0) {
-        setLabelSelectOptions(prev => (prev.length === 0 ? prev : []));
-        return;
-      }
-
-      setLabelSelectOptions(prev => {
-        const merged = mergeOptions(prev, options);
-        if (areOptionsEqual(prev, merged)) {
-          return prev;
-        }
-        return merged;
-      });
-    },
-    []
-  );
-
-  const handleParentOptionsSync = useCallback((options: MultiSelectOption[]) => {
+  const handleLabelOptionsSync = useCallback((options: MultiSelectOption[]) => {
     if (options.length === 0) {
+      setLabelSelectOptions(prev => (prev.length === 0 ? prev : []));
       return;
     }
+    setLabelSelectOptions(prev => {
+      const merged = mergeOptions(prev, options);
+      return areOptionsEqual(prev, merged) ? prev : merged;
+    });
+  }, []);
+
+  const handleParentOptionsSync = useCallback((options: MultiSelectOption[]) => {
+    if (options.length === 0) return;
     setParentProjectOptions(prev => {
       const merged = mergeOptions(prev, options);
       return areOptionsEqual(prev, merged) ? prev : merged;
     });
   }, []);
 
+  // Ensure selected customer id is present in options so label is shown
+  const ensureCustomerOption = useCallback(
+    (id: number | undefined | null, labelHint?: string) => {
+      if (id == null) return;
+      const exists =
+        customerOptions.some(o => o.value === id) ||
+        defaultCustomerOptions.some(o => o.value === id);
+      if (!exists) {
+        const item = { value: id, label: labelHint || `Müşteri #${id}` };
+        setCustomerOptions(prev => [item, ...prev]);
+        setDefaultCustomerOptions(prev => [item, ...prev]);
+      }
+    },
+    [customerOptions, defaultCustomerOptions]
+  );
+
   const loadInitialSelectData = useCallback(async () => {
     setCustomerLoading(true);
-
     try {
       const [clientsRaw, labelsRaw, projectsRaw] = await Promise.all([
         getClientsForSelect("", "/Client"),
@@ -479,55 +374,30 @@ export default function CreateProjectModal({
 
       const clientOptions = extractArrayFromResponse(clientsRaw)
         .map((item: any) => {
-          const rawLabel =
-            item?.name ||
-            item?.title ||
-            item?.companyName ||
-            `${item?.firstName || ""} ${item?.lastName || ""}`.trim();
-
-          const normalizedLabel = (rawLabel || "").trim();
-
-          if (!normalizedLabel) {
-            return null;
-          }
-
-          return {
-            value: normalizedLabel,
-            label: normalizedLabel,
-            key:
-              item?.id?.toString?.() ||
-              item?.Id?.toString?.() ||
-              Math.random().toString(36).slice(2),
-          };
+          if (item?.id == null || !item?.name) return null;
+          return { value: Number(item.id), label: String(item.name) };
         })
-        .filter(
-          (option): option is { value: string; label: string; key: string } =>
-            Boolean(option)
-        );
+        .filter(Boolean) as Array<{ value: number; label: string }>;
 
       setCustomerOptions(clientOptions);
       setDefaultCustomerOptions(clientOptions);
 
       const normalizedLabelOptions = extractArrayFromResponse(labelsRaw)
         .map(normalizeLabelOption)
-        .filter((option): option is MultiSelectOption => Boolean(option));
-
-      if (normalizedLabelOptions.length > 0) {
-        handleLabelOptionsSync(normalizedLabelOptions);
-      }
+        .filter((o): o is MultiSelectOption => Boolean(o));
+      if (normalizedLabelOptions.length > 0) handleLabelOptionsSync(normalizedLabelOptions);
 
       const normalizedProjectOptions = extractArrayFromResponse(projectsRaw)
         .map(normalizeProjectOption)
-        .filter((option): option is MultiSelectOption => Boolean(option));
-
+        .filter((o): o is MultiSelectOption => Boolean(o));
       if (normalizedProjectOptions.length > 0) {
         setParentProjectOptions(prev => {
           const merged = mergeOptions(prev, normalizedProjectOptions);
           return areOptionsEqual(prev, merged) ? prev : merged;
         });
       }
-    } catch (error) {
-      console.error("İlk seçenek verileri yüklenirken hata:", error);
+    } catch (e) {
+      console.error("İlk seçenek verileri yüklenirken hata:", e);
     } finally {
       setCustomerLoading(false);
     }
@@ -549,7 +419,6 @@ export default function CreateProjectModal({
 
   const handleReset = useCallback(() => {
     form.resetFields();
-    setCustomerValue("");
     setCustomerOptions([]);
     setDefaultCustomerOptions([]);
     setSelectedParentProjects([]);
@@ -559,7 +428,7 @@ export default function CreateProjectModal({
     setSelectedUsers([]);
     setUserOptions([]);
     setUserSearchValue("");
-    setLabelModalMode('create');
+    setLabelModalMode("create");
     setEditingLabelData(null);
     setIsLabelModalVisible(false);
     setProjectFiles([]);
@@ -570,31 +439,33 @@ export default function CreateProjectModal({
     console.log("Form temizlendi");
   }, [form]);
 
-  const handleFileUpload = useCallback(async (file: File) => {
-    if (!resolvedProjectId) {
-      showNotification.error("Proje bulunamadı", "Dosya yüklemek için önce projeyi seçin.");
-      return;
-    }
-
-    setIsUploadingFile(true);
-    setUploadProgress(0);
-    try {
-      const uploaded = await uploadProjectFile({
-        projectId: resolvedProjectId,
-        file,
-        title: file.name,
-        onProgress: (progress) => setUploadProgress(progress),
-      });
-      showNotification.success("Dosya yüklendi", `"${uploaded.title}" başarıyla yüklendi.`);
-      await loadProjectFiles(resolvedProjectId);
-    } catch (error) {
-      console.error("Dosya yükleme hatası:", error);
-      showNotification.error("Dosya yüklenemedi", "Dosya yüklenirken bir hata oluştu.");
-    } finally {
-      setIsUploadingFile(false);
+  const handleFileUpload = useCallback(
+    async (file: File) => {
+      if (!resolvedProjectId) {
+        showNotification.error("Proje bulunamadı", "Dosya yüklemek için önce projeyi seçin.");
+        return;
+      }
+      setIsUploadingFile(true);
       setUploadProgress(0);
-    }
-  }, [resolvedProjectId, loadProjectFiles]);
+      try {
+        const uploaded = await uploadProjectFile({
+          projectId: resolvedProjectId,
+          file,
+          title: file.name,
+          onProgress: progress => setUploadProgress(progress),
+        });
+        showNotification.success("Dosya yüklendi", `"${uploaded.title}" başarıyla yüklendi.`);
+        await loadProjectFiles(resolvedProjectId);
+      } catch (error) {
+        console.error("Dosya yükleme hatası:", error);
+        showNotification.error("Dosya yüklenemedi", "Dosya yüklenirken bir hata oluştu.");
+      } finally {
+        setIsUploadingFile(false);
+        setUploadProgress(0);
+      }
+    },
+    [resolvedProjectId, loadProjectFiles]
+  );
 
   const handleFileDownload = useCallback(async (file: ProjectFileDto) => {
     try {
@@ -611,34 +482,31 @@ export default function CreateProjectModal({
     e.preventDefault();
     setIsDragOver(true);
   }, []);
-
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      handleFileUpload(files[0]);
-    }
-  }, [handleFileUpload]);
-
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      handleFileUpload(files[0]);
-    }
-    // Reset input value to allow selecting the same file again
-    e.target.value = '';
-  }, [handleFileUpload]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragOver(false);
+      const files = Array.from(e.dataTransfer.files);
+      if (files.length > 0) handleFileUpload(files[0]);
+    },
+    [handleFileUpload]
+  );
+  const handleFileSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (files && files.length > 0) handleFileUpload(files[0]);
+      e.target.value = "";
+    },
+    [handleFileUpload]
+  );
 
   const labelTagRender: SelectProps["tagRender"] = tagProps => {
     const { label, value, closable, onClose } = tagProps;
-
     const option = (tagProps as any)?.option;
 
     const handleMouseDown = (event: MouseEvent<HTMLSpanElement>) => {
@@ -650,17 +518,14 @@ export default function CreateProjectModal({
       event.preventDefault();
       event.stopPropagation();
 
-      // Find the label data from labelSelectOptions
       const labelOption = labelSelectOptions.find(opt => opt.value === String(value));
-
       const labelData = {
         id: String(value),
-        name: labelOption?.name || labelOption?.label || '',
-        description: (labelOption as any)?.description || '',
-        color: (labelOption as any)?.color || '#1890ff',
+        name: labelOption?.name || labelOption?.label || "",
+        description: (labelOption as any)?.description || "",
+        color: (labelOption as any)?.color || "#1890ff",
       };
-
-      setLabelModalMode('edit');
+      setLabelModalMode("edit");
       setEditingLabelData(labelData);
       setIsLabelModalVisible(true);
     };
@@ -673,137 +538,83 @@ export default function CreateProjectModal({
         onMouseDown={handleMouseDown}
         closable={!isViewMode && closable}
         onClose={onClose}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 4,
-          marginInlineEnd: 4,
-          paddingInlineEnd: isViewMode ? 8 : 4,
-        }}
+        style={{ display: "inline-flex", alignItems: "center", gap: 4, marginInlineEnd: 4, paddingInlineEnd: isViewMode ? 8 : 4 }}
       >
         <span>{label}</span>
         {!isViewMode && (
-          <Button
-            type="text"
-            size="small"
-            icon={<AiOutlineEdit />}
-            onClick={handleEditClick}
-          />
+          <Button type="text" size="small" icon={<AiOutlineEdit />} onClick={handleEditClick} />
         )}
       </Tag>
     );
   };
 
-  // Form'u edit veya view mode'da doldur
+  // mount
   useEffect(() => {
-    console.log(projectData);
-
-
-    if (!visible) {
-      return;
-    }
-
+    if (!visible) return;
     loadInitialSelectData();
   }, [visible, loadInitialSelectData]);
 
-  // Form'u edit veya view mode'da doldur
+  // fill form (edit/view)
   useEffect(() => {
-    if (!visible) {
-      return;
-    }
-
+    if (!visible) return;
     if ((isEditMode || isViewMode) && projectData) {
       let derivedLabelIds: string[] = [];
       let derivedParentProjectIds: string[] = [];
 
       if (fullProjectDetails) {
-        // ProjectDetails has Labels array
-        interface Label {
-          id: string | number;
-          [key: string]: any;
-        }
-
+        interface Label { id: string | number; [key: string]: any }
         derivedLabelIds = fullProjectDetails.Labels
-          ? (fullProjectDetails.Labels as Label[]).map((label: Label) => String(label.id))
+          ? (fullProjectDetails.Labels as Label[]).map(l => String(l.id))
           : [];
       } else {
-        // projectData has LabelIds array
         derivedLabelIds =
           projectData.LabelIds && projectData.LabelIds.length > 0
             ? projectData.LabelIds
-              .map(id =>
-                id !== null && id !== undefined ? String(id) : null
-              )
-              .filter((id): id is string => Boolean(id))
+                .map(id => (id !== null && id !== undefined ? String(id) : null))
+                .filter((id): id is string => Boolean(id))
             : [];
       }
 
       const detailParentIds = resolveParentProjectIds(fullProjectDetails);
       const fallbackParentIds = resolveParentProjectIds(projectData);
-
-      derivedParentProjectIds =
-        detailParentIds.length > 0 ? detailParentIds : fallbackParentIds;
+      derivedParentProjectIds = detailParentIds.length > 0 ? detailParentIds : fallbackParentIds;
 
       const detailParentOptions = resolveParentProjectOptions(fullProjectDetails);
       const projectParentOptions = resolveParentProjectOptions(projectData);
       const resolvedParentOptions = mergeOptions(detailParentOptions, projectParentOptions);
 
       const normalizedLabelAccumulator: MultiSelectOption[] = [];
-
       const pushNormalizedLabels = (labelsSource: any) => {
-        if (!Array.isArray(labelsSource)) {
-          return;
-        }
-
+        if (!Array.isArray(labelsSource)) return;
         labelsSource.forEach(labelItem => {
           const normalized = normalizeLabelOption(labelItem);
-          if (normalized) {
-            normalizedLabelAccumulator.push(normalized);
-          }
+          if (normalized) normalizedLabelAccumulator.push(normalized);
         });
       };
-
       pushNormalizedLabels(fullProjectDetails?.Labels);
       pushNormalizedLabels((fullProjectDetails as any)?.labels);
       pushNormalizedLabels(projectData?.Labels);
       pushNormalizedLabels((projectData as any)?.labels);
 
       if (labelSelectOptions.length > 0 && derivedLabelIds.length > 0) {
-        const matchedExisting = labelSelectOptions.filter(option =>
-          derivedLabelIds.includes(String(option.value))
-        );
+        const matchedExisting = labelSelectOptions.filter(option => derivedLabelIds.includes(String(option.value)));
         normalizedLabelAccumulator.push(...matchedExisting);
       }
 
       const normalizedLabelOptions = mergeOptions([], normalizedLabelAccumulator);
-
       const fallbackLabelOptions = derivedLabelIds
-        .filter(
-          id =>
-            !normalizedLabelOptions.some(
-              option => String(option.value) === id
-            )
-        )
+        .filter(id => !normalizedLabelOptions.some(option => String(option.value) === id))
         .map(id => {
           const existing =
             normalizedLabelOptions.find(option => String(option.value) === id) ||
             labelSelectOptions.find(option => String(option.value) === id);
-
-          if (existing) {
-            return existing;
-          }
-
-          return {
-            value: id,
-            label: id,
-            key: id,
-          } as MultiSelectOption;
+          if (existing) return existing;
+          return { value: id, label: id, key: id } as MultiSelectOption;
         });
+      const combinedOptions = mergeOptions(normalizedLabelOptions, fallbackLabelOptions);
 
-      const combinedOptions = mergeOptions(
-        normalizedLabelOptions,
-        fallbackLabelOptions
-      );
+      const initialClientId: number | undefined =
+        (fullProjectDetails?.ClientId ?? projectData.ClientId) ?? undefined;
 
       form.setFieldsValue({
         code: fullProjectDetails?.Code || projectData.Code,
@@ -813,38 +624,38 @@ export default function CreateProjectModal({
         plannedHours: fullProjectDetails?.PlannedHours ?? projectData.PlannedHours,
         startedAt: parseDate(fullProjectDetails?.StartedAt) || parseDate(projectData.rawStartedAt),
         endAt: parseDate(fullProjectDetails?.EndAt) || parseDate(projectData.rawEndAt),
-        status: fullProjectDetails?.Status
-          ? statusStringToNumber(fullProjectDetails.Status)
-          : projectData.rawStatus ?? 0,
+        status: fullProjectDetails?.Status ? statusStringToNumber(fullProjectDetails.Status) : projectData.rawStatus ?? 0,
         priority: fullProjectDetails?.Priority || projectData.Priority,
-        customer: (fullProjectDetails?.ClientId ?? projectData.ClientId) || "",
+        customer: initialClientId, // numeric id
         parentProjects: derivedParentProjectIds,
         labels: derivedLabelIds,
       });
 
+      // ensure we can display customer label
+      ensureCustomerOption(
+        initialClientId,
+        (fullProjectDetails as any)?.Client?.Name ||
+          (projectData as any)?.Client?.Name ||
+          (projectData as any)?.ClientName ||
+          undefined
+      );
+
       if (fullProjectDetails?.AssignedUsers && Array.isArray(fullProjectDetails.AssignedUsers)) {
-        setSelectedUsers(fullProjectDetails.AssignedUsers.map((user: any) => ({
-          userId: String(user.userId || user.id),
-          name: String(user.user.name || user.id),
-          role: user.role || 'Member',
-        })));
+        setSelectedUsers(
+          fullProjectDetails.AssignedUsers.map((user: any) => ({
+            userId: String(user.userId || user.id),
+            name: String(user.user?.name || user.id),
+            role: user.role || "Member",
+          }))
+        );
       } else {
         setSelectedUsers([]);
-      }      // Load user assignments
-      // const userAssignments = projectData.UserAssignments || [];
-      // const formattedUsers = userAssignments.map((assignment: any) => ({
-      //   userId: assignment.UserId || assignment.userId,
-      //   role: assignment.Role || assignment.role || 'Developer',
-      // }));
-      // setSelectedUsers(formattedUsers);
+      }
 
-      setCustomerValue(projectData.ClientId || "");
       setSelectedParentProjects(derivedParentProjectIds);
       setSelectedLabels(derivedLabelIds);
-      setLabelSelectOptions(prev =>
-        areOptionsEqual(prev, combinedOptions) ? prev : combinedOptions
-      );
-      setLabelModalMode('create');
+      setLabelSelectOptions(prev => (areOptionsEqual(prev, combinedOptions) ? prev : combinedOptions));
+      setLabelModalMode("create");
       setEditingLabelData(null);
 
       if (resolvedParentOptions.length > 0) {
@@ -855,35 +666,34 @@ export default function CreateProjectModal({
           label: `Proje ${id}`,
           key: id,
         })) as MultiSelectOption[];
-
-        if (normalizedParentOptions.length > 0) {
-          handleParentOptionsSync(normalizedParentOptions);
-        }
+        if (normalizedParentOptions.length > 0) handleParentOptionsSync(normalizedParentOptions);
       }
     }
-  }, [visible, isEditMode, isViewMode, projectData, fullProjectDetails]);
+  }, [
+    visible,
+    isEditMode,
+    isViewMode,
+    projectData,
+    fullProjectDetails,
+    labelSelectOptions,
+    ensureCustomerOption,
+    handleParentOptionsSync,
+  ]);
 
-  // Reset form when opening create mode
+  // reset on create open
   useEffect(() => {
-    if (!visible) {
-      return;
-    }
-
-    if (isEditMode || isViewMode) {
-      return;
-    }
-
+    if (!visible) return;
+    if (isEditMode || isViewMode) return;
     handleReset();
   }, [visible, isEditMode, isViewMode, handleReset]);
 
-  // Fetch full project details for edit/view modes
+  // fetch details
   useEffect(() => {
-    if (!visible || !isEditMode && !isViewMode || !projectData?.Id) {
+    if (!visible || (!isEditMode && !isViewMode) || !projectData?.Id) {
       setFullProjectDetails(null);
       setIsLoadingDetails(false);
       return;
     }
-
     const fetchProjectDetails = async () => {
       setIsLoadingDetails(true);
       try {
@@ -897,70 +707,39 @@ export default function CreateProjectModal({
         setIsLoadingDetails(false);
       }
     };
-
     fetchProjectDetails();
   }, [visible, isEditMode, isViewMode, projectData?.Id]);
 
+  // files
   useEffect(() => {
     if (!visible || !resolvedProjectId || (!isEditMode && !isViewMode)) {
       setProjectFiles([]);
       setIsLoadingFiles(false);
       return;
     }
-
     loadProjectFiles(resolvedProjectId);
   }, [visible, resolvedProjectId, isEditMode, isViewMode, loadProjectFiles]);
 
+  // --- CUSTOMER search (remote) ---
   const handleCustomerSearch = async (searchText: string) => {
     if (!searchText || searchText.trim().length < 2) {
       setCustomerOptions(defaultCustomerOptions);
       return;
     }
-
     setCustomerLoading(true);
-
     try {
       const res = await getClientsForSelect(searchText, "/Client");
-      const apiResult = res.data?.result?.data || res.data?.data || res.data;
-
-      if (!Array.isArray(apiResult)) {
-        console.error("Müşteri API yanıtı array formatında değil:", apiResult);
-        setCustomerOptions([]);
-        return;
-      }
-
-      const data = apiResult.map((item: any) => ({
-        value:
-          item.name ||
-          item.title ||
-          `${item.firstName} ${item.lastName}`.trim(),
-        label:
-          item.name ||
-          item.title ||
-          `${item.firstName} ${item.lastName}`.trim(),
-        key: item.id?.toString() || Math.random().toString(),
-      }));
-
-      console.log("Formatted müşteri options:", data);
+      const apiList = extractArrayFromResponse(res);
+      const data = apiList
+        .map((item: any) => {
+          if (item?.id == null || !item?.name) return null;
+          return { value: Number(item.id), label: String(item.name) };
+        })
+        .filter(Boolean) as Array<{ value: number; label: string }>;
       setCustomerOptions(data);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Müşteri veri çekme hatası:", err);
-
-      if (err.response?.status === 500 || err.code === "ERR_NETWORK") {
-        console.warn("Müşteri mock data kullanılıyor...");
-
-        const mockCustomers = [
-          { value: "ABC Şirketi", label: "ABC Şirketi", key: "1" },
-          { value: "XYZ Ltd.", label: "XYZ Ltd.", key: "2" },
-          { value: "Test Müşteri", label: "Test Müşteri", key: "3" },
-        ].filter(customer =>
-          customer.value.toLowerCase().includes(searchText.toLowerCase())
-        );
-
-        setCustomerOptions(mockCustomers);
-      } else {
-        setCustomerOptions([]);
-      }
+      setCustomerOptions([]);
     } finally {
       setCustomerLoading(false);
     }
@@ -968,24 +747,19 @@ export default function CreateProjectModal({
 
   const handleUserSearch = async (searchText: string) => {
     if (!searchText || searchText.trim().length === 0) {
-      // Boş arama için tüm listeyi yükle
       setUserLoading(true);
       try {
         const response = await getMultiSelectSearch("", "/User");
         const apiResult = extractArrayFromResponse(response.data);
-
         const formattedOptions: MultiSelectOption[] = apiResult.map((item: any) => {
           const id = item.id?.toString() || Math.random().toString();
-          const name = item.name || item.title || `${item.firstName || ""} ${item.lastName || ""}`.trim() || `User ${id}`;
-
-          return {
-            value: id,
-            label: name,
-            key: id,
-            ...item,
-          };
+          const name =
+            item.name ||
+            item.title ||
+            `${item.firstName || ""} ${item.lastName || ""}`.trim() ||
+            `User ${id}`;
+          return { value: id, label: name, key: id, ...item };
         });
-
         setUserOptions(formattedOptions);
       } catch (error) {
         console.error("Kullanıcı listesi yükleme hatası:", error);
@@ -997,23 +771,18 @@ export default function CreateProjectModal({
     }
 
     setUserLoading(true);
-
     try {
       const response = await getMultiSelectSearch(searchText, "/User");
       const apiResult = extractArrayFromResponse(response.data);
-
       const formattedOptions: MultiSelectOption[] = apiResult.map((item: any) => {
         const id = item.id?.toString() || Math.random().toString();
-        const name = item.name || item.title || `${item.firstName || ""} ${item.lastName || ""}`.trim() || `User ${id}`;
-
-        return {
-          value: id,
-          label: name,
-          key: id,
-          ...item,
-        };
+        const name =
+          item.name ||
+          item.title ||
+          `${item.firstName || ""} ${item.lastName || ""}`.trim() ||
+          `User ${id}`;
+        return { value: id, label: name, key: id, ...item };
       });
-
       setUserOptions(formattedOptions);
     } catch (error) {
       console.error("Kullanıcı arama hatası:", error);
@@ -1025,56 +794,41 @@ export default function CreateProjectModal({
 
   const handleAddUser = (userId: string) => {
     if (isViewMode) return;
-
     const userOption = userOptions.find(option => option.value === userId);
     if (!userOption) return;
-
-    // Kullanıcı zaten ekli mi kontrol et
-    if (selectedUsers.some(user => user.userId === userId)) {
-      return;
-    }
-
+    if (selectedUsers.some(u => u.userId === userId)) return;
     const newUser = {
       userId,
-      name: typeof userOption.label === 'string' ? userOption.label : String(userOption.label),
-      role: 'Member',
+      name: typeof userOption.label === "string" ? userOption.label : String(userOption.label),
+      role: "Member",
     };
-
     setSelectedUsers(prev => [...prev, newUser]);
   };
 
   const handleRemoveUser = (userId: string) => {
     if (isViewMode) return;
-    setSelectedUsers(prev => prev.filter(user => user.userId !== userId));
+    setSelectedUsers(prev => prev.filter(u => u.userId !== userId));
   };
 
   const handleUserRoleChange = (userId: string, role: string) => {
     if (isViewMode) return;
-    setSelectedUsers(prev =>
-      prev.map(user =>
-        user.userId === userId ? { ...user, role } : user
-      )
-    );
+    setSelectedUsers(prev => prev.map(u => (u.userId === userId ? { ...u, role } : u)));
   };
 
   const handleLabelCreateButtonClick = () => {
-    setLabelModalMode('create');
+    setLabelModalMode("create");
     setEditingLabelData(null);
     setIsLabelModalVisible(true);
   };
 
   const handleLabelModalSuccess = (labelOption: MultiSelectOption) => {
-    // Update label options
     setLabelSelectOptions(prev => mergeOptions(prev, [labelOption]));
-
-    // Add to selected labels if it's a new label
-    if (labelModalMode === 'create') {
+    if (labelModalMode === "create") {
       const newId = String(labelOption.value);
-      const updatedLabels = Array.from(new Set([...selectedLabels, newId]));
-      setSelectedLabels(updatedLabels);
-      form.setFieldValue("labels", updatedLabels);
+      const updated = Array.from(new Set([...selectedLabels, newId]));
+      setSelectedLabels(updated);
+      form.setFieldValue("labels", updated);
     }
-
     setIsLabelModalVisible(false);
     setEditingLabelData(null);
   };
@@ -1085,36 +839,15 @@ export default function CreateProjectModal({
   };
 
   const handleParentProjectsChange = (values: string[]) => {
-    if (isViewMode) {
-      return;
-    }
+    if (isViewMode) return;
     setSelectedParentProjects(values);
     form.setFieldValue("parentProjects", values);
   };
-  const handleLabelsChange = (values: string[]) => {
-    if (isViewMode) {
-      return;
-    }
 
+  const handleLabelsChange = (values: string[]) => {
+    if (isViewMode) return;
     setSelectedLabels(values);
     form.setFieldValue("labels", values);
-  };
-
-  const handleCustomerChange = (data: string) => {
-    if (isViewMode) {
-      return;
-    }
-    setCustomerValue(data);
-    form.setFieldValue("customer", data);
-  };
-
-  const handleCustomerSelect = (data: string) => {
-    console.log("Müşteri seçildi:", data);
-    if (isViewMode) {
-      return;
-    }
-    setCustomerValue(data);
-    form.setFieldValue("customer", data);
   };
 
   const onChangeNumber: InputNumberProps["onChange"] = value => {
@@ -1122,14 +855,12 @@ export default function CreateProjectModal({
   };
 
   const handleSubmit = async (values: any) => {
-    console.log(`Proje ${isEditMode ? 'güncelleme' : 'oluşturma'} form değerleri:`, values);
-
     setIsSubmitting(true);
     try {
+      
       if (isEditMode && projectData?.Id) {
         const updateData: UpdateProjectData = {
           title: values.title,
-          // Interpret the selected date as a UTC date (no local timezone shift)
           plannedStartDate: values.plannedStartDate
             ? dayjs.utc(dayjs(values.plannedStartDate).format("YYYY-MM-DD")).valueOf()
             : null,
@@ -1137,29 +868,24 @@ export default function CreateProjectModal({
             ? dayjs.utc(dayjs(values.plannedEndDate).format("YYYY-MM-DD")).valueOf()
             : null,
           plannedHours: values.plannedHours || null,
-          startedAt: values.startedAt ? dayjs.utc(dayjs(values.startedAt).format("YYYY-MM-DD")).valueOf() : null,
+          startedAt: values.startedAt
+            ? dayjs.utc(dayjs(values.startedAt).format("YYYY-MM-DD")).valueOf()
+            : null,
           labelIds: selectedLabels,
           parentProjectIds: selectedParentProjects,
           endAt: values.endAt ? dayjs.utc(dayjs(values.endAt).format("YYYY-MM-DD")).valueOf() : null,
           status: statusNumberToString(values.status),
           priority: values.priority,
-          assignedUsers: selectedUsers.map(user => ({
-            UserId: parseInt(user.userId, 10),
-            Role: user.role,
-          })),
+          assignedUsers: selectedUsers.map(u => ({ UserId: parseInt(u.userId, 10), Role: u.role })),
+          clientId: values.customer ?? null, // <-- number id
         };
-
         await updateProject(projectData.Id, updateData);
         showNotification.success("Proje Güncellendi", " Proje başarıyla güncellendi!");
       } else {
-        // Create mode
-        console.log(values.plannedStartDate);
-
         const createData = {
           Code: values.code || undefined,
           Title: values.title || undefined,
           PlannedHours: values.plannedHours || undefined,
-
           PlannedStartDate: values.plannedStartDate
             ? dayjs.utc(dayjs(values.plannedStartDate).format("YYYY-MM-DD")).valueOf()
             : undefined,
@@ -1169,38 +895,29 @@ export default function CreateProjectModal({
           StartedAt: values.startedAt
             ? dayjs.utc(dayjs(values.startedAt).format("YYYY-MM-DD")).valueOf()
             : undefined,
-          EndAt: values.endAt ? dayjs.utc(dayjs(values.endAt).format("YYYY-MM-DD")).valueOf() : undefined,
-
+          EndAt: values.endAt
+            ? dayjs.utc(dayjs(values.endAt).format("YYYY-MM-DD")).valueOf()
+            : undefined,
           Status: statusNumberToString(values.status) || undefined,
           Priority: values.priority || undefined,
-
-          ClientId: values.customer || undefined,
+          clientId: values.customer || undefined, // <-- number id
           ParentProjectIds: selectedParentProjects || [],
           LabelIds: selectedLabels || [],
-          AssignedUsers: selectedUsers.map(user => ({
-            UserId: parseInt(user.userId, 10),
-            Role: user.role,
-          })),
+          AssignedUsers: selectedUsers.map(u => ({ UserId: parseInt(u.userId, 10), Role: u.role })),
         };
-
         const cleanedData = Object.fromEntries(
           Object.entries(createData).filter(
-            ([_, value]) =>
-              value !== undefined &&
-              value !== null &&
-              value !== "" &&
-              !(Array.isArray(value) && value.length === 0)
+            ([, v]) => v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0)
           )
         );
         await createProject(cleanedData);
         showNotification.success("Proje Oluşturuldu", " Proje başarıyla oluşturuldu!");
       }
-
       handleReset();
       onSuccess?.();
       onClose();
-    } catch (error: any) {
-      console.error(`Proje ${isEditMode ? 'güncelleme' : 'oluşturma'} hatası:`, error);
+    } catch (error) {
+      console.error(`Proje ${isEditMode ? "güncelleme" : "oluşturma"} hatası:`, error);
     } finally {
       setIsSubmitting(false);
     }
@@ -1213,21 +930,31 @@ export default function CreateProjectModal({
 
   const statusStringToNumber = (status: string): number => {
     switch (status) {
-      case "Planned": return 0;
-      case "Active": return 1;
-      case "Completed": return 2;
-      case "InActive": return 3;
-      default: return 0;
+      case "Planned":
+        return 0;
+      case "Active":
+        return 1;
+      case "Completed":
+        return 2;
+      case "InActive":
+        return 3;
+      default:
+        return 0;
     }
   };
 
   const statusNumberToString = (status: number): string => {
     switch (status) {
-      case 0: return "Planned";
-      case 1: return "Active";
-      case 2: return "Completed";
-      case 3: return "InActive";
-      default: return "Planned";
+      case 0:
+        return "Planned";
+      case 1:
+        return "Active";
+      case 2:
+        return "Completed";
+      case 3:
+        return "InActive";
+      default:
+        return "Planned";
     }
   };
 
@@ -1247,7 +974,7 @@ export default function CreateProjectModal({
   const userRoleOptions = [
     { value: "Manager", label: "Yöneticisi" },
     { value: "Member", label: "Üye" },
-    { value: "Reviewer", label: "Gözlemci" }
+    { value: "Reviewer", label: "Gözlemci" },
   ];
 
   return (
@@ -1257,31 +984,22 @@ export default function CreateProjectModal({
           isViewMode
             ? `Proje Detayları: ${projectData?.Code}`
             : isEditMode
-              ? `Proje Güncelle: ${projectData?.Code}`
-              : "Yeni Proje Oluştur"
+            ? `Proje Güncelle: ${projectData?.Code}`
+            : "Yeni Proje Oluştur"
         }
         open={visible}
         onCancel={handleModalClose}
         footer={null}
         width={1200}
-        destroyOnClose={true}
-        styles={{
-          body: {
-            maxHeight: "70vh",
-            overflowY: "auto",
-          },
-        }}
+        destroyOnClose
+        styles={{ body: { maxHeight: "70vh", overflowY: "auto" } }}
       >
         {isLoadingDetails ? (
           <div className="flex justify-center items-center h-64">
             <Spin size="large" tip="Proje detayları yükleniyor..." />
           </div>
         ) : (
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={isViewMode ? undefined : handleSubmit}
-          >
+          <Form form={form} layout="vertical" onFinish={isViewMode ? undefined : handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-2 gap-y-1">
               <Form.Item
                 label="Proje Kodu"
@@ -1289,12 +1007,7 @@ export default function CreateProjectModal({
                 rules={[{ required: !isEditMode, message: "Proje kodu zorunludur!" }]}
                 style={formItemNoMarginStyle}
               >
-                <Input
-                  placeholder="Örn: PRJ-001"
-                  size="middle"
-                  disabled={!!isEditMode || !!isViewMode}
-                  style={viewModeFieldStyle}
-                />
+                <Input placeholder="Örn: PRJ-001" size="middle" disabled={!!isEditMode || !!isViewMode} style={viewModeFieldStyle} />
               </Form.Item>
 
               <Form.Item
@@ -1303,67 +1016,36 @@ export default function CreateProjectModal({
                 rules={[{ required: true, message: "Proje başlığı zorunludur!" }]}
                 style={formItemNoMarginStyle}
               >
-                <Input
-                  placeholder="Proje başlığını girin"
-                  size="middle"
-                  disabled={!!isViewMode}
-                  style={viewModeFieldStyle}
-                />
+                <Input placeholder="Proje başlığını girin" size="middle" disabled={!!isViewMode} style={viewModeFieldStyle} />
               </Form.Item>
 
-              <Form.Item
-                label="Planlanan Saat"
-                name="plannedHours"
-                rules={[{ required: false, message: "Planlanan saat zorunludur!" }]}
-                style={formItemNoMarginStyle}
-              >
+              <Form.Item label="Planlanan Saat" name="plannedHours" style={formItemNoMarginStyle}>
                 <InputNumber
                   min={0}
                   max={10000}
                   placeholder="Saat"
                   onChange={onChangeNumber}
                   size="middle"
-                  style={{
-                    width: "100%",
-                    ...(viewModeFieldStyle || {}),
-                  }}
+                  style={{ width: "100%", ...(viewModeFieldStyle || {}) }}
                   disabled={!!isViewMode}
                 />
               </Form.Item>
 
-              <Form.Item
-                label="Planlanan Başlangıç"
-                name="plannedStartDate"
-                rules={[
-                  { required: false, message: "Başlangıç tarihi zorunludur!" },
-                ]}
-                style={formItemNoMarginStyle}
-              >
+              <Form.Item label="Planlanan Başlangıç" name="plannedStartDate" style={formItemNoMarginStyle}>
                 <DatePicker
                   placeholder="Başlangıç tarihi"
                   size="middle"
-                  style={{
-                    width: "100%",
-                    ...(viewModeFieldStyle || {}),
-                  }}
+                  style={{ width: "100%", ...(viewModeFieldStyle || {}) }}
                   format="DD-MM-YYYY"
                   disabled={!!isViewMode}
                 />
               </Form.Item>
 
-              <Form.Item
-                label="Planlanan Bitiş"
-                name="plannedEndDate"
-                rules={[{ required: false, message: "Bitiş tarihi zorunludur!" }]}
-                style={formItemNoMarginStyle}
-              >
+              <Form.Item label="Planlanan Bitiş" name="plannedEndDate" style={formItemNoMarginStyle}>
                 <DatePicker
                   placeholder="Bitiş tarihi"
                   size="middle"
-                  style={{
-                    width: "100%",
-                    ...(viewModeFieldStyle || {}),
-                  }}
+                  style={{ width: "100%", ...(viewModeFieldStyle || {}) }}
                   format="DD-MM-YYYY"
                   disabled={!!isViewMode}
                 />
@@ -1373,10 +1055,7 @@ export default function CreateProjectModal({
                 <DatePicker
                   placeholder="Başlangıç zamanı"
                   size="middle"
-                  style={{
-                    width: "100%",
-                    ...(viewModeFieldStyle || {}),
-                  }}
+                  style={{ width: "100%", ...(viewModeFieldStyle || {}) }}
                   format="DD-MM-YYYY"
                   disabled={!!isViewMode}
                 />
@@ -1386,87 +1065,67 @@ export default function CreateProjectModal({
                 <DatePicker
                   placeholder="Bitiş zamanı"
                   size="middle"
-                  style={{
-                    width: "100%",
-                    ...(viewModeFieldStyle || {}),
-                  }}
+                  style={{ width: "100%", ...(viewModeFieldStyle || {}) }}
                   format="DD-MM-YYYY"
                   disabled={!!isViewMode}
                 />
               </Form.Item>
 
-              <Form.Item
-                label="Proje Durumu"
-                name="status"
-                rules={[{ required: false, message: "Proje durumu zorunludur!" }]}
-                style={formItemNoMarginStyle}
-              >
+              <Form.Item label="Proje Durumu" name="status" style={formItemNoMarginStyle}>
                 <Select
                   placeholder="Durum seçin"
                   allowClear
                   size="middle"
-                  style={{
-                    width: "100%",
-                    ...(viewModeFieldStyle || {}),
-                  }}
+                  style={{ width: "100%", ...(viewModeFieldStyle || {}) }}
                   options={statusOptions}
                   disabled={!!isViewMode}
                 />
               </Form.Item>
 
-              <Form.Item
-                label="Proje Önceliği"
-                name="priority"
-                rules={[{ required: false, message: "Proje önceliği zorunludur!" }]}
-                style={formItemNoMarginStyle}
-              >
+              <Form.Item label="Proje Önceliği" name="priority" style={formItemNoMarginStyle}>
                 <Select
                   placeholder="Öncelik seçin"
                   allowClear
                   size="middle"
-                  style={{
-                    width: "100%",
-                    ...(viewModeFieldStyle || {}),
-                  }}
+                  style={{ width: "100%", ...(viewModeFieldStyle || {}) }}
                   options={priorityOptions}
                   disabled={!!isViewMode}
                 />
               </Form.Item>
 
+              {/* --- UPDATED: Searchable Select for Customer --- */}
               <Form.Item label="Müşteri" name="customer" style={formItemNoMarginStyle}>
-                <AutoComplete
-                  value={customerValue}
-                  disabled={!!isViewMode}
-                  style={viewModeFieldStyle}
+                <Select
+                  showSearch
+                  placeholder="Müşteri seçin veya arayın..."
                   options={customerOptions}
-                  onSearch={handleCustomerSearch}
-                  onChange={handleCustomerChange}
-                  onSelect={handleCustomerSelect}
-                  placeholder="Müşteri ara... (min 2 karakter)"
+                  loading={customerLoading}
+                  filterOption={false}              // remote search
+                  onSearch={handleCustomerSearch}   // fetch as user types
+                  allowClear
+                  size="middle"
+                  disabled={!!isViewMode}
+                  style={{ width: "100%", ...(viewModeFieldStyle || {}) }}
+                  optionFilterProp="label"          // in case filterOption toggled later
                   notFoundContent={
                     customerLoading ? (
                       <div className="flex justify-center items-center py-2">
                         <Spin size="small" />
                         <span className="ml-2">Müşteriler aranıyor...</span>
                       </div>
-                    ) : customerValue && customerValue.length >= 2 ? (
-                      "Müşteri bulunamadı"
                     ) : (
-                      "En az 2 karakter yazın"
+                      "Müşteri bulunamadı"
                     )
                   }
-                  allowClear
-                  size="middle"
-                  filterOption={false}
-                  showSearch={true}
+                  onDropdownVisibleChange={(open) => {
+                    if (open && customerOptions.length === 0) {
+                      setCustomerOptions(defaultCustomerOptions);
+                    }
+                  }}
                 />
               </Form.Item>
 
-              <Form.Item
-                label="Üst Projeler"
-                name="parentProjects"
-                style={formItemNoMarginStyle}
-              >
+              <Form.Item label="Üst Projeler" name="parentProjects" style={formItemNoMarginStyle}>
                 <MultiSelectSearch
                   placeholder="Üst proje ara ve seç..."
                   onChange={handleParentProjectsChange}
@@ -1475,14 +1134,12 @@ export default function CreateProjectModal({
                   size="middle"
                   className="w-full"
                   disabled={isViewMode}
-                  style={{
-                    width: "100%",
-                    ...(viewModeFieldStyle || {}),
-                  }}
+                  style={{ width: "100%", ...(viewModeFieldStyle || {}) }}
                   initialOptions={parentProjectOptions}
                   onOptionsChange={handleParentOptionsSync}
                 />
               </Form.Item>
+
               <Form.Item label="Etiketler" name="labels" style={formItemNoMarginStyle}>
                 <div className="space-y-2 flex flex-row gap-2">
                   <MultiSelectSearch
@@ -1493,15 +1150,11 @@ export default function CreateProjectModal({
                     size="middle"
                     className="w-full flex-1"
                     disabled={isViewMode}
-                    style={{
-                      width: "100%",
-                      ...(viewModeFieldStyle || {}),
-                    }}
+                    style={{ width: "100%", ...(viewModeFieldStyle || {}) }}
                     initialOptions={labelSelectOptions}
                     tagRender={labelTagRender}
                     onOptionsChange={handleLabelOptionsSync}
                   />
-
                   {!isViewMode && (
                     <Button
                       type="dashed"
@@ -1509,13 +1162,8 @@ export default function CreateProjectModal({
                       onClick={handleLabelCreateButtonClick}
                       size="middle"
                       className="w-full h-[32px] flex items-center justify-center gap-1"
-                      style={{
-                        borderStyle: "dashed",
-                        color: "#52c41a",
-                        borderColor: "#52c41a",
-                      }}
-                    >
-                    </Button>
+                      style={{ borderStyle: "dashed", color: "#52c41a", borderColor: "#52c41a" }}
+                    />
                   )}
                 </div>
               </Form.Item>
@@ -1528,7 +1176,7 @@ export default function CreateProjectModal({
                     value={userSearchValue}
                     options={userOptions}
                     onSearch={handleUserSearch}
-                    onSelect={(value) => {
+                    onSelect={value => {
                       handleAddUser(value);
                       setUserSearchValue("");
                     }}
@@ -1547,44 +1195,36 @@ export default function CreateProjectModal({
                     }
                     allowClear
                     size="middle"
-                    style={{
-                      width: "100%",
-                    }}
+                    style={{ width: "100%" }}
                     filterOption={false}
-                    showSearch={true}
+                    showSearch
                   />
                 )}
 
                 <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {selectedUsers.map((user) => {
+                  {selectedUsers.map(user => {
                     const userOption = userOptions.find(option => option.value === user.userId);
                     const userName = userOption?.label || user.name || `User ${user.userId}`;
-
                     return (
-                      <div
-                        key={user.userId}
-                        className="flex items-center mt-1 p-1 pl-3 rounded-lg border border-gray-200 bg-white"
-                      >
+                      <div key={user.userId} className="flex items-center mt-1 p-1 pl-3 rounded-lg border border-gray-200 bg-white">
                         <div className="flex-1">
                           <span className="font-sm text-gray-900">{userName}</span>
                         </div>
-
                         <Select
                           value={user.role}
                           className="flex-1"
-                          onChange={(value) => handleUserRoleChange(user.userId, value)}
+                          onChange={value => handleUserRoleChange(user.userId, value)}
                           options={userRoleOptions}
                           size="small"
                           style={{ minWidth: 140 }}
                           disabled={isViewMode}
                           placeholder="Rol seçin"
                         />
-
                         {!isViewMode && (
                           <Button
                             type="text"
                             danger
-                            icon={<AiOutlinePlus style={{ transform: 'rotate(45deg)' }} />}
+                            icon={<AiOutlinePlus style={{ transform: "rotate(45deg)" }} />}
                             onClick={() => handleRemoveUser(user.userId)}
                             size="small"
                           />
@@ -1592,28 +1232,23 @@ export default function CreateProjectModal({
                       </div>
                     );
                   })}
-
-                  {selectedUsers.length === 0 && (
-                    <div className="text-center py-2 text-gray-500">
-                      Henüz ekip üyesi eklenmemiş
-                    </div>
-                  )}
+                  {selectedUsers.length === 0 && <div className="text-center py-2 text-gray-500">Henüz ekip üyesi eklenmemiş</div>}
                 </div>
               </div>
             </Form.Item>
 
             {(isEditMode || isViewMode) && (
               <Form.Item label="Proje Dosyaları" style={formItemNoMarginStyle}>
-                <div className="border-2 border-dashed rounded-lg p-2 pt-0 transition-colors duration-200"
-                     style={{
-                       borderColor: isDragOver ? '#1890ff' : '#d9d9d9',
-                       backgroundColor: isDragOver ? '#f0f8ff' : 'transparent'
-                     }}
-                     onDragOver={handleDragOver}
-                     onDragLeave={handleDragLeave}
-                     onDrop={handleDrop}>
-                  
-                  {/* Upload Progress */}
+                <div
+                  className="border-2 border-dashed rounded-lg p-2 pt-0 transition-colors duration-200"
+                  style={{
+                    borderColor: isDragOver ? "#1890ff" : "#d9d9d9",
+                    backgroundColor: isDragOver ? "#f0f8ff" : "transparent",
+                  }}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
                   {isUploadingFile && (
                     <div className="mb-4">
                       <div className="flex items-center justify-between mb-2">
@@ -1621,43 +1256,26 @@ export default function CreateProjectModal({
                         <span className="text-sm text-gray-500">{uploadProgress}%</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${uploadProgress}%` }}
-                        ></div>
+                        <div className="bg-blue-500 h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
                       </div>
                     </div>
                   )}
 
-                  {/* Upload Area */}
                   {isEditMode && !isUploadingFile && (
                     <div className="text-center">
                       <AiOutlineCloudUpload className="mx-auto h-12 w-12 text-gray-400 mb-0" />
                       <div className="space-y-2">
-                        <p className="text-sm text-gray-600">
-                          Dosyalarınızı sürükleyip bırakın veya
-                        </p>
+                        <p className="text-sm text-gray-600">Dosyalarınızı sürükleyip bırakın veya</p>
                         <div className="flex justify-center mb-0">
-                          <Button
-                            type="primary"
-                            size="small"
-                            onClick={() => document.getElementById('file-input')?.click()}
-                          >
+                          <Button type="primary" size="small" onClick={() => document.getElementById("file-input")?.click()}>
                             Dosya Seç
                           </Button>
                         </div>
-                        <input
-                          id="file-input"
-                          type="file"
-                          className="hidden"
-                          onChange={handleFileSelect}
-                          accept="*/*"
-                        />
+                        <input id="file-input" type="file" className="hidden" onChange={handleFileSelect} accept="*/*" />
                       </div>
                     </div>
                   )}
 
-                  {/* Files List */}
                   <div className="mt-2">
                     {isLoadingFiles ? (
                       <div className="flex items-center justify-center py-6">
@@ -1670,20 +1288,16 @@ export default function CreateProjectModal({
                       </div>
                     ) : (
                       <div className="flex gap-3 overflow-x-auto">
-                        {projectFiles.map((file) => {
-                          console.log(file);
-                          
+                        {projectFiles.map(file => {
                           const extension = resolveFileExtension(file);
                           const displayName = file.title || `Dosya #${file.id}`;
                           const imagePreview = isImageFile(file);
-
                           const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
                             if (event.key === "Enter" || event.key === " ") {
                               event.preventDefault();
                               handleFileDownload(file);
                             }
                           };
-
                           return (
                             <div
                               key={file.id}
@@ -1710,22 +1324,11 @@ export default function CreateProjectModal({
                                 )}
                               </div>
                               <div className="flex flex-col gap-1">
-                                <span
-                                  className="truncate text-sm font-medium text-gray-900"
-                                  title={displayName}
-                                >
+                                <span className="truncate text-sm font-medium text-gray-900" title={displayName}>
                                   {displayName}
                                 </span>
-                                {extension && (
-                                  <span className="text-xs uppercase text-gray-500">
-                                    .{extension}
-                                  </span>
-                                )}
-                                {file.description && (
-                                  <span className="text-xs text-gray-500">
-                                    {file.description}
-                                  </span>
-                                )}
+                                {extension && <span className="text-xs uppercase text-gray-500">.{extension}</span>}
+                                {file.description && <span className="text-xs text-gray-500">{file.description}</span>}
                               </div>
                             </div>
                           );
@@ -1739,35 +1342,18 @@ export default function CreateProjectModal({
 
             <Form.Item style={formItemNoMarginStyle}>
               <div className="flex justify-end w-full gap-3 pt-3">
-                <Button
-                  onClick={handleModalClose}
-                  size="middle"
-                  className="min-w-[100px]"
-                >
+                <Button onClick={handleModalClose} size="middle" className="min-w-[100px]">
                   {isViewMode ? "Kapat" : "İptal"}
                 </Button>
                 {!isViewMode && (
                   <>
                     {!isEditMode && (
-                      <Button
-                        onClick={handleReset}
-                        size="middle"
-                        className="min-w-[100px]"
-                      >
+                      <Button onClick={handleReset} size="middle" className="min-w-[100px]">
                         Temizle
                       </Button>
                     )}
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      size="middle"
-                      className="min-w-[100px]"
-                      loading={isSubmitting}
-                    >
-                      {isSubmitting
-                        ? (isEditMode ? "Güncelleniyor..." : "Oluşturuluyor...")
-                        : (isEditMode ? "Proje Güncelle" : "Proje Oluştur")
-                      }
+                    <Button type="primary" htmlType="submit" size="middle" className="min-w-[100px]" loading={isSubmitting}>
+                      {isSubmitting ? (isEditMode ? "Güncelleniyor..." : "Oluşturuluyor...") : isEditMode ? "Proje Güncelle" : "Proje Oluştur"}
                     </Button>
                   </>
                 )}
@@ -1776,6 +1362,7 @@ export default function CreateProjectModal({
           </Form>
         )}
       </Modal>
+
       <CreateLabelModal
         visible={isLabelModalVisible}
         mode={labelModalMode}
@@ -1786,4 +1373,3 @@ export default function CreateProjectModal({
     </>
   );
 }
-

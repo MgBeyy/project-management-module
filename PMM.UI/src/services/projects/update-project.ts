@@ -12,10 +12,13 @@ export interface UpdateProjectData {
   parentProjectIds?: string[];
   assignedUsers?: { UserId: number; Role: string }[];
   labelIds?: string[];
+  clientId?: number | null;
 }
 
 export async function updateProject(projectId: number, data: UpdateProjectData) {
   try {
+    console.log(data);
+    
     const response = await apiClient.put(`/Project/${projectId}`, data, {
       headers: {
         "Content-Type": "application/json",
