@@ -134,7 +134,7 @@ export default function ProjectsFilter() {
           />
         </Form.Item>
 
-        <Form.Item label="Gerçekleşen Bitiş Zamanı" name="endAt" className="mb-3">
+        <Form.Item label="Gerçekleşen Bitiş Tarihi" name="endAt" className="mb-3">
           <DatePicker
             showTime
             placeholder="Bitiş zamanı"
