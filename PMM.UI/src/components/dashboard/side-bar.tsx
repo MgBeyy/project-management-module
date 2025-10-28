@@ -10,8 +10,8 @@ import { useSidebarStore } from "@/store/zustand/sidebarStore";
 export default function SideBar() {
   const { collapsed, setCollapsed, toggleCollapsed } = useSidebarStore();
 
-  const itemsOptions = ["Projeler", "Görevler", "Etkinlikler"];
-  const itemsOptionsEn = ["Projects", "Tasks", "Activities"];
+  const itemsOptions = ["Projeler", "Görevler", "Etkinlikler", "Destek"];
+  const itemsOptionsEn = ["Projects", "Tasks", "Activities", "Support"];
   const items: MenuProps["items"] = [FaFolderOpen].map((icon, index) => {
     return {
       className: "h-screen",

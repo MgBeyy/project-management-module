@@ -20,6 +20,10 @@ export default function Header() {
       pathOriginal: "activities",
       pathTr: "Etkinlikler",
     },
+    {
+      pathOriginal: "support",
+      pathTr: "Destek",
+    },
   ];
   return (
     <>
