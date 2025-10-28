@@ -208,7 +208,7 @@ export default function TasksFilter() {
             loading={projectLoading}
           />
         </Form.Item>
-        <Form.Item label="Planlanan Saat (Min)" name="plannedHoursMin" className="mb-3">
+        <Form.Item label="Planlanan Çalışma Saati (Min)" name="plannedHoursMin" className="mb-3">
           <InputNumber
             min={0}
             placeholder="Min saat"
@@ -217,7 +217,7 @@ export default function TasksFilter() {
           />
         </Form.Item>
 
-        <Form.Item label="Planlanan Saat (Maks)" name="plannedHoursMax" className="mb-3">
+        <Form.Item label="Planlanan Çalışma Saati (Maks)" name="plannedHoursMax" className="mb-3">
           <InputNumber
             min={0}
             placeholder="Maks saat"

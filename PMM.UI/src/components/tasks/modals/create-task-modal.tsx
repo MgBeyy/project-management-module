@@ -943,7 +943,7 @@ export default function CreateTaskModal({
             </Select>
           </Form.Item>
 
-          <Form.Item label="Planlanan Saat" name="plannedHours" style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}>
+          <Form.Item label="Planlanan Çalışma Saati" name="plannedHours" style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}>
             <InputNumber
               style={{ width: "100%" }}
               min={0}
@@ -951,7 +951,7 @@ export default function CreateTaskModal({
             />
           </Form.Item>
 
-          <Form.Item label="Gerçekleşen Saat" name="actualHours" style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}>
+          <Form.Item label="Gerçekleşen Çalışma Saati" name="actualHours" style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}>
             <InputNumber
               style={{ width: "100%" }}
               min={0}

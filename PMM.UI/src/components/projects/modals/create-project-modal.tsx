@@ -1019,7 +1019,7 @@ export default function CreateProjectModal({
                 <Input placeholder="Proje başlığını girin" size="middle" disabled={!!isViewMode} style={viewModeFieldStyle} />
               </Form.Item>
 
-              <Form.Item label="Planlanan Saat" name="plannedHours" style={formItemNoMarginStyle}>
+              <Form.Item label="Planlanan Çalışma Saati" name="plannedHours" style={formItemNoMarginStyle}>
                 <InputNumber
                   min={0}
                   max={10000}
@@ -1031,7 +1031,7 @@ export default function CreateProjectModal({
                 />
               </Form.Item>
 
-              <Form.Item label="Planlanan Başlangıç" name="plannedStartDate" style={formItemNoMarginStyle}>
+              <Form.Item label="Planlanan Başlangıç Tarihi" name="plannedStartDate" style={formItemNoMarginStyle}>
                 <DatePicker
                   placeholder="Başlangıç tarihi"
                   size="middle"
@@ -1041,7 +1041,7 @@ export default function CreateProjectModal({
                 />
               </Form.Item>
 
-              <Form.Item label="Planlanan Bitiş" name="plannedEndDate" style={formItemNoMarginStyle}>
+              <Form.Item label="Planlanan Bitiş Tarihi" name="plannedEndDate" style={formItemNoMarginStyle}>
                 <DatePicker
                   placeholder="Bitiş tarihi"
                   size="middle"
