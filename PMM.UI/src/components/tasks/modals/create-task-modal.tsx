@@ -958,9 +958,7 @@ export default function CreateTaskModal({
               step={0.5}
             />
           </Form.Item>
-        </div>
-
-        <Form.Item label="Etiketler" name="labels" style={formItemNoMarginStyle}>
+           <Form.Item label="Etiketler" name="labels" style={formItemNoMarginStyle}>
           <div className="space-y-2 flex flex-row gap-2">
             <MultiSelectSearch
               placeholder="Etiket ara ve seç..."
@@ -995,6 +993,7 @@ export default function CreateTaskModal({
             )}
           </div>
         </Form.Item>
+        </div>
 
         <Form.Item label="Açıklama" required name="description" style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? 'none' : 'auto' }}>
           <TextArea rows={4} />
