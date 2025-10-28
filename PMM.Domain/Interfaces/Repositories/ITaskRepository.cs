@@ -9,5 +9,6 @@ namespace PMM.Domain.Interfaces.Repositories
         Task<List<TaskEntity>> GetSubTasksWithLabelsAsync(int parentTaskId);
         Task<TaskEntity?> GetWithDependenciesAsync(int taskId);
         Task<List<TaskEntity>> GetByProjectIdAsync(int projectId);
+        Task<List<TaskEntity>> GetByUserIdAsync(int userId);
     }
 }
