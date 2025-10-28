@@ -130,6 +130,138 @@ const normalizeTaskOption = (task: any): SelectOption | null => {
   };
 };
 
+const resolveLabelColor = (label: any): string | undefined => {
+  return (
+    label?.color ??
+    label?.Color ??
+    label?.hexColor ??
+    label?.HexColor ??
+    label?.hex ??
+    label?.Hex ??
+    label?.colour ??
+    label?.Colour
+  );
+};
+
+const resolveLabelDescription = (label: any): string | undefined => {
+  return label?.description ?? label?.Description ?? label?.desc ?? label?.Desc;
+};
+
+const extractLabelIdentifier = (candidate: any): string | null => {
+  if (candidate === null || candidate === undefined) {
+    return null;
+  }
+
+  if (typeof candidate === "object" && !Array.isArray(candidate)) {
+    const value =
+      candidate?.id ??
+      candidate?.Id ??
+      candidate?.labelId ??
+      candidate?.LabelId ??
+      candidate?.value ??
+      candidate?.key;
+
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    return String(value);
+  }
+
+  const stringified = String(candidate);
+  if (!stringified || stringified === "null" || stringified === "undefined") {
+    return null;
+  }
+
+  return stringified;
+};
+
+const normalizeLabelOption = (label: any): MultiSelectSearchOption | null => {
+  if (!label) {
+    return null;
+  }
+
+  const identifier = extractLabelIdentifier(label);
+
+  if (!identifier) {
+    return null;
+  }
+
+  const resolvedName =
+    label?.name ??
+    label?.Name ??
+    label?.title ??
+    label?.Title ??
+    label?.label ??
+    label?.Label ??
+    `Label ${identifier}`;
+
+  return {
+    value: identifier,
+    label: resolvedName,
+    key: identifier,
+    color: resolveLabelColor(label),
+    description: resolveLabelDescription(label),
+    name: resolvedName,
+    ...label,
+  };
+};
+
+const resolveTaskLabelData = (task: any): {
+  ids: string[];
+  options: MultiSelectSearchOption[];
+} => {
+  const derivedIds: string[] = [];
+  const normalizedOptions: MultiSelectSearchOption[] = [];
+
+  const pushId = (value: any) => {
+    const identifier = extractLabelIdentifier(value);
+    if (!identifier) {
+      return;
+    }
+
+    if (!derivedIds.includes(identifier)) {
+      derivedIds.push(identifier);
+    }
+  };
+
+  const processSource = (source: any) => {
+    if (!source) {
+      return;
+    }
+
+    const evaluate = (item: any) => {
+      if (item && typeof item === "object" && !Array.isArray(item)) {
+        const normalized = normalizeLabelOption(item);
+        if (normalized) {
+          normalizedOptions.push(normalized);
+          pushId(normalized.value);
+          return;
+        }
+      }
+
+      pushId(item);
+    };
+
+    if (Array.isArray(source)) {
+      source.forEach(evaluate);
+      return;
+    }
+
+    evaluate(source);
+  };
+
+  processSource(task?.LabelIds);
+  processSource((task as any)?.labelIds);
+  processSource((task as any)?.Labels);
+  processSource((task as any)?.labels);
+
+  return {
+    ids: derivedIds,
+    options: mergeOptions([], normalizedOptions),
+  };
+};
+
 export default function CreateTaskModal({
   visible,
   onClose,
@@ -577,6 +709,7 @@ export default function CreateTaskModal({
     }
 
     if ((isEditMode || isViewMode) && currentTaskData) {
+      const { ids: resolvedLabelIds, options: resolvedLabelOptions } = resolveTaskLabelData(currentTaskData);
       const currentStatus = (currentTaskData as any)?.Status;
       let statusValue = TaskStatus.TODO;
       if (currentStatus === "InProgress") {
@@ -594,10 +727,66 @@ export default function CreateTaskModal({
         status: statusValue,
         plannedHours: currentTaskData?.PlannedHours ?? undefined,
         actualHours: currentTaskData?.ActualHours ?? undefined,
-        labels: (currentTaskData as any)?.LabelIds ?? [],
       });
 
-      setSelectedLabels((currentTaskData as any)?.LabelIds ?? []);
+      setSelectedLabels(resolvedLabelIds);
+
+      if (resolvedLabelOptions.length > 0 || resolvedLabelIds.length > 0) {
+        setLabelSelectOptions(prev => {
+          const fallbackOptions = resolvedLabelIds
+            .filter(id => !resolvedLabelOptions.some(option => String(option.value) === id))
+            .map(id => {
+              const existing = prev.find(option => String(option.value) === id);
+              if (existing) {
+                return existing;
+              }
+
+              return {
+                value: id,
+                label: id,
+                key: id,
+                name: id,
+              } as MultiSelectSearchOption;
+            });
+
+          const next = mergeOptions(
+            prev,
+            mergeOptions(resolvedLabelOptions, fallbackOptions)
+          );
+
+          if (next.length === prev.length) {
+            const prevMap = new Map(
+              prev.map(option => [String(option.value), option])
+            );
+
+            let hasDifference = false;
+
+            for (const option of next) {
+              const key = String(option.value);
+              const existing = prevMap.get(key);
+              if (!existing) {
+                hasDifference = true;
+                break;
+              }
+
+              if (
+                existing.label !== option.label ||
+                (existing as any).color !== (option as any).color ||
+                (existing as any).description !== (option as any).description
+              ) {
+                hasDifference = true;
+                break;
+              }
+            }
+
+            if (!hasDifference) {
+              return prev;
+            }
+          }
+
+          return next;
+        });
+      }
 
       if (currentTaskData?.ProjectId) {
         const option: SelectOption = {
@@ -619,7 +808,11 @@ export default function CreateTaskModal({
           const exists = prev.some(existing => existing.value === option.value);
           return exists ? prev : [...prev, option];
         });
-        setSelectedUsers(currentTaskData?.AssignedUsers);
+        setSelectedUsers(
+          Array.isArray(currentTaskData?.AssignedUsers)
+            ? currentTaskData.AssignedUsers
+            : []
+        );
 
         // fetchParentTasks("", Number((currentTaskData as any).ProjectId)); // Removed to avoid API call in modal
       }
@@ -645,6 +838,8 @@ export default function CreateTaskModal({
     } else if (visible) {
       form.resetFields();
       setSelectedUsers([]);
+      setSelectedLabels([]);
+      setLabelSelectOptions([]);
     }
   }, [
     visible,

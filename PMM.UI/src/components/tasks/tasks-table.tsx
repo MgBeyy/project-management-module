@@ -1,4 +1,4 @@
-import { Table } from "antd";
+import { Table, Tag, Tooltip } from "antd";
 import { useEffect } from "react";
 import type { ColumnsType } from "antd/es/table";
 import { useTasksStore } from "@/store/zustand/tasks-store";
@@ -55,7 +55,29 @@ export default function TasksCustomTable() {
           UpdatedById: item?.updatedById || null,
           PlannedHours: item?.plannedHours || null,
           ActualHours: item?.actualHours || null,
-          AssignedUsers: item?.assignedUsers || [],
+          AssignedUsers: Array.isArray(item?.assignedUsers)
+            ? item.assignedUsers
+            : [],
+          Labels: Array.isArray(item?.labels) ? item.labels : [],
+          LabelIds: (() => {
+            if (Array.isArray(item?.labelIds)) {
+              return item.labelIds
+                .map((id: any) =>
+                  id !== null && id !== undefined ? String(id) : null
+                )
+                .filter((id: string | null): id is string => Boolean(id));
+            }
+            if (Array.isArray(item?.labels)) {
+              return item.labels
+                .map((label: any) =>
+                  label?.id !== null && label?.id !== undefined
+                    ? String(label.id)
+                    : null
+                )
+                .filter((id: string | null): id is string => Boolean(id));
+            }
+            return [];
+          })(),
         }));
             
       setTasks(transformedData);
@@ -122,6 +144,38 @@ export default function TasksCustomTable() {
         showTitle: false,
       },
       render: (text: string) => <span title={text}>{text}</span>,
+    },
+    {
+      title: <HeaderWithTooltip title="Etiketler" maxWidth={200} />,
+      dataIndex: "Labels",
+      key: "Labels",
+      width: 130,
+      render: (labels: any[]) => (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+          {Array.isArray(labels) && labels.length > 0 ? (
+            labels.map((label: any) => (
+              <Tooltip
+                key={label?.id ?? label?.name}
+                title={label?.description || label?.name}
+                placement="top"
+              >
+                <Tag
+                  color={label?.color}
+                  style={{
+                    margin: 0,
+                    borderRadius: "4px",
+                    cursor: "default",
+                  }}
+                >
+                  {label?.name ?? "-"}
+                </Tag>
+              </Tooltip>
+            ))
+          ) : (
+            <span style={{ color: "#999" }}>-</span>
+          )}
+        </div>
+      ),
     },
     {
       title: <HeaderWithTooltip title="Proje Kodu" maxWidth={100} />,
