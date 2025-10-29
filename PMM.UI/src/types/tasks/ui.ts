@@ -1,39 +1,29 @@
 // src/types/tasks/ui.ts
 
+import { IdNameDto } from "../common";
+import { LabelDto } from "../label/api";
+
 export type TaskModalMode = "create" | "edit" | "view";
 
-export interface TaskModalLabel {
-  id: string | number;
-  name: string;
-  color?: string;
-  description?: string;
-}
-
-export interface TaskModalUser {
-  id: string | number;
-  name: string;
-}
-
 export interface TaskModalTask {
-  Id: number | null;
-  Code?: string | null;
-  ProjectId?: number | null;
-  ProjectCode?: string | null;
-  ParentTaskId?: number | null;
-  ParentTaskCode?: string | null;
-  ParentTaskTitle?: string | null;
-  Title?: string | null;
-  Description?: string | null;
-  Status?: string | null;
-  CreatedAt?: string | null;
-  CreatedById?: number | null;
-  UpdatedAt?: string | null;
-  UpdatedById?: number | null;
-  PlannedHours?: number | null;
-  ActualHours?: number | null;
-  AssignedUsers?: TaskModalUser[];
-  Labels?: TaskModalLabel[];
-  LabelIds?: Array<string | number>;
+  id: number | null;
+  code?: string | null;
+  projectId?: number | null;
+  projectCode?: string | null;
+  parentTaskId?: number | null;
+  parentTaskCode?: string | null;
+  parentTaskTitle?: string | null;
+  title?: string | null;
+  description?: string | null;
+  status?: string | null;
+  createdAt?: number | null;
+  createdById?: number | null;
+  updatedAt?: number | null;
+  updatedById?: number | null;
+  plannedHours?: number | null;
+  actualHours?: number | null;
+  assignedUsers?: IdNameDto[];
+  labels?: LabelDto[];
 }
 
 export interface TaskModalProps {
@@ -42,4 +32,10 @@ export interface TaskModalProps {
   onSuccess?: () => void;
   mode?: TaskModalMode;
   taskData?: TaskModalTask | null;
+}
+export enum TaskStatus {
+  TODO = "Todo",
+  IN_PROGRESS = "InProgress",
+  DONE = "Done",
+  INACTIVE = "InActive",
 }

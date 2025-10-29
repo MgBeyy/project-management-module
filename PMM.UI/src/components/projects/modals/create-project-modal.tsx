@@ -17,7 +17,7 @@ import {
   AiOutlineEdit
 } from "react-icons/ai";
 import type { InputNumberProps, SelectProps } from "antd";
-import MultiSelectSearch, { areOptionsEqual, mergeOptions, MultiSelectOption } from "../multi-select-search";
+import MultiSelectSearch, { areOptionsEqual, mergeOptions, MultiSelectOption } from "../../common/multi-select-search";
 import { getClientsForSelect } from "@/services/projects/get-clients-for-select";
 import { createProject } from "@/services/projects/create-project";
 import { showNotification } from "@/utils/notification";
@@ -29,42 +29,17 @@ import type {
 } from "@/types/projects";
 import type {
   DetailedProjectDto,
-  LabelDto,
   ProjectDto,
   ProjectPriority,
   ProjectStatus,
   ProjectAssignmentRole,
 } from "@/types/projects";
-import CreateLabelModal from "./create-label-modal";
 import ProjectFiles from "../files/ProjectFiles";
 import { normalizePriority, normalizeStatus, priorityOptions, statusOptions, userRoleOptions } from "@/types/projects/helpers";
 import { toMillis, fromMillis, coerceNumberArray } from "@/utils/retype";
-
-
-
-
-const resolveLabelColor = (label: LabelDto): string =>  label?.color ?? "#1890ff";
-
-const resolveLabelDescription = (label: LabelDto): string =>label?.description ?? "";
-
-const normalizeLabelOption = (label: LabelDto): MultiSelectOption | null => {
-  if (!label) return null;
-  const id = label?.id;
-  if (id === undefined || id === null) return null;
-
-  const stringId = String(id);
-  const resolvedName = label?.name;
-
-  return {
-    ...label,
-    value: stringId,
-    label: resolvedName?? "",
-    key: stringId,
-    color: resolveLabelColor(label),
-    description: resolveLabelDescription(label),
-    name: resolvedName,
-  };
-};
+import CreateLabelModal from "@/components/label/create-label-modal";
+import { normalizeLabelOption } from "@/types/label/ui";
+import { LabelDto } from "@/types";
 
 const normalizeProjectOption = (project: any): MultiSelectOption | null => {
   if (!project) return null;
@@ -75,7 +50,7 @@ const normalizeProjectOption = (project: any): MultiSelectOption | null => {
   const resolvedTitle = project?.title;
   const resolvedLabel = resolvedCode && resolvedTitle
     ? `${resolvedCode} - ${resolvedTitle}`
-      : resolvedTitle ?? resolvedCode ?? `Project ${stringId}`;
+    : resolvedTitle ?? resolvedCode ?? `Project ${stringId}`;
   return {
     value: stringId,
     label: resolvedLabel,
@@ -318,7 +293,7 @@ export default function CreateProjectModal({
       // Labels -> normalize to options list (to show colored tags)
       const finalLabelOptions = (fullProjectDetails?.labels || [])
         .map(normalizeLabelOption)
-        .filter((o: MultiSelectOption | null): o is MultiSelectOption => Boolean(o));
+        .filter((o): o is MultiSelectOption => Boolean(o));
 
       // Client
       const initialClientId: number | undefined = fullProjectDetails?.clientId ?? undefined;
@@ -326,7 +301,7 @@ export default function CreateProjectModal({
       // Set form values
 
       form.setFieldsValue({
-        code: fullProjectDetails?.code ,
+        code: fullProjectDetails?.code,
         title: fullProjectDetails?.title,
         plannedStartDate: fromMillis(fullProjectDetails?.plannedStartDate),
         plannedEndDate: fromMillis(fullProjectDetails?.plannedDeadline),

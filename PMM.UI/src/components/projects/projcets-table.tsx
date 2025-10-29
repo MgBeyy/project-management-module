@@ -10,7 +10,7 @@ import {
   useProjectsStore,
 } from "@/store/zustand/projects-store";
 import { GetProjects } from "@/services/projects/get-projects";
-import Spinner from "../spinner";
+import Spinner from "../common/spinner";
 import { fromMillis } from "@/utils/retype";
 
 type SortableColumnKey = ProjectSortKey;

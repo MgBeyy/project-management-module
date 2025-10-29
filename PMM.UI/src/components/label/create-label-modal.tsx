@@ -1,9 +1,8 @@
 import { Button, Form, Input, Modal, ColorPicker } from "antd";
 import { useState, useEffect } from "react";
-import { createLabel } from "@/services/projects/create-label";
-import { updateLabel } from "@/services/projects/update-label";
+import { createLabel } from "@/services/labels/create-label";
+import { updateLabel } from "@/services/labels/update-label";
 import { showNotification } from "@/utils/notification";
-import type { MultiSelectOption } from "../multi-select-search";
 import { CreateLabelModalProps } from "@/types/projects/ui";
 
 
@@ -72,18 +71,8 @@ export default function CreateLabelModal({
       }
 
       // Extract label entity from response
-      const labelEntity = extractLabelEntity(response);
-      const resolvedId = labelEntity?.id ?? labelEntity?.Id ?? initialData?.id ?? null;
 
-      const normalizedOption = normalizeLabelOption({
-        ...labelEntity,
-        id: labelEntity?.id ?? labelEntity?.Id ?? resolvedId,
-        color: labelEntity?.color ?? color,
-        description: labelEntity?.description ?? values.labelDescription ?? "",
-        name: labelEntity?.name ?? values.labelName,
-      });
-
-      onSuccess?.(normalizedOption);
+      onSuccess?.(response);
       handleCancel();
     } catch (error: any) {
       console.error("Label kaydetme hatası:", error);
@@ -199,72 +188,3 @@ export default function CreateLabelModal({
     </Modal>
   );
 }
-
-// Helper functions (moved from parent component)
-const extractLabelEntity = (response: any) => {
-  if (!response) {
-    return null;
-  }
-
-  const candidate =
-    response?.result?.data ||
-    response?.data?.result ||
-    response?.data?.data ||
-    response?.result ||
-    response?.data ||
-    response;
-
-  if (Array.isArray(candidate)) {
-    return candidate[0] || null;
-  }
-
-  return candidate;
-};
-
-const resolveLabelColor = (label: any): string | undefined => {
-  return (
-    label?.color ??
-    label?.Color ??
-    label?.hexColor ??
-    label?.HexColor ??
-    label?.hex ??
-    label?.Hex ??
-    label?.colour ??
-    label?.Colour
-  );
-};
-
-const resolveLabelDescription = (label: any): string | undefined => {
-  return label?.description ?? label?.Description ?? label?.desc ?? label?.Desc;
-};
-
-const normalizeLabelOption = (label: any): MultiSelectOption | null => {
-  if (!label) {
-    return null;
-  }
-
-  const id =
-    label?.id ?? label?.Id ?? label?.labelId ?? label?.value ?? label?.key;
-
-  if (id === undefined || id === null) {
-    return null;
-  }
-
-  const stringId = String(id);
-  const resolvedName =
-    label?.name ||
-    label?.title ||
-    label?.label ||
-    label?.Label ||
-    `Label ${stringId}`;
-
-  return {
-    value: stringId,
-    label: resolvedName,
-    key: stringId,
-    color: resolveLabelColor(label),
-    description: resolveLabelDescription(label),
-    name: resolvedName,
-    ...label,
-  };
-};

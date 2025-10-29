@@ -27,11 +27,8 @@ export type {
 } from "./activities";
 
 export type {
-  ClientDto,
-  CreateLabelPayload,
   CreateProjectPayload,
   DetailedProjectDto,
-  LabelDto,
   ProjectDto,
   ProjectAssignmentItemPayload,
   ProjectAssignmentRole,
@@ -39,7 +36,6 @@ export type {
   ProjectPagedResult,
   ProjectPriority,
   ProjectStatus,
-  UpdateLabelPayload,
   UpdateProjectPayload,
 } from "./projects";
 
@@ -63,3 +59,6 @@ export type {
   ProjectFilePagedResult,
   UploadProjectFilePayload,
 } from "./files";
+
+export type * from "./label";
+

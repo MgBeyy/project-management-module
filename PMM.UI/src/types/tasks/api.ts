@@ -6,7 +6,7 @@ import type {
   Nullable,
   PagedResult,
 } from "../common";
-import type { LabelDto } from "../projects";
+import { LabelDto } from "../label/api";
 
 export type TaskStatus =
   | "Todo"
@@ -61,4 +61,42 @@ export interface UpdateTaskPayload {
   labelIds?: Nullable<number[]>;
   assignedUserIds?: Nullable<number[]>;
   isLast?: boolean;
+}
+
+export type TaskQuery = {
+  page?: number;
+  pageSize?: number;
+  id?: number;
+  projectId?: number;
+  projectCode?: string;
+  parentTaskId?: number;
+  title?: string;
+  description?: string;
+  status?: TaskStatus;
+  plannedHours?: number;
+  plannedHoursMin?: number;
+  plannedHoursMax?: number;
+  actualHours?: number;
+  actualHoursMin?: number;
+  actualHoursMax?: number;
+  createdAt?: number;
+  createdAtMin?: number;
+  createdAtMax?: number;
+  createdById?: number;
+  updatedAt?: number;
+  updatedAtMin?: number;
+  updatedAtMax?: number;
+  updatedById?: number;
+  assignedUserId?: number;
+  search?: string;
+  sortBy?: string;
+  sortDesc?: boolean;
+};
+
+export interface TaskListDto {
+  data: TaskDto[];
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  totalRecords: number;
 }

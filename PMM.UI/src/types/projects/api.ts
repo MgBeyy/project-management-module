@@ -7,6 +7,7 @@ import type {
   Nullable,
   PagedResult,
 } from "../common";
+import { LabelDto } from "../label/api";
 import type { TaskDto } from "../tasks";
 import { ClientDto } from "../users";
 
@@ -19,16 +20,7 @@ export type ProjectStatus =
 
 export type ProjectPriority = "High" | "Regular" | "Low";
 
-export interface LabelDto {
-  id: number;
-  name: string | null;
-  color: string | null;
-  description: string | null;
-  createdAt: DateTimeString;
-  createdById: number;
-  updatedAt: Nullable<DateTimeString>;
-  updatedById: Nullable<number>;
-}
+
 
 
 
@@ -147,10 +139,3 @@ export interface DetailedProjectDto {
   updatedByUser: IdNameDto | null;
 }
 
-export interface CreateLabelPayload {
-  name: string;
-  color?: Nullable<string>;
-  description?: Nullable<string>;
-}
-
-export type UpdateLabelPayload = CreateLabelPayload;
