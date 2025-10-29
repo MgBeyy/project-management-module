@@ -8,7 +8,6 @@ export async function createProject(data: CreateProjectPayload) {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      timeout: 15000,
     });
     return response.data;
   } catch (error) {

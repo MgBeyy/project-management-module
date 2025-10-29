@@ -1,13 +1,13 @@
+import { CreateLabelPayload } from "@/types";
 import apiClient from "../api-client";
 
-export async function createLabel(labelData: any) {
+export async function createLabel(labelData: CreateLabelPayload) {
   try {
     const response = await apiClient.post("Label", labelData, {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      timeout: 10000,
     });
 
     return response.data;

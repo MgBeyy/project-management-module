@@ -36,14 +36,14 @@ export interface ClientDto {
 
 export interface ProjectDto {
   id: number;
-  code: string | null;
-  title: string | null;
-  plannedStartDate: Nullable<DateString>;
-  plannedDeadline: Nullable<DateString>;
+  code: string;
+  title: string;
+  plannedStartDate: Nullable<number>;
+  plannedDeadline: Nullable<number>;
   plannedHours: Nullable<number>;
   actualHours: Nullable<number>;
-  startedAt: Nullable<DateString>;
-  endAt: Nullable<DateString>;
+  startedAt: Nullable<number>;
+  endAt: Nullable<number>;
   status: ProjectStatus;
   priority: ProjectPriority;
   parentProjectIds: Nullable<number[]>;
@@ -53,6 +53,14 @@ export interface ProjectDto {
   createdAt: DateTimeString;
   updatedById: Nullable<number>;
   updatedAt: Nullable<DateTimeString>;
+}
+
+export interface ProjectListDto {
+  data: ProjectDto[];
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  totalRecords: number;
 }
 
 export type ProjectPagedResult = PagedResult<ProjectDto>;

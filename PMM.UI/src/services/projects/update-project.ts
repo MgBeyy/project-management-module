@@ -8,7 +8,6 @@ export async function updateProject(projectId: number, data: UpdateProjectPayloa
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      timeout: 15000,
     });
 
     return response.data;

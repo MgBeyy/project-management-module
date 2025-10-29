@@ -7,7 +7,6 @@ export async function getClientsForSelect(searchText: string, url: string) {
         Search: searchText.trim(),
         limit: 50,
       },
-      timeout: 5000,
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",

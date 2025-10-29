@@ -4,6 +4,5 @@
 export * from "./api";
 export type {
   ProjectModalMode,
-  ProjectModalProject,
   ProjectModalProps,
 } from "./ui";

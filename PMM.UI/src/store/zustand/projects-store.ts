@@ -1,49 +1,23 @@
+import { ProjectDto } from "@/types";
 import { create } from "zustand";
 
 export type ProjectSortKey =
-  | "Code"
-  | "Labels"
-  | "Title"
-  | "PlannedStartDate"
-  | "PlannedDeadLine"
-  | "PlannedHours"
-  | "StartedAt"
-  | "EndAt"
-  | "Status"
-  | "Priority";
+  | "code"
+  | "labels"
+  | "title"
+  | "plannedStartDate"
+  | "plannedDeadline"
+  | "plannedHours"
+  | "startedAt"
+  | "endAt"
+  | "status"
+  | "priority";
 
 export type ProjectSortOrder = "ascend" | "descend" | null;
 
-export interface ProjectData {
-  key: number;
-  Id: number | null;
-  Code: string;
-  Title: string;
-  Labels?: Array<{
-    id?: number | string;
-    name?: string;
-    description?: string;
-    color?: string;
-  }>;
-  LabelIds?: string[];
-  PlannedStartDate: string;
-  PlannedDeadLine: string;
-  PlannedHours: number;
-  StartedAt: string | null;
-  EndAt: string | null;
-  Status: string;
-  Priority: string;
-  // Raw timestamp values for editing
-  rawPlannedStartDate?: number | null;
-  rawPlannedDeadline?: number | null;
-  rawStartedAt?: number | null;
-  rawEndAt?: number | null;
-  rawStatus?: number;
-}
-
 interface ProjectsState {
-  projects: ProjectData[];
-  selectedProject: ProjectData | null;
+  projects: ProjectDto[];
+  selectedProject: ProjectDto | null;
   currentPage: number;
   pageSize: number;
   totalItems: number;
@@ -54,8 +28,8 @@ interface ProjectsState {
   sortOrder: ProjectSortOrder;
 
   // Actions
-  setProjects: (projects: ProjectData[]) => void;
-  setSelectedProject: (project: ProjectData | null) => void;
+  setProjects: (projects: ProjectDto[]) => void;
+  setSelectedProject: (project: ProjectDto | null) => void;
   setCurrentPage: (page: number) => void;
   setPageSize: (size: number) => void;
   setTotalItems: (total: number) => void;

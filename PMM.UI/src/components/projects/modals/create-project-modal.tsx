@@ -130,7 +130,7 @@ export default function CreateProjectModal({
 
   const isEditMode = mode === "edit" && !!projectData;
   const isViewMode = mode === "view" && !!projectData;
-  const resolvedProjectId = fullProjectDetails?.id ?? projectData?.Id ?? null;
+  const resolvedProjectId = fullProjectDetails?.id;
 
   const viewModeFieldStyle: CSSProperties | undefined = isViewMode
     ? { backgroundColor: "#f7f9fc", color: "#1f1f1f", borderColor: "#d9d9d9" }
@@ -295,7 +295,7 @@ export default function CreateProjectModal({
           .map((l: LabelDto) => String(l.id))
           .filter(Boolean);
       } else {
-        derivedLabelIds = (projectData.LabelIds || [])
+        derivedLabelIds = (projectData.labels?.map((l) => String(l.id)) || [])
           .map((id) => (id !== null && id !== undefined ? String(id) : null))
           .filter((id): id is string => Boolean(id));
       }
@@ -327,16 +327,15 @@ export default function CreateProjectModal({
       console.log(fullProjectDetails?.startedAt);
 
       form.setFieldsValue({
-        code: fullProjectDetails?.code ?? projectData.Code,
-        title: fullProjectDetails?.title ?? projectData.Title,
-        plannedStartDate: fromMillis(fullProjectDetails?.plannedStartDate) ?? fromISODate(projectData.PlannedStartDate ?? undefined),
-        plannedEndDate: fromMillis(fullProjectDetails?.plannedDeadline) ?? fromISODate(projectData.PlannedDeadLine ?? undefined),
-        plannedHours: fullProjectDetails?.plannedHours ?? projectData.PlannedHours ?? undefined,
-        startedAt: fromMillis(fullProjectDetails?.startedAt) ?? fromISODate(projectData.StartedAt ?? undefined),
-        endAt: fromMillis(fullProjectDetails?.endAt) ?? fromISODate(projectData.EndAt ?? undefined),
-
-        status: normalizeStatus(fullProjectDetails?.status ?? (projectData?.Status as any)) ?? "Planned",
-        priority: normalizePriority(fullProjectDetails?.priority ?? (projectData?.Priority as any)) ?? "Regular",
+        code: fullProjectDetails?.code ,
+        title: fullProjectDetails?.title,
+        plannedStartDate: fromMillis(fullProjectDetails?.plannedStartDate),
+        plannedEndDate: fromMillis(fullProjectDetails?.plannedDeadline),
+        plannedHours: fullProjectDetails?.plannedHours,
+        startedAt: fromMillis(fullProjectDetails?.startedAt),
+        endAt: fromMillis(fullProjectDetails?.endAt),
+        status: normalizeStatus(fullProjectDetails?.status),
+        priority: normalizePriority(fullProjectDetails?.priority),
 
         customer: initialClientId,
         parentProjects: derivedParentProjectIds,
@@ -394,7 +393,7 @@ export default function CreateProjectModal({
 
   // fetch details
   useEffect(() => {
-    if (!visible || (!isEditMode && !isViewMode) || !projectData?.Id) {
+    if (!visible || (!isEditMode && !isViewMode) || !projectData?.id) {
       setFullProjectDetails(null);
       setIsLoadingDetails(false);
       return;
@@ -402,7 +401,7 @@ export default function CreateProjectModal({
     const fetchProjectDetails = async () => {
       setIsLoadingDetails(true);
       try {
-        const details = (await getProjectById(String(projectData.Id))) as unknown as DetailedProjectDto; // service naming kept
+        const details = (await getProjectById(String(projectData.id))) as DetailedProjectDto;
         setFullProjectDetails(details);
       } catch (error) {
         console.error("Proje detayları çekilirken hata:", error);
@@ -413,7 +412,7 @@ export default function CreateProjectModal({
       }
     };
     fetchProjectDetails();
-  }, [visible, isEditMode, isViewMode, projectData?.Id]);
+  }, [visible, isEditMode, isViewMode, projectData?.id]);
 
   /** Remote searches */
   const handleCustomerSearch = async (searchText: string) => {
@@ -546,7 +545,7 @@ export default function CreateProjectModal({
   const handleSubmit = async (values: any) => {
     setIsSubmitting(true);
     try {
-      if (isEditMode && projectData?.Id) {
+      if (isEditMode && projectData?.id) {
         const updateData = {
           title: values.title as string,
           plannedStartDate: toMillis(values.plannedStartDate),
@@ -567,7 +566,7 @@ export default function CreateProjectModal({
 
         console.log(updateData);
 
-        await updateProject(projectData.Id, updateData);
+        await updateProject(projectData.id, updateData);
         showNotification.success("Proje Güncellendi", " Proje başarıyla güncellendi!");
       } else {
         const createData = {
@@ -614,9 +613,9 @@ export default function CreateProjectModal({
       <Modal
         title={
           isViewMode
-            ? `Proje Detayları: ${projectData?.Code}`
+            ? `Proje Detayları: ${fullProjectDetails?.code}`
             : isEditMode
-              ? `Proje Güncelle: ${projectData?.Code}`
+              ? `Proje Güncelle: ${fullProjectDetails?.code}`
               : "Yeni Proje Oluştur"
         }
         open={visible}

@@ -10,8 +10,8 @@ import {
   useProjectsStore,
 } from "@/store/zustand/projects-store";
 import { GetProjects } from "@/services/projects/get-projects";
-import { formatDate, mapStatusToString } from "@/utils/retype";
 import Spinner from "../spinner";
+import { fromMillis } from "@/utils/retype";
 
 type SortableColumnKey = ProjectSortKey;
 type SortOrder = ProjectSortOrder;
@@ -133,49 +133,7 @@ export default function CustomTable() {
           ...sortParams,
         },
       });
-      
-      const transformedData = (result.data || [])
-        .filter((item: any) => item != null)
-        .map((item: any, index: number) => {
-          const labelsArray = Array.isArray(item?.labels) ? item.labels : [];
-          const normalizedLabelIds = Array.isArray(item?.labelIds)
-            ? item.labelIds
-                .map((id: any) =>
-                  id !== null && id !== undefined ? String(id) : null
-                )
-                .filter((id: string | null): id is string => Boolean(id))
-            : labelsArray
-                .map((label: any) =>
-                  label?.id !== null && label?.id !== undefined
-                    ? String(label.id)
-                    : null
-                )
-                .filter((id: string | null): id is string => Boolean(id));
-
-          return {
-            key: index + 1,
-            Id: item?.id || null,
-            Code: item?.code || "N/A",
-            Labels: labelsArray,
-            LabelIds: normalizedLabelIds,
-            Title: item?.title || "Başlık Yok",
-            PlannedStartDate: formatDate(item?.plannedStartDate),
-            PlannedDeadLine: formatDate(item?.plannedDeadline || item?.plannedDeadLine),
-            PlannedHours: typeof item?.plannedHours === "number" ? item.plannedHours : (typeof item?.plannedHours === "number" ? item.plannedHours : 0),
-            StartedAt: formatDate(item?.startedAt),
-            EndAt: formatDate(item?.endAt),
-            Status: mapStatusToString(item?.status),
-            Priority: item?.priority || "Düşük",
-            // Store raw values for editing
-            rawPlannedStartDate: item?.plannedStartDate || null,
-            rawPlannedDeadline: item?.plannedDeadline || item?.plannedDeadLine || null,
-            rawStartedAt: item?.startedAt || null,
-            rawEndAt: item?.endAt || null,
-            rawStatus: typeof item?.status === "number" ? item.status : null,
-          };
-        });
-      
-      setProjects(transformedData);
+      setProjects(result.data || []);
       setTotalItems(result.totalRecords || 0);
       setIsLoading(false);
     } catch (error) {
@@ -191,9 +149,9 @@ export default function CustomTable() {
 
   const columns: ColumnsType<any> = [
     {
-      title: <SortableHeader title="Kod" maxWidth={130} dataIndex="Code" />,
-      dataIndex: "Code",
-      key: "Code",
+      title: <SortableHeader title="Kod" maxWidth={130} dataIndex="code" />,
+      dataIndex: "code",
+      key: "code",
       width: 130,
       ellipsis: {
         showTitle: false,
@@ -205,9 +163,9 @@ export default function CustomTable() {
       ),
     },
     {
-      title: <SortableHeader title="Etiketler" maxWidth={200} dataIndex="Labels" />,
-      dataIndex: "Labels",
-      key: "Labels",
+      title: <SortableHeader title="Etiketler" maxWidth={200} dataIndex="labels" />,
+      dataIndex: "labels",
+      key: "labels",
       width: 120,
       render: (labels: any[]) => (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
@@ -237,9 +195,9 @@ export default function CustomTable() {
       ),
     },
     {
-      title: <SortableHeader title="Başlık" maxWidth={250} dataIndex="Title" />,
-      dataIndex: "Title",
-      key: "Title",
+      title: <SortableHeader title="Başlık" maxWidth={250} dataIndex="title" />,
+      dataIndex: "title",
+      key: "title",
       width: 250,
       ellipsis: {
         showTitle: false,
@@ -251,89 +209,101 @@ export default function CustomTable() {
         <SortableHeader
           title="Planlanan Başlangıç Tarihi"
           maxWidth={170}
-          dataIndex="PlannedStartDate"
+          dataIndex="plannedStartDate"
         />
       ),
-      dataIndex: "PlannedStartDate",
-      key: "PlannedStartDate",
+      dataIndex: "plannedStartDate",
+      key: "plannedStartDate",
       width: 170,
       ellipsis: {
         showTitle: false,
       },
-      render: (text: string) => <span title={text}>{text}</span>,
+      render: (text: string) => <span title={text}>{fromMillis(text)?.format('DD.MM.YYYY')}</span>,
     },
     {
       title: (
         <SortableHeader
           title="Planlanan Bitiş Tarihi"
           maxWidth={170}
-          dataIndex="PlannedDeadLine"
+          dataIndex="plannedDeadline"
         />
       ),
-      dataIndex: "PlannedDeadLine",
-      key: "PlannedDeadLine",
+      dataIndex: "plannedDeadline",
+      key: "plannedDeadline",
       width: 170,
       ellipsis: {
         showTitle: false,
       },
-      render: (text: string) => <span title={text}>{text}</span>,
+      render: (text: string) => <span title={text}>{fromMillis(text)?.format('DD.MM.YYYY')}</span>,
     },
     {
-      title: <SortableHeader title="Planlanan Çalışma Saati" maxWidth={120} dataIndex="PlannedHours" />,
-      dataIndex: "PlannedHours",
-      key: "PlannedHours",
+      title: <SortableHeader title="Planlanan Çalışma Saati" maxWidth={120} dataIndex="plannedHours" />,
+      dataIndex: "plannedHours",
+      key: "plannedHours",
       width: 120,
       ellipsis: {
         showTitle: false,
       },
       render: (text: number) => (
-        <span title={text?.toString()}>{text} saat</span>
+        <span title={text?.toString()}>{text===0 || text===null ? "-" : text} saat</span>
       ),
     },
     {
-      title: <SortableHeader title="Başlangıç Zamanı" maxWidth={150} dataIndex="StartedAt" />,
-      dataIndex: "StartedAt",
-      key: "StartedAt",
+      title: <SortableHeader title="Başlangıç Zamanı" maxWidth={150} dataIndex="startedAt" />,
+      dataIndex: "startedAt",
+      key: "startedAt",
       width: 150,
       ellipsis: {
         showTitle: false,
       },
       render: (text: string) => (
-        <span title={text || "Başlanmadı"}>{text || "-"}</span>
+        <span title={text || "Başlanmadı"}>{fromMillis(text)?.format('DD.MM.YYYY') || "Başlanmadı"}</span>
       ),
     },
     {
-      title: <SortableHeader title="Bitiş Zamanı" maxWidth={150} dataIndex="EndAt" />,
-      dataIndex: "EndAt",
-      key: "EndAt",
+      title: <SortableHeader title="Bitiş Zamanı" maxWidth={150} dataIndex="endAt" />,
+      dataIndex: "endAt",
+      key: "endAt",
       width: 150,
       ellipsis: {
         showTitle: false,
       },
       render: (text: string) => (
-        <span title={text || "Devam ediyor"}>{text || "-"}</span>
+        <span title={text || "Devam ediyor"}>{fromMillis(text)?.format('DD.MM.YYYY') ?? ""}</span>
       ),
     },
     {
-      title: <SortableHeader title="Durum" maxWidth={120} dataIndex="Status" />,
-      dataIndex: "Status",
-      key: "Status",
+      title: <SortableHeader title="Durum" maxWidth={120} dataIndex="status" />,
+      dataIndex: "status",
+      key: "status",
       width: 120,
       ellipsis: {
         showTitle: false,
       },
       render: (text: string) => {
+          const label =
+            text === "Active"
+              ? "Aktif"
+              : text === "Inactive"
+                ? "Pasif"
+                : text === "Planned"
+                  ? "Planlandı"
+                  : text === "Completed"
+                    ? "Tamamlandı"
+                    : text === "WaitingForApproval"
+                      ? "Onay Bekliyor"
+                  : "Bilinmiyor";
         return (
           <span title={text} style={{ fontWeight: "bold" }}>
-            {text}
+            {label}
           </span>
         );
       },
     },
     {
-      title: <SortableHeader title="Öncelik" maxWidth={100} dataIndex="Priority" />,
-      dataIndex: "Priority",
-      key: "Priority",
+      title: <SortableHeader title="Öncelik" maxWidth={100} dataIndex="priority" />,
+      dataIndex: "priority",
+      key: "priority",
       width: 100,
       ellipsis: {
         showTitle: false,
@@ -391,7 +361,7 @@ export default function CustomTable() {
             },
           }}
           onRow={(record, rowIndex) => {
-            const isSelected = selectedProject?.key === record.key;
+            const isSelected = selectedProject?.id === record.id;
 
             return {
               onClick: () => {

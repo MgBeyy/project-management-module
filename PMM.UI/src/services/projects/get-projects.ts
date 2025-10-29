@@ -1,3 +1,4 @@
+import { ProjectListDto } from "@/types";
 import apiClient from "../api-client";
 
 export enum ProjectStatus {
@@ -29,7 +30,10 @@ type ProjectQuery = {
   SortDesc?: boolean;
 };
 
-export async function GetProjects({ query }: { query: ProjectQuery }) {
+
+
+
+export async function GetProjects({ query }: { query: ProjectQuery }) : Promise<ProjectListDto> {
   try {
     const queryParams = new URLSearchParams();
 
