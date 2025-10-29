@@ -1,7 +1,7 @@
 ﻿import apiClient from "../api-client";
-import type { CreateProjectPayload } from "@/types";
+import type { CreateProjectPayload, ProjectDto } from "@/types";
 
-export async function createProject(data: CreateProjectPayload) {
+export async function createProject(data: CreateProjectPayload) : Promise<ProjectDto> {
   try {
     const response = await apiClient.post("/Project", data, {
       headers: {

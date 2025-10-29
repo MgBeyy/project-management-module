@@ -13,3 +13,15 @@ export interface ProjectModalProps {
   mode?: ProjectModalMode;
 }
 
+export interface CreateLabelModalProps {
+  visible: boolean;
+  mode: 'create' | 'edit';
+  initialData?: {
+    id?: string;
+    name?: string;
+    description?: string;
+    color?: string;
+  };
+  onSuccess?: (labelData: any) => void;
+  onCancel: () => void;
+}

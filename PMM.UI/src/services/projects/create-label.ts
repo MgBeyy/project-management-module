@@ -1,7 +1,7 @@
-import { CreateLabelPayload } from "@/types";
+import { CreateLabelPayload, LabelDto } from "@/types";
 import apiClient from "../api-client";
 
-export async function createLabel(labelData: CreateLabelPayload) {
+export async function createLabel(labelData: CreateLabelPayload) : Promise<LabelDto> {
   try {
     const response = await apiClient.post("Label", labelData, {
       headers: {
@@ -11,8 +11,7 @@ export async function createLabel(labelData: CreateLabelPayload) {
     });
 
     return response.data;
-  } catch (error) {
-    console.error("Label oluşturulurken hata oluştu:", error);
-    return null;
+  } catch (error: any) {
+    return error.response;
   }
 }

@@ -1,7 +1,7 @@
-import { UpdateLabelPayload } from "@/types";
+import { LabelDto, UpdateLabelPayload } from "@/types";
 import apiClient from "../api-client";
 
-export async function updateLabel(labelId: string | number, labelData: UpdateLabelPayload) {
+export async function updateLabel(labelId: string | number, labelData: UpdateLabelPayload) : Promise<LabelDto> {
   try {
     const response = await apiClient.put(`/Label/${labelId}`, labelData, {
       headers: {

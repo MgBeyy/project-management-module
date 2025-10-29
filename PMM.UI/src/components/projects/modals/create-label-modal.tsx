@@ -4,19 +4,9 @@ import { createLabel } from "@/services/projects/create-label";
 import { updateLabel } from "@/services/projects/update-label";
 import { showNotification } from "@/utils/notification";
 import type { MultiSelectOption } from "../multi-select-search";
+import { CreateLabelModalProps } from "@/types/projects/ui";
 
-interface CreateLabelModalProps {
-  visible: boolean;
-  mode: 'create' | 'edit';
-  initialData?: {
-    id?: string;
-    name?: string;
-    description?: string;
-    color?: string;
-  };
-  onSuccess?: (labelData: any) => void;
-  onCancel: () => void;
-}
+
 
 export default function CreateLabelModal({
   visible,

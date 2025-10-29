@@ -1,18 +1,6 @@
 import apiClient from "@/services/api-client";
 import { DetailedProjectDto } from "@/types";
 
-export interface Label {
-  id: number;
-  name: string;
-  color: string;
-  description: string | null;
-  createdAt: string;
-  createdById: number;
-  updatedAt: string | null;
-  updatedById: number | null;
-}
-
-
 
 function normalize(item: any): DetailedProjectDto {
   return {

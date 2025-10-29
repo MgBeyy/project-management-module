@@ -8,6 +8,7 @@ import type {
   PagedResult,
 } from "../common";
 import type { TaskDto } from "../tasks";
+import { ClientDto } from "../users";
 
 export type ProjectStatus =
   | "Active"
@@ -29,10 +30,7 @@ export interface LabelDto {
   updatedById: Nullable<number>;
 }
 
-export interface ClientDto {
-  id: number;
-  name: string | null;
-}
+
 
 export interface ProjectDto {
   id: number;
