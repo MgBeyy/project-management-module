@@ -12,6 +12,7 @@ import CreateProjectModal from "./modals/create-project-modal";
 import { useProjectsStore } from "@/store/zustand/projects-store";
 import { useNotification } from "@/hooks/useNotification";
 import { deleteProject } from "@/services/projects/delete-project";
+import { ProjectDto } from "@/types";
 
 type SizeType = ConfigProviderProps["componentSize"];
 
@@ -31,7 +32,7 @@ export default function CrudModal() {
   };
 
   const handleUpdateClick = () => {
-    if (!selectedProject || !selectedProject.Code) {
+    if (!selectedProject || !selectedProject.code) {
       notification.warning("Uyarı", "Lütfen güncellemek için bir proje seçin.");
       return;
     }
@@ -40,7 +41,7 @@ export default function CrudModal() {
   };
   
   const handleViewClick = () => {
-    if (!selectedProject || !selectedProject.Code) {
+    if (!selectedProject || !selectedProject.code) {
       notification.warning("Uyarı", "Lütfen görüntülemek için bir proje seçin.");
       return;
     }
@@ -49,7 +50,7 @@ export default function CrudModal() {
   };
 
   const handleDeleteClick = () => {
-    if (!selectedProject || !selectedProject.Code) {
+    if (!selectedProject || !selectedProject.code) {
       notification.warning("Uyarı", "Lütfen silmek için bir proje seçin.");
       return;
     }
@@ -57,14 +58,14 @@ export default function CrudModal() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!selectedProject || !selectedProject.Id) {
+    if (!selectedProject || !selectedProject.id) {
       return;
     }
 
     setIsDeleting(true);
     try {
-      await deleteProject(selectedProject.Id);
-      notification.success("Başarılı", `"${selectedProject.Title}" projesi başarıyla silindi.`);
+      await deleteProject(selectedProject.id);
+      notification.success("Başarılı", `"${selectedProject.title}" projesi başarıyla silindi.`);
       setDeleteModalVisible(false);
       clearSelectedProject();
       triggerRefresh(); // Tabloyu yenile
@@ -122,7 +123,7 @@ export default function CrudModal() {
         visible={projectModalVisible}
         onClose={() => setProjectModalVisible(false)}
         onSuccess={handleProjectModalSuccess}
-        projectData={selectedProject as any}
+        projectData={selectedProject as ProjectDto}
         mode={modalMode}
       />
 
@@ -130,7 +131,7 @@ export default function CrudModal() {
         visible={deleteModalVisible}
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
-        projectTitle={selectedProject?.Title}
+        projectTitle={selectedProject?.title}
       />
     </>
   );

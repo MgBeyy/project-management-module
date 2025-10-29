@@ -1,9 +1,10 @@
 import { Button, DatePicker, Form, Input, InputNumber, Select } from "antd";
 import { useState, useEffect, useCallback } from "react";
 import { useTasksStore } from "@/store/zustand/tasks-store";
-import { TaskStatus } from "@/services/tasks/get-tasks";
 import getMultiSelectSearch from "@/services/projects/get-multi-select-search";
 import type { SelectProps } from "antd";
+import { TaskStatus } from "@/types/tasks/ui";
+import { ProjectDto } from "@/types";
 
 const MIN_SEARCH_LENGTH = 2;
 
@@ -33,27 +34,12 @@ const extractArrayFromResponse = (payload: any): any[] => {
   return [];
 };
 
-const normalizeProjectOption = (project: any): SelectOption | null => {
-  const rawId = project?.id
-
-  const numericId = Number(rawId);
-
-  if (!rawId || Number.isNaN(numericId)) {
-    return null;
-  }
-
-  const projectCode = project?.code;
-  const projectTitle = project?.title;
-
-  const composedLabel = [projectCode, projectTitle]
-    .filter(Boolean)
-    .join(" - ")
-    .trim();
-  const label = composedLabel;
+export const normalizeProjectOption = (project: ProjectDto): SelectOption | null => {
+  if (!project) return null;
   return {
-    value: numericId,
-    label,
-    key: String(numericId),
+    value: project.id,
+    label: [project.code, project.title].filter(Boolean).join(" - ").trim(),
+    key: String(project.id),
     raw: project,
   };
 };

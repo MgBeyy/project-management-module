@@ -1,53 +1,64 @@
 // src/types/index.ts
+// Centralised re-export surface for the data shapes used by the UI.
 
-// Tüm type'ları merkezi olarak export et
-export * from './common';
+export * from "./common";
+export * from "./projects";
+export * from "./activities";
+export * from "./tasks";
+export * from "./users";
+export * from "./files";
 
-// Domain bazlı export'lar
-export * from './projects';
-export * from './activities';
-export * from './tasks';
-export * from './users';
-export * from './files';
-
-// Belirli türleri yeniden export et (kolay erişim için)
 export type {
-  BaseEntity,
   ApiResponse,
-  PaginatedResponse,
-  SelectOption,
+  DateString,
+  DateTimeString,
+  IdNameDto,
   MultiSelectOption,
-  FormMode,
-  LoadingState,
-} from './common';
-
-export type {
-  ProjectDto,
-  ProjectStatus,
-  ProjectPriority,
-  LabelDto,
-  ClientDto,
-} from './projects';
+  Nullable,
+  PagedResult,
+  SelectOption,
+} from "./common";
 
 export type {
   ActivityDto,
-  ActivityType,
-  ActivityStatus,
-  ActivityPriority,
-} from './activities';
+  ActivityPagedResult,
+  CreateActivityPayload,
+  UpdateActivityPayload,
+} from "./activities";
 
 export type {
+  CreateProjectPayload,
+  DetailedProjectDto,
+  ProjectDto,
+  ProjectAssignmentItemPayload,
+  ProjectAssignmentRole,
+  ProjectAssignmentWithUserDto,
+  ProjectPagedResult,
+  ProjectPriority,
+  ProjectStatus,
+  UpdateProjectPayload,
+} from "./projects";
+
+export type {
+  CreateTaskPayload,
   TaskDto,
+  TaskPagedResult,
   TaskStatus,
-  TaskPriority,
-} from './tasks';
+  UpdateTaskPayload,
+} from "./tasks";
 
 export type {
+  CreateUserPayload,
+  UpdateUserPayload,
   UserDto,
-  UserRole,
-} from './users';
+  UserPagedResult,
+} from "./users";
 
 export type {
   ProjectFileDto,
+  ProjectFilePagedResult,
   UploadProjectFilePayload,
-} from './files';
+} from "./files";
+
+export type * from "./label";
+

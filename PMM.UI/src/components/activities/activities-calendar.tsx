@@ -13,7 +13,7 @@ import CreateActivityModal from "./modals/create-activity-modal";
 import UpdateActivityModal from "./modals/update-activity-modal";
 import DeleteActivityModal from "./modals/delete-activity-modal";
 import UserSelect from "./user-select";
-import Spinner from "../spinner";
+import Spinner from "../common/spinner";
 
 interface TimeSlot {
   date: Dayjs;

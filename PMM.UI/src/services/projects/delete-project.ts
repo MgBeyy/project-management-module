@@ -7,7 +7,6 @@ export async function deleteProject(projectId: number) {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      timeout: 15000,
     });
 
     return response.data;

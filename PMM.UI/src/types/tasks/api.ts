@@ -1,77 +1,102 @@
 // src/types/tasks/api.ts
 
-import { BaseEntity, DateString } from '../common';
+import type {
+  DateTimeString,
+  IdNameDto,
+  Nullable,
+  PagedResult,
+} from "../common";
+import { LabelDto } from "../label/api";
 
-export interface TaskDto extends BaseEntity {
-  title: string;
-  description?: string;
-  code: string;
+export type TaskStatus =
+  | "Todo"
+  | "InProgress"
+  | "Done"
+  | "Inactive"
+  | "WaitingForApproval";
+
+export interface TaskDto {
+  id: number;
+  code: string | null;
+  projectId: number;
+  projectCode: string | null;
+  parentTaskId: Nullable<number>;
+  title: string | null;
+  description: string | null;
   status: TaskStatus;
-  priority: TaskPriority;
-  dueDate?: DateString;
-  completedAt?: DateString;
-  estimatedHours?: number;
-  actualHours?: number;
-  projectId?: number;
-  project?: {
-    id: number;
-    title: string;
-    code: string;
-  };
-  assignedUserId?: number;
-  assignedUser?: {
-    id: number;
-    name: string;
-    email: string;
-  };
-  parentTaskId?: number;
-  subtasks?: TaskDto[];
-  dependencies?: TaskDependency[];
+  createdAt: DateTimeString;
+  createdById: number;
+  updatedAt: Nullable<DateTimeString>;
+  updatedById: Nullable<number>;
+  plannedHours: Nullable<number>;
+  actualHours: Nullable<number>;
+  isLast: boolean;
+  labels: Nullable<LabelDto[]>;
+  assignedUsers: Nullable<IdNameDto[]>;
+  subTasks: Nullable<TaskDto[]>;
 }
 
-export interface TaskDependency {
-  id: number;
-  taskId: number;
-  dependsOnTaskId: number;
-  dependencyType: DependencyType;
-}
+export type TaskPagedResult = PagedResult<TaskDto>;
 
-export interface CreateTaskRequest {
+export interface CreateTaskPayload {
+  code: string;
+  projectId: number;
+  parentTaskId?: Nullable<number>;
   title: string;
-  description?: string;
-  priority?: TaskPriority;
-  dueDate?: DateString;
-  estimatedHours?: number;
-  projectId?: number;
-  assignedUserId?: number;
-  parentTaskId?: number;
-}
-
-export interface UpdateTaskRequest extends Partial<CreateTaskRequest> {
-  id: number;
+  description?: Nullable<string>;
   status?: TaskStatus;
+  plannedHours?: Nullable<number>;
+  actualHours?: Nullable<number>;
+  labelIds?: Nullable<number[]>;
+  assignedUserIds?: Nullable<number[]>;
+  isLast?: boolean;
+}
+
+export interface UpdateTaskPayload {
+  title?: string;
+  description?: Nullable<string>;
+  status?: TaskStatus;
+  plannedHours?: Nullable<number>;
+  actualHours?: Nullable<number>;
+  labelIds?: Nullable<number[]>;
+  assignedUserIds?: Nullable<number[]>;
+  isLast?: boolean;
+}
+
+export type TaskQuery = {
+  page?: number;
+  pageSize?: number;
+  id?: number;
+  projectId?: number;
+  projectCode?: string;
+  parentTaskId?: number;
+  title?: string;
+  description?: string;
+  status?: TaskStatus;
+  plannedHours?: number;
+  plannedHoursMin?: number;
+  plannedHoursMax?: number;
   actualHours?: number;
-  completedAt?: DateString;
-}
+  actualHoursMin?: number;
+  actualHoursMax?: number;
+  createdAt?: number;
+  createdAtMin?: number;
+  createdAtMax?: number;
+  createdById?: number;
+  updatedAt?: number;
+  updatedAtMin?: number;
+  updatedAtMax?: number;
+  updatedById?: number;
+  assignedUserId?: number;
+  search?: string;
+  sortBy?: string;
+  sortDesc?: boolean;
+};
 
-export enum TaskStatus {
-  TODO = 0,
-  IN_PROGRESS = 1,
-  IN_REVIEW = 2,
-  DONE = 3,
-  CANCELLED = 4,
-}
-
-export enum TaskPriority {
-  LOW = 0,
-  MEDIUM = 1,
-  HIGH = 2,
-  URGENT = 3,
-}
-
-export enum DependencyType {
-  FINISH_TO_START = 0,
-  START_TO_START = 1,
-  FINISH_TO_FINISH = 2,
-  START_TO_FINISH = 3,
+export interface TaskListDto {
+  data: TaskDto[];
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  totalRecords: number;
 }

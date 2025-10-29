@@ -1,66 +1,38 @@
 import apiClient from "@/services/api-client";
-import { formatDate, formatDateTime } from "@/utils/retype";
+import { DetailedProjectDto } from "@/types";
 
-export interface Label {
-  id: number;
-  name: string;
-  color: string;
-  description: string | null;
-  createdAt: string;
-  createdById: number;
-  updatedAt: string | null;
-  updatedById: number | null;
-}
 
-// Normalized project shape similar to table/store
-export interface ProjectDetails {
-  Id: number | null;
-  Code: string;
-  Title: string;
-  PlannedStartDate: string | null;
-  PlannedDeadLine: string | null;
-  PlannedHours: number | null;
-  StartedAt: string | null;
-  EndAt: string | null;
-  Status: string;
-  Priority: string;
-  ParentProjectIds: number[];
-  ParentProjects: { id: string; code: string; title: string }[];
-  ClientId: number | null;
-  Labels: Label[];
-  AssignedUsers: any[]; // Add assigned users
-  CreatedById: number;
-  CreatedAt: string | null;
-  UpdatedById: number | null;
-  UpdatedAt: string | null;
-}
-
-function normalize(item: any): ProjectDetails {
+function normalize(item: any): DetailedProjectDto {
   return {
-    Id: item?.id ?? null,
-    Code: item?.code ?? "N/A",
-    Title: item?.title ?? "Başlık Yok",
-    PlannedStartDate: formatDate(item?.plannedStartDate),
-    PlannedDeadLine: formatDate(item?.plannedDeadline ?? item?.plannedDeadLine),
-    PlannedHours: item?.plannedHours ?? item?.plannedHours ?? null,
-    StartedAt: formatDateTime(item?.startedAt),
-    EndAt: formatDateTime(item?.endAt),
-    Status: item?.status ?? "Belirtilmemiş",
-    Priority: item?.priority ?? "Düşük",
-    ParentProjectIds: item?.parentProjectIds ?? [],
-    ParentProjects: item?.parentProjects ?? [],
-    ClientId: item?.clientId ?? null,
-    Labels: item?.labels ?? [],
-    AssignedUsers: item?.assignedUsers ?? [],
-    CreatedById: item?.createdById ?? 0,
-    CreatedAt: formatDateTime(item?.createdAt),
-    UpdatedById: item?.updatedById ?? null,
-    UpdatedAt: formatDateTime(item?.updatedAt),
+    id: item?.id ?? null,
+    code: item?.code ?? "N/A",
+    title: item?.title ?? "Başlık Yok",
+    plannedStartDate: item?.plannedStartDate,
+    plannedDeadline: item?.plannedDeadline ?? null,
+    plannedHours: item?.plannedHours ?? item?.plannedHours ?? null,
+    startedAt: item?.startedAt,
+    endAt: item?.endAt,
+    status: item?.status ?? "Belirtilmemiş",
+    priority: item?.priority ?? "Düşük",
+    parentProjects: item?.parentProjects ?? [],
+    clientId: item?.clientId ?? null,
+    labels: item?.labels ?? [],
+    assignedUsers: item?.assignedUsers ?? [],
+    createdById: item?.createdById ?? 0,
+    createdAt: item?.createdAt ?? null,
+    updatedById: item?.updatedById ?? null,
+    updatedAt: item?.updatedAt ?? null,
+    actualHours: item?.actualHours ?? null,
+    childProjects: item?.childProjects ?? [],
+    client: item?.client ?? null,
+    tasks: item?.tasks ?? [],
+    createdByUser: item?.createdByUser ?? null,
+    updatedByUser: item?.updatedByUser ?? null,
   };
 }
 
 // Tries multiple endpoints to improve compatibility
-export async function getProjectById(id: string): Promise<ProjectDetails | null> {
+export async function getProjectById(id: string): Promise<DetailedProjectDto | null> {
   // Attempt 1: RESTful by id: /Project/{id}
   try {
     const res = await apiClient.get(`Project/detailed/${encodeURIComponent(id)}`);

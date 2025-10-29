@@ -11,7 +11,38 @@ export interface MultiSelectOption extends DefaultOptionType {
   key: string;
   [key: string]: any;
 }
+export const mergeOptions = (
+  existing: MultiSelectOption[],
+  incoming: MultiSelectOption[]
+) => {
+  const map = new Map<string, MultiSelectOption>();
+  existing.forEach((o) => map.set(String(o.value), o));
+  incoming.forEach((o) => map.set(String(o.value), o));
+  return Array.from(map.values());
+};
 
+export const areOptionsEqual = (
+  first: MultiSelectOption[],
+  second: MultiSelectOption[]
+) => {
+  if (first.length !== second.length) return false;
+  const map = new Map<string, MultiSelectOption>();
+  first.forEach((o) => map.set(String(o.value), o));
+  return second.every((option) => {
+    const key = String(option.value);
+    const matched = map.get(key);
+    if (!matched) return false;
+    const matchedLabel =
+      typeof matched.label === "string" ? matched.label : String(matched.label);
+    const optionLabel =
+      typeof option.label === "string" ? option.label : String(option.label);
+    return (
+      matchedLabel === optionLabel &&
+      (matched as any)?.color === (option as any)?.color &&
+      (matched as any)?.description === (option as any)?.description
+    );
+  });
+};
 const mergeOptionArrays = (
   existing: MultiSelectOption[],
   incoming: MultiSelectOption[]

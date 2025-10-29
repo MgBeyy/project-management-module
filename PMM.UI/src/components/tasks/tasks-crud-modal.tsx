@@ -19,7 +19,7 @@ export default function TasksCrudModal() {
   };
 
   const handleUpdateClick = () => {
-    if (!selectedTask || !selectedTask.Id) {
+    if (!selectedTask || !selectedTask.id) {
       notification.warning("Uyarı", "Lütfen güncellemek için bir görev seçin.");
       return;
     }
@@ -28,7 +28,7 @@ export default function TasksCrudModal() {
   };
 
   const handleViewClick = () => {
-    if (!selectedTask || !selectedTask.Id) {
+    if (!selectedTask || !selectedTask.id) {
       notification.warning("Uyarı", "Lütfen görüntülemek için bir görev seçin.");
       return;
     }
@@ -37,7 +37,7 @@ export default function TasksCrudModal() {
   };
 
   const handleDeleteClick = () => {
-    if (!selectedTask || !selectedTask.Id) {
+    if (!selectedTask || !selectedTask.id) {
       notification.warning("Uyarı", "Lütfen silmek için bir görev seçin.");
       return;
     }

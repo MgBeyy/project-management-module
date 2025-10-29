@@ -3,8 +3,9 @@ import { useEffect } from "react";
 import type { ColumnsType } from "antd/es/table";
 import { useTasksStore } from "@/store/zustand/tasks-store";
 import { GetTasks } from "@/services/tasks/get-tasks";
-import Spinner from "../spinner";
+import Spinner from "../common/spinner";
 import { formatDateTime } from "@/utils/retype";
+import { TaskDto } from "@/types";
 
 export default function TasksCustomTable() {
   const {
@@ -26,62 +27,16 @@ export default function TasksCustomTable() {
 
   async function getTaskData() {
     try {
-      console.log("filters in table:", filters);
       setIsLoading(true);
       const response = await GetTasks({
         query: { ...filters, page: currentPage, pageSize: pageSize },
       });
+      const taskData = response.data || [];
+      console.log(taskData);
       
-      console.log("Task API response:", response);
+      setTasks(taskData);
       
-      // Backend response structure: { result: { data: [], totalRecords: 240 } }
-      const result = response.result || response;
-      const taskData = result.data || [];
-      const transformedData = taskData
-        .filter((item: any) => item != null)
-        .map((item: any, index: number) => ({
-          key: index + 1,
-          Id: item?.id || null,
-          Code: item?.code || null,
-          ProjectId: item?.projectId || null,
-          ProjectCode: item?.projectCode || null,
-          ParentTaskId: item?.parentTaskId || null,
-          Title: item?.title || "Başlık Yok",
-          Description: item?.description || "-",
-          Status: item?.status || "Todo",
-          CreatedAt: item?.createdAt || "-",
-          CreatedById: item?.createdById || null,
-          UpdatedAt: item?.updatedAt || null,
-          UpdatedById: item?.updatedById || null,
-          PlannedHours: item?.plannedHours || null,
-          ActualHours: item?.actualHours || null,
-          AssignedUsers: Array.isArray(item?.assignedUsers)
-            ? item.assignedUsers
-            : [],
-          Labels: Array.isArray(item?.labels) ? item.labels : [],
-          LabelIds: (() => {
-            if (Array.isArray(item?.labelIds)) {
-              return item.labelIds
-                .map((id: any) =>
-                  id !== null && id !== undefined ? String(id) : null
-                )
-                .filter((id: string | null): id is string => Boolean(id));
-            }
-            if (Array.isArray(item?.labels)) {
-              return item.labels
-                .map((label: any) =>
-                  label?.id !== null && label?.id !== undefined
-                    ? String(label.id)
-                    : null
-                )
-                .filter((id: string | null): id is string => Boolean(id));
-            }
-            return [];
-          })(),
-        }));
-            
-      setTasks(transformedData);
-      setTotalItems(result.totalRecords || 0);
+      setTotalItems(response.totalRecords || 0);
       setIsLoading(false);
     } catch (error) {
       console.error("Error fetching task data:", error);
@@ -117,8 +72,8 @@ export default function TasksCustomTable() {
   const columns: ColumnsType<any> = [
     {
       title: <HeaderWithTooltip title="Görev Kodu" maxWidth={120} />,
-      dataIndex: "Code",
-      key: "Code",
+      dataIndex: "code",
+      key: "code",
       width: 120,
       ellipsis: {
         showTitle: false,
@@ -127,8 +82,8 @@ export default function TasksCustomTable() {
     },
     {
       title: <HeaderWithTooltip title="Başlık" maxWidth={250} />,
-      dataIndex: "Title",
-      key: "Title",
+      dataIndex: "title",
+      key: "title",
       width: 250,
       ellipsis: {
         showTitle: false,
@@ -137,8 +92,8 @@ export default function TasksCustomTable() {
     },
     {
       title: <HeaderWithTooltip title="Açıklama" maxWidth={200} />,
-      dataIndex: "Description",
-      key: "Description",
+      dataIndex: "description",
+      key: "description",
       width: 200,
       ellipsis: {
         showTitle: false,
@@ -147,8 +102,8 @@ export default function TasksCustomTable() {
     },
     {
       title: <HeaderWithTooltip title="Etiketler" maxWidth={200} />,
-      dataIndex: "Labels",
-      key: "Labels",
+      dataIndex: "labels",
+      key: "labels",
       width: 130,
       render: (labels: any[]) => (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
@@ -179,8 +134,8 @@ export default function TasksCustomTable() {
     },
     {
       title: <HeaderWithTooltip title="Proje Kodu" maxWidth={100} />,
-      dataIndex: "ProjectCode",
-      key: "ProjectCode",
+      dataIndex: "projectCode",
+      key: "projectCode",
       width: 100,
       ellipsis: {
         showTitle: false,
@@ -193,8 +148,8 @@ export default function TasksCustomTable() {
     },
     {
       title: <HeaderWithTooltip title="Durum" maxWidth={120} />,
-      dataIndex: "Status",
-      key: "Status",
+      dataIndex: "status",
+      key: "status",
       width: 120,
       ellipsis: {
         showTitle: false,
@@ -219,8 +174,8 @@ export default function TasksCustomTable() {
     },
     {
       title: <HeaderWithTooltip title="Planlanan Çalışma Saati" maxWidth={130} />,
-      dataIndex: "PlannedHours",
-      key: "PlannedHours",
+      dataIndex: "plannedHours",
+      key: "plannedHours",
       width: 130,
       ellipsis: {
         showTitle: false,
@@ -231,8 +186,8 @@ export default function TasksCustomTable() {
     },
     {
       title: <HeaderWithTooltip title="Gerçek Çalışma Saati" maxWidth={120} />,
-      dataIndex: "ActualHours",
-      key: "ActualHours",
+      dataIndex: "actualHours",
+      key: "actualHours",
       width: 120,
       ellipsis: {
         showTitle: false,
@@ -243,8 +198,8 @@ export default function TasksCustomTable() {
     },
     {
       title: <HeaderWithTooltip title="Oluşturulma" maxWidth={150} />,
-      dataIndex: "CreatedAt",
-      key: "CreatedAt",
+      dataIndex: "createdAt",
+      key: "createdAt",
       width: 150,
       ellipsis: {
         showTitle: false,
@@ -253,9 +208,7 @@ export default function TasksCustomTable() {
     },
   ];
 
-  function onRowClick(record: any) {
-    console.log(record);
-    
+  function onRowClick(record: TaskDto) {    
     setSelectedTask(record);
   }
 
@@ -290,7 +243,7 @@ export default function TasksCustomTable() {
             },
           }}
           onRow={(record, rowIndex) => {
-            const isSelected = selectedTask?.key === record.key;
+            const isSelected = selectedTask?.id === record.id;
 
             return {
               onClick: () => {

@@ -1,39 +1,9 @@
+import { TaskDto } from '@/types';
 import { create } from 'zustand';
 
-interface TaskData {
-  key: number;
-  Id: number | null;
-  Code: string | null;
-  ProjectId: number;
-  ProjectCode: string;
-  ParentTaskId: number | null;
-  Title: string;
-  Description: string | null;
-  Status: string;
-  CreatedAt: string;
-  CreatedById: number;
-  UpdatedAt: string | null;
-  UpdatedById: number | null;
-  PlannedHours: number | null;
-  ActualHours: number | null;
-  AssignedUsers: Array<{
-    id: string;
-    name: string;
-  }>;
-  Labels: Array<{
-    id: string | number;
-    name: string;
-    color?: string;
-    description?: string;
-  }>;
-  LabelIds: string[];
-  ParentTaskCode: string | null;
-  ParentTaskTitle: string | null;
-}
-
 interface TasksState {
-  tasks: TaskData[];
-  selectedTask: TaskData | null;
+  tasks: TaskDto[];
+  selectedTask: TaskDto | null;
   currentPage: number;
   pageSize: number;
   totalItems: number;
@@ -42,8 +12,8 @@ interface TasksState {
   refreshTrigger: number | null;
   
   // Actions
-  setTasks: (tasks: TaskData[]) => void;
-  setSelectedTask: (task: TaskData | null) => void;
+  setTasks: (tasks: TaskDto[]) => void;
+  setSelectedTask: (task: TaskDto | null) => void;
   setCurrentPage: (page: number) => void;
   setPageSize: (size: number) => void;
   setTotalItems: (total: number) => void;

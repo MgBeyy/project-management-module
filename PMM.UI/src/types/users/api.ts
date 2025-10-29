@@ -1,55 +1,28 @@
 // src/types/users/api.ts
 
-import { BaseEntity } from '../common';
+import type { PagedResult } from "../common";
 
-export interface UserDto extends BaseEntity {
-  username: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  fullName: string;
-  role: UserRole;
-  department?: string;
-  position?: string;
-  avatarUrl?: string;
-  isActive: boolean;
-  lastLoginAt?: string;
-  permissions?: string[];
-}
-
-export interface CreateUserRequest {
-  username: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  department?: string;
-  position?: string;
-  password: string;
-}
-
-export interface UpdateUserRequest extends Partial<CreateUserRequest> {
+export interface UserDto {
   id: number;
-  isActive?: boolean;
-  permissions?: string[];
+  name: string | null;
+  email: string | null;
 }
 
-export interface UserProfile extends UserDto {
-  phoneNumber?: string;
-  address?: string;
-  bio?: string;
-  skills?: string[];
-  socialLinks?: {
-    linkedin?: string;
-    github?: string;
-    twitter?: string;
-  };
-}
+export type UserPagedResult = PagedResult<UserDto>;
 
-export enum UserRole {
-  ADMIN = 0,
-  MANAGER = 1,
-  DEVELOPER = 2,
-  TESTER = 3,
-  USER = 4,
+export interface CreateUserPayload {
+  name: string;
+  email: string;
 }
+export interface ClientDto {
+  id: number;
+  name: string | null;
+}
+export interface ClientListDto {
+  data: ClientDto[];
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  totalRecords: number;
+}
+export type UpdateUserPayload = CreateUserPayload;

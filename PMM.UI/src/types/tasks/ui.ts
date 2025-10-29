@@ -1,51 +1,41 @@
 // src/types/tasks/ui.ts
 
-import { FormMode } from '../common';
-import { TaskDto } from './api';
+import { IdNameDto } from "../common";
+import { LabelDto } from "../label/api";
+
+export type TaskModalMode = "create" | "edit" | "view";
+
+export interface TaskModalTask {
+  id: number | null;
+  code?: string | null;
+  projectId?: number | null;
+  projectCode?: string | null;
+  parentTaskId?: number | null;
+  parentTaskCode?: string | null;
+  parentTaskTitle?: string | null;
+  title?: string | null;
+  description?: string | null;
+  status?: string | null;
+  createdAt?: number | null;
+  createdById?: number | null;
+  updatedAt?: number | null;
+  updatedById?: number | null;
+  plannedHours?: number | null;
+  actualHours?: number | null;
+  assignedUsers?: IdNameDto[];
+  labels?: LabelDto[];
+}
 
 export interface TaskModalProps {
   visible: boolean;
   onClose: () => void;
   onSuccess?: () => void;
-  taskData?: TaskDto | null;
-  mode?: FormMode;
+  mode?: TaskModalMode;
+  taskData?: TaskModalTask | null;
 }
-
-export interface TaskFormValues {
-  title: string;
-  description?: string;
-  status?: number;
-  priority?: number;
-  dueDate?: string;
-  estimatedHours?: number;
-  actualHours?: number;
-  projectId?: number;
-  assignedUserId?: number;
-  parentTaskId?: number;
-}
-
-export interface TaskListProps {
-  tasks: TaskDto[];
-  loading?: boolean;
-  onEdit?: (task: TaskDto) => void;
-  onDelete?: (taskId: number) => void;
-  onView?: (task: TaskDto) => void;
-  onStatusChange?: (taskId: number, status: number) => void;
-}
-
-export interface TaskFilters {
-  status?: number[];
-  priority?: number[];
-  projectId?: number[];
-  assignedUserId?: number[];
-  dueDateRange?: [string, string];
-  searchText?: string;
-}
-
-export interface TaskQueryParams {
-  pageNumber?: number;
-  pageSize?: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  filters?: TaskFilters;
+export enum TaskStatus {
+  TODO = "Todo",
+  IN_PROGRESS = "InProgress",
+  DONE = "Done",
+  INACTIVE = "InActive",
 }

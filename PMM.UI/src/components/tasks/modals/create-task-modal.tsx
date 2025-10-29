@@ -7,17 +7,18 @@ import { AiOutlinePlus, AiOutlineEdit } from "react-icons/ai";
 import { useNotification } from "@/hooks/useNotification";
 import { useTasksStore } from "@/store/zustand/tasks-store";
 import getMultiSelectSearch from "@/services/projects/get-multi-select-search";
-import { getTasksForSelect } from "@/services/tasks/get-tasks-for-select";
 import { createTask } from "@/services/tasks/create-task";
-import { TaskStatus } from "@/services/tasks/get-tasks";
+import { GetTasks } from "@/services/tasks/get-tasks";
 import { updateTask } from "@/services/tasks/update-task";
-import type { TaskModalProps } from "@/types/tasks";
-import type { MultiSelectOption } from "@/types";
+import type { TaskDto, TaskModalProps } from "@/types/tasks";
+import type { IdNameDto, MultiSelectOption, ProjectDto, ProjectListDto } from "@/types";
 
 import MultiSelectSearch, {
   MultiSelectOption as MultiSelectSearchOption,
-} from "../../projects/multi-select-search";
-import CreateLabelModal from "../../projects/modals/create-label-modal";
+} from "../../common/multi-select-search";
+import CreateLabelModal from "@/components/label/create-label-modal";
+import { TaskStatus } from "@/types/tasks/ui";
+import { normalizeProjectOption } from "../tasks-filter";
 
 const { TextArea } = Input;
 const MIN_SEARCH_LENGTH = 2;
@@ -29,14 +30,7 @@ interface SelectOption extends BaseSelectOption {
   value: number;
   label: string;
   key: string;
-  raw?: any;
 }
-
-const parseNumericId = (value: unknown): number | undefined => {
-  if (value === null || value === undefined || value === "") return undefined;
-  const numericValue = Number(value);
-  return Number.isNaN(numericValue) ? undefined : numericValue;
-};
 
 const mergeOptions = <T extends { value: string | number }>(existing: T[], incoming: T[]) => {
   const map = new Map<string, T>();
@@ -56,148 +50,31 @@ const areSelectOptionArraysEqual = (a: SelectOption[], b: SelectOption[]) => {
   return true;
 };
 
-const extractArrayFromResponse = (payload: any): any[] => {
-  if (!payload) return [];
-  if (Array.isArray(payload)) return payload;
-  const candidates = [
-    payload?.result?.data,
-    payload?.data?.result?.data,
-    payload?.data?.data,
-    payload?.data,
-    payload?.result,
-  ];
-  for (const c of candidates) if (Array.isArray(c)) return c;
-  return [];
-};
-
-const normalizeProjectOption = (project: any): SelectOption | null => {
-  if (!project) return null;
-  const rawId = project?.id;
-  const numericId = Number(rawId);
-  if (!rawId || Number.isNaN(numericId)) return null;
-
-  const projectCode = project?.code;
-  const projectTitle = project?.title;
-  const label = [projectCode, projectTitle].filter(Boolean).join(" - ").trim();
-
-  return {
-    value: numericId,
-    label,
-    key: String(numericId),
-    raw: project,
-  };
-};
-
-const normalizeTaskOption = (task: any): SelectOption | null => {
+const normalizeTaskOption = (task: TaskDto): SelectOption | null => {
   if (!task) return null;
-  const rawId = task?.id ?? task?.Id ?? task?.taskId ?? task?.value ?? task?.key;
-  const numericId = Number(rawId);
-  if (!rawId || Number.isNaN(numericId)) return null;
-
-  const taskCode = task?.code || task?.Code;
-  const taskTitle = task?.title;
-  const projectCode = task?.projectCode || task?.ProjectCode;
-  const resolvedLabel =
-    [taskCode, taskTitle, projectCode ? `(Proje: ${projectCode})` : undefined]
-      .filter(Boolean)
-      .join(" - ") || `Görev #${numericId}`;
-
   return {
-    value: numericId,
-    label: resolvedLabel,
-    key: String(numericId),
+    value: task.id,
+    label: [task.code, task.title].filter(Boolean).join(" - ").trim(),
+    key: String(task.id),
     raw: task,
   };
 };
 
-const resolveLabelColor = (label: any): string | undefined =>
-  label?.color ??
-  label?.Color ??
-  label?.hexColor ??
-  label?.HexColor ??
-  label?.hex ??
-  label?.Hex ??
-  label?.colour ??
-  label?.Colour;
-
-const resolveLabelDescription = (label: any): string | undefined =>
-  label?.description ?? label?.Description ?? label?.desc ?? label?.Desc;
-
-const extractLabelIdentifier = (candidate: any): string | null => {
-  if (candidate === null || candidate === undefined) return null;
-
-  if (typeof candidate === "object" && !Array.isArray(candidate)) {
-    const value =
-      candidate?.id ??
-      candidate?.Id ??
-      candidate?.labelId ??
-      candidate?.LabelId ??
-      candidate?.value ??
-      candidate?.key;
-    if (value === null || value === undefined) return null;
-    return String(value);
-  }
-
-  const s = String(candidate);
-  if (!s || s === "null" || s === "undefined") return null;
-  return s;
-};
-
-const normalizeLabelOption = (label: any): MultiSelectSearchOption | null => {
-  if (!label) return null;
-  const identifier = extractLabelIdentifier(label);
-  if (!identifier) return null;
-
-  const resolvedName =
-    label?.name ??
-    label?.Name ??
-    label?.title ??
-    label?.Title ??
-    label?.label ??
-    label?.Label ??
-    `Label ${identifier}`;
-
-  return {
-    value: identifier,
-    label: resolvedName,
-    key: identifier,
-    color: resolveLabelColor(label),
-    description: resolveLabelDescription(label),
-    name: resolvedName,
-    ...label,
-  };
-};
-
-const resolveTaskLabelData = (task: any): { ids: string[]; options: MultiSelectSearchOption[] } => {
+const resolveTaskLabelData = (task: TaskDto): { ids: string[]; options: MultiSelectSearchOption[] } => {
   const ids: string[] = [];
   const options: MultiSelectSearchOption[] = [];
-
-  const pushId = (v: any) => {
-    const id = extractLabelIdentifier(v);
-    if (id && !ids.includes(id)) ids.push(id);
-  };
-
-  const processSource = (src: any) => {
-    if (!src) return;
-    const evalOne = (item: any) => {
-      if (item && typeof item === "object" && !Array.isArray(item)) {
-        const norm = normalizeLabelOption(item);
-        if (norm) {
-          options.push(norm);
-          pushId(norm.value);
-          return;
-        }
-      }
-      pushId(item);
+  task.labels?.forEach((label: any) => {
+    const option = {
+      value: label.id.toString(),
+      label: label.name,
+      key: label.id.toString(),
+      ...label,
     };
-    Array.isArray(src) ? src.forEach(evalOne) : evalOne(src);
-  };
-
-  processSource(task?.LabelIds);
-  processSource((task as any)?.labelIds);
-  processSource((task as any)?.Labels);
-  processSource((task as any)?.labels);
-
+    if (option) {
+      options.push(option);
+      ids.push(String(label.id));
+    }
+  });
   return { ids, options: mergeOptions([], options) };
 };
 
@@ -225,7 +102,7 @@ export default function CreateTaskModal({
   const [parentTaskCache, setParentTaskCache] = useState<Record<number, SelectOption[]>>({});
 
   // Users
-  const [selectedUsers, setSelectedUsers] = useState<{ id: string; name: string }[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<IdNameDto[]>([]);
   const [userOptions, setUserOptions] = useState<MultiSelectOption[]>([]);
   const [userLoading, setUserLoading] = useState(false);
   const [userSearchValue, setUserSearchValue] = useState("");
@@ -239,7 +116,7 @@ export default function CreateTaskModal({
 
   const isEditMode = mode === "edit" && !!currentTaskData;
   const isViewMode = mode === "view" && !!currentTaskData;
-  const resolvedTaskId = currentTaskData?.Id;
+  const resolvedTaskId = currentTaskData?.id;
 
   const closeModal = useCallback(() => {
     form.resetFields();
@@ -255,18 +132,18 @@ export default function CreateTaskModal({
     setParentTaskLoading(true);
     try {
       const [projectsRaw, tasksRaw] = await Promise.all([
-        getMultiSelectSearch("", "/Project"),
-        getTasksForSelect({ pageSize: 20 }),
+        getMultiSelectSearch("", "/Project") as Promise<ProjectListDto>,
+        GetTasks({ query: { pageSize: 50 } }),
       ]);
 
-      const projectList = extractArrayFromResponse(projectsRaw)
+      const projectList: SelectOption[] = projectsRaw.data
         .map(normalizeProjectOption)
         .filter((o): o is SelectOption => Boolean(o));
 
       setProjectOptions(projectList);
       setDefaultProjectOptions(projectList);
 
-      const taskList = extractArrayFromResponse(tasksRaw)
+      const taskList = tasksRaw.data
         .map(normalizeTaskOption)
         .filter((o): o is SelectOption => Boolean(o));
 
@@ -330,8 +207,8 @@ export default function CreateTaskModal({
       }
       setProjectLoading(true);
       try {
-        const projectsRaw = await getMultiSelectSearch(trimmed, "/Project");
-        const list = extractArrayFromResponse(projectsRaw)
+        const projectsRaw = await getMultiSelectSearch(trimmed, "/Project") as ProjectListDto;
+        const list = projectsRaw.data
           .map(normalizeProjectOption)
           .filter((o): o is SelectOption => Boolean(o));
         setProjectOptions(list);
@@ -349,7 +226,7 @@ export default function CreateTaskModal({
     async (searchText: string, projectId?: number) => {
       const trimmed = searchText.trim();
       const shouldSearch = trimmed.length >= MIN_SEARCH_LENGTH;
-      const resolvedProjectId = projectId ?? parseNumericId(form.getFieldValue("projectId"));
+      const resolvedProjectId = projectId ?? form.getFieldValue("projectId");
 
       if (!shouldSearch && !resolvedProjectId) {
         setParentTaskOptions([]);
@@ -358,13 +235,14 @@ export default function CreateTaskModal({
 
       setParentTaskLoading(true);
       try {
-        const tasksRaw = await getTasksForSelect({
-          searchText: shouldSearch ? trimmed : "",
-          projectId: resolvedProjectId,
-          pageSize: 20,
+        const tasksRaw = await GetTasks({
+          query: {
+            projectId: resolvedProjectId,
+            pageSize: 20,
+          },
         });
 
-        const taskList = extractArrayFromResponse(tasksRaw)
+        const taskList = tasksRaw.data
           .map(normalizeTaskOption)
           .filter((o): o is SelectOption => Boolean(o));
 
@@ -399,19 +277,19 @@ export default function CreateTaskModal({
   const handleParentTaskSearch = useCallback(
     (searchText: string) => {
       if (isViewMode) return;
-      const projectId = parseNumericId(form.getFieldValue("projectId"));
+      const projectId = form.getFieldValue("projectId");
       fetchParentTasks(searchText, projectId);
     },
     [fetchParentTasks, form, isViewMode]
   );
 
   const handleProjectChange = useCallback(
-    (value: number | undefined) => {
+    (value: number) => {
       if (isViewMode) return;
 
       form.setFieldValue("parentTaskId", undefined);
 
-      const numericValue = parseNumericId(value);
+      const numericValue = value;
       if (numericValue === undefined) {
         setParentTaskOptions([]);
         return;
@@ -442,7 +320,7 @@ export default function CreateTaskModal({
     (open: boolean) => {
       if (!open) return;
 
-      const projectId = parseNumericId(form.getFieldValue("projectId"));
+      const projectId = form.getFieldValue("projectId");
       if (projectId) {
         const cached = parentTaskCache[projectId];
         if (cached && cached.length > 0) {
@@ -470,18 +348,18 @@ export default function CreateTaskModal({
       else if (currentStatus === "Done") statusValue = TaskStatus.DONE;
       else if (currentStatus === "InActive") statusValue = TaskStatus.INACTIVE;
 
-      const resolvedProjectId = parseNumericId(currentTaskData?.ProjectId);
-      const resolvedParentTaskId = parseNumericId(currentTaskData?.ParentTaskId);
+      const resolvedProjectId = currentTaskData?.projectId;
+      const resolvedParentTaskId = currentTaskData?.parentTaskId;
 
       form.setFieldsValue({
-        code: currentTaskData?.Code ?? "",
+        code: currentTaskData?.code ?? "",
         projectId: resolvedProjectId,
         parentTaskId: resolvedParentTaskId,
-        title: currentTaskData?.Title ?? "",
-        description: currentTaskData?.Description ?? "",
+        title: currentTaskData?.title ?? "",
+        description: currentTaskData?.description ?? "",
         status: statusValue,
-        plannedHours: currentTaskData?.PlannedHours ?? undefined,
-        actualHours: currentTaskData?.ActualHours ?? undefined,
+        plannedHours: currentTaskData?.plannedHours ?? undefined,
+        actualHours: currentTaskData?.actualHours ?? undefined,
       });
 
       setSelectedLabels(resolvedLabelIds);
@@ -525,35 +403,31 @@ export default function CreateTaskModal({
       }
 
       // Ensure Project option exists
-      if (currentTaskData?.ProjectId) {
+      if (currentTaskData?.projectId) {
         const option: SelectOption = {
-          value: Number(currentTaskData?.ProjectId),
+          value: Number(currentTaskData?.projectId),
           label:
             String(
-              projectOptions.find(o => o.value === currentTaskData?.ProjectId)?.label ??
-                currentTaskData?.ProjectCode ??
-                ""
-            ) || `Proje #${currentTaskData?.ProjectId}`,
-          key: String(currentTaskData?.ProjectId),
-          raw: { Id: currentTaskData?.ProjectId, Code: currentTaskData?.ProjectCode },
+              projectOptions.find(o => o.value === currentTaskData?.projectId)?.label ??
+              currentTaskData?.projectCode ??
+              ""
+            ) || `Proje #${currentTaskData?.projectId}`,
+          key: String(currentTaskData?.projectId),
+          raw: { Id: currentTaskData?.projectId, Code: currentTaskData?.projectCode },
         };
 
         setProjectOptions(prev => mergeOptions(prev, [option]));
         setDefaultProjectOptions(prev => (prev.some(e => e.value === option.value) ? prev : [...prev, option]));
-        setSelectedUsers(Array.isArray(currentTaskData?.AssignedUsers) ? currentTaskData.AssignedUsers : []);
+        setSelectedUsers(currentTaskData.assignedUsers || []);
       }
 
       // Ensure Parent Task option exists
-      if (currentTaskData?.ParentTaskId) {
-        const resolvedParentId = Number(currentTaskData?.ParentTaskId);
+      if (currentTaskData?.parentTaskId) {
+        const resolvedParentId = Number(currentTaskData?.parentTaskId);
         const found =
           parentTaskOptions.find(o => o.value === resolvedParentId) ??
           defaultParentTaskOptions.find(o => o.value === resolvedParentId);
-        const parentLabel =
-          found?.label ||
-          currentTaskData?.ParentTaskCode ||
-          currentTaskData?.ParentTaskTitle ||
-          `Görev #${resolvedParentId}`;
+        const parentLabel = found?.label;
 
         const parentOption: SelectOption = {
           value: resolvedParentId,
@@ -562,8 +436,8 @@ export default function CreateTaskModal({
           raw:
             found?.raw ?? {
               Id: resolvedParentId,
-              Code: currentTaskData?.ParentTaskCode,
-              Title: currentTaskData?.ParentTaskTitle,
+              Code: found?.parentTaskCode,
+              Title: found?.parentTaskTitle,
             },
         };
 
@@ -603,9 +477,6 @@ export default function CreateTaskModal({
     isViewMode,
     currentTaskData,
     form,
-    parentTaskOptions,
-    defaultParentTaskOptions,
-    projectOptions,
   ]);
 
   useEffect(() => {
@@ -618,7 +489,7 @@ export default function CreateTaskModal({
     }
   }, [visible, isEditMode, isViewMode, form]);
 
-  const handleRemoveUser = (userId: string) => {
+  const handleRemoveUser = (userId: number) => {
     if (isViewMode) return;
     setSelectedUsers(prev => prev.filter(u => u.id !== userId));
   };
@@ -627,9 +498,9 @@ export default function CreateTaskModal({
     if (isViewMode) return;
     const userOption = userOptions.find(o => o.value === userId);
     if (!userOption) return;
-    if (selectedUsers.some(u => u.id === userId)) return;
+    if (selectedUsers.some(u => u.id === Number(userId))) return;
     const newUser = {
-      id: userId,
+      id: Number(userId),
       name: typeof userOption.label === "string" ? userOption.label : String(userOption.label),
     };
     setSelectedUsers(prev => [...prev, newUser]);
@@ -640,7 +511,7 @@ export default function CreateTaskModal({
       setUserLoading(true);
       try {
         const response = await getMultiSelectSearch("", "/User");
-        const apiResult = extractArrayFromResponse(response.data);
+        const apiResult = response.data;
         const opts: MultiSelectOption[] = apiResult.map((item: any) => {
           const id = item.id?.toString() || Math.random().toString();
           const name =
@@ -663,7 +534,7 @@ export default function CreateTaskModal({
     setUserLoading(true);
     try {
       const response = await getMultiSelectSearch(searchText, "/User");
-      const apiResult = extractArrayFromResponse(response.data);
+      const apiResult = response.data;
       const opts: MultiSelectOption[] = apiResult.map((item: any) => {
         const id = item.id?.toString() || Math.random().toString();
         const name =
@@ -684,6 +555,7 @@ export default function CreateTaskModal({
 
   const handleLabelsChange = (values: string[]) => {
     if (isViewMode) return;
+    console.log("handleLabelsChange called with:", values);
     setSelectedLabels(values);
     form.setFieldValue("labels", values);
   };
@@ -758,10 +630,10 @@ export default function CreateTaskModal({
   };
 
   const modalTitle = isViewMode
-    ? `Görev Detayları${currentTaskData?.Code ? ` (${currentTaskData?.Code})` : ""}`
+    ? `Görev Detayları${currentTaskData?.code ? ` (${currentTaskData?.code})` : ""}`
     : isEditMode
-    ? `Görev Güncelle${currentTaskData?.Code ? ` (${currentTaskData?.Code})` : ""}`
-    : "Yeni Görev Oluştur";
+      ? `Görev Güncelle${currentTaskData?.code ? ` (${currentTaskData?.code})` : ""}`
+      : "Yeni Görev Oluştur";
 
   return (
     <>
@@ -867,7 +739,7 @@ export default function CreateTaskModal({
               <InputNumber style={{ width: "100%" }} min={0} step={0.5} />
             </Form.Item>
 
-            <Form.Item label="Etiketler" name="labels" style={formItemNoMarginStyle}>
+            <Form.Item label="Etiketler" style={formItemNoMarginStyle}>
               <div className="space-y-2 flex flex-row gap-2">
                 <MultiSelectSearch
                   placeholder="Etiket ara ve seç..."
@@ -989,11 +861,11 @@ export default function CreateTaskModal({
         initialData={
           editingLabelData
             ? {
-                id: editingLabelData.value.toString(),
-                name: editingLabelData.label,
-                description: (editingLabelData as any).description || "",
-                color: (editingLabelData as any).color || "",
-              }
+              id: editingLabelData.value.toString(),
+              name: editingLabelData.label,
+              description: (editingLabelData as any).description || "",
+              color: (editingLabelData as any).color || "",
+            }
             : undefined
         }
         onSuccess={handleLabelModalSuccess}
