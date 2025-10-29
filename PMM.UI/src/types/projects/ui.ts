@@ -1,67 +1,60 @@
 // src/types/projects/ui.ts
 
-import { FormMode } from '../common';
-import { ProjectDto } from './api';
+import { ProjectData } from "@/store/zustand/projects-store";
+import type { ProjectPriority, ProjectStatus } from "./api";
 
-// Modal props
+export type ProjectModalMode = "create" | "edit" | "view";
+
+export interface ProjectModalLabel {
+  id: number | string;
+  name?: string | null;
+  description?: string | null;
+  color?: string | null;
+}
+
+export interface ProjectModalParentProject {
+  id?: number | string | null;
+  code?: string | null;
+  title?: string | null;
+}
+
+export interface ProjectModalProject {
+  Id: number | null;
+  Code?: string | null;
+  Title?: string | null;
+  Labels?: ProjectModalLabel[] | null;
+  labels?: ProjectModalLabel[] | null;
+  LabelIds?: Array<number | string> | null;
+  PlannedStartDate?: string | null;
+  PlannedDeadLine?: string | null;
+  PlannedHours?: number | null;
+  StartedAt?: string | null;
+  EndAt?: string | null;
+  Status?: ProjectStatus | string | null;
+  Priority?: ProjectPriority | string | null;
+  ClientId?: number | null;
+  Client?: { Name?: string | null } | null;
+  ClientName?: string | null;
+  ParentProjectIds?: Array<number | string> | null;
+  ParentProjects?: ProjectModalParentProject[] | null;
+  AssignedUsers?: Array<{
+    userId?: number;
+    id?: number;
+    role?: string;
+    user?: { name?: string | null };
+  }> | null;
+  rawPlannedStartDate?: number | null;
+  rawPlannedDeadline?: number | null;
+  rawStartedAt?: number | null;
+  rawEndAt?: number | null;
+  rawStatus?: number | null;
+}
+
 export interface ProjectModalProps {
   visible: boolean;
   onClose: () => void;
   onSuccess?: () => void;
-  projectData?: ProjectDto | null;
-  mode?: FormMode;
+  projectData?: ProjectData | null;
+  mode?: ProjectModalMode;
 }
 
-// Form değerleri
-export interface ProjectFormValues {
-  code?: string;
-  title: string;
-  description?: string;
-  plannedStartDate?: string; // dayjs object için
-  plannedDeadline?: string;
-  plannedHours?: number;
-  startedAt?: string;
-  endAt?: string;
-  status?: number;
-  priority?: number;
-  customer?: string;
-  parentProjects?: string[];
-  labels?: string[];
-}
-
-// Liste bileşeni props
-export interface ProjectListProps {
-  projects: ProjectDto[];
-  loading?: boolean;
-  onEdit?: (project: ProjectDto) => void;
-  onDelete?: (projectId: number) => void;
-  onView?: (project: ProjectDto) => void;
-}
-
-// Tablo sütun tanımları
-export interface ProjectTableColumn {
-  key: string;
-  title: string;
-  dataIndex: keyof ProjectDto;
-  sorter?: boolean;
-  width?: string | number;
-  render?: (value: any, record: ProjectDto) => React.ReactNode;
-}
-
-// Filtreleme ve arama
-export interface ProjectFilters {
-  status?: number[];
-  priority?: number[];
-  clientId?: string[];
-  labelIds?: string[];
-  dateRange?: [string, string];
-  searchText?: string;
-}
-
-export interface ProjectQueryParams {
-  pageNumber?: number;
-  pageSize?: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  filters?: ProjectFilters;
-}

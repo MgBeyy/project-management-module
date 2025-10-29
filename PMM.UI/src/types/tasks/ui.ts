@@ -1,51 +1,45 @@
 // src/types/tasks/ui.ts
 
-import { FormMode } from '../common';
-import { TaskDto } from './api';
+export type TaskModalMode = "create" | "edit" | "view";
+
+export interface TaskModalLabel {
+  id: string | number;
+  name: string;
+  color?: string;
+  description?: string;
+}
+
+export interface TaskModalUser {
+  id: string | number;
+  name: string;
+}
+
+export interface TaskModalTask {
+  Id: number | null;
+  Code?: string | null;
+  ProjectId?: number | null;
+  ProjectCode?: string | null;
+  ParentTaskId?: number | null;
+  ParentTaskCode?: string | null;
+  ParentTaskTitle?: string | null;
+  Title?: string | null;
+  Description?: string | null;
+  Status?: string | null;
+  CreatedAt?: string | null;
+  CreatedById?: number | null;
+  UpdatedAt?: string | null;
+  UpdatedById?: number | null;
+  PlannedHours?: number | null;
+  ActualHours?: number | null;
+  AssignedUsers?: TaskModalUser[];
+  Labels?: TaskModalLabel[];
+  LabelIds?: Array<string | number>;
+}
 
 export interface TaskModalProps {
   visible: boolean;
   onClose: () => void;
   onSuccess?: () => void;
-  taskData?: TaskDto | null;
-  mode?: FormMode;
-}
-
-export interface TaskFormValues {
-  title: string;
-  description?: string;
-  status?: number;
-  priority?: number;
-  dueDate?: string;
-  estimatedHours?: number;
-  actualHours?: number;
-  projectId?: number;
-  assignedUserId?: number;
-  parentTaskId?: number;
-}
-
-export interface TaskListProps {
-  tasks: TaskDto[];
-  loading?: boolean;
-  onEdit?: (task: TaskDto) => void;
-  onDelete?: (taskId: number) => void;
-  onView?: (task: TaskDto) => void;
-  onStatusChange?: (taskId: number, status: number) => void;
-}
-
-export interface TaskFilters {
-  status?: number[];
-  priority?: number[];
-  projectId?: number[];
-  assignedUserId?: number[];
-  dueDateRange?: [string, string];
-  searchText?: string;
-}
-
-export interface TaskQueryParams {
-  pageNumber?: number;
-  pageSize?: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  filters?: TaskFilters;
+  mode?: TaskModalMode;
+  taskData?: TaskModalTask | null;
 }

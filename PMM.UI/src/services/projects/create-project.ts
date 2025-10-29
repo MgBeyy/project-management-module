@@ -1,21 +1,7 @@
-import apiClient from "../api-client";
+﻿import apiClient from "../api-client";
+import type { CreateProjectPayload } from "@/types";
 
-export interface CreateProjectData {
-  code?: string;
-  title?: string;
-  plannedHours?: number;
-  plannedStartDate?: number; // milliseconds
-  plannedDeadline?: number; // milliseconds
-  startedAt?: number; // milliseconds
-  endAt?: number; // milliseconds
-  status?: number;
-  priority?: string;
-  clientId?: number;
-  parentProjectIds?: number[];
-  labelIds?: number[];
-}
-
-export async function createProject(data: CreateProjectData) {
+export async function createProject(data: CreateProjectPayload) {
   try {
     const response = await apiClient.post("/Project", data, {
       headers: {

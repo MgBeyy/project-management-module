@@ -14,7 +14,7 @@ export type ProjectSortKey =
 
 export type ProjectSortOrder = "ascend" | "descend" | null;
 
-interface ProjectData {
+export interface ProjectData {
   key: number;
   Id: number | null;
   Code: string;

@@ -1,26 +1,30 @@
 // src/types/common/index.ts
+// Shared primitives and helpers for API shapes that are currently in use.
 
-// Ortak kullanılan temel türler
+export type DateString = string;
+export type DateTimeString = string;
+export type Nullable<T> = T | null;
 
-export interface BaseEntity {
-  id: number;
-  createdAt?: string;
-  updatedAt?: string;
+export interface ApiResponse<T = unknown> {
+  version?: string | null;
+  statusCode: number;
+  message?: string | null;
+  isError?: boolean | null;
+  responseException?: unknown;
+  result?: T | null;
 }
 
-export interface ApiResponse<T> {
-  data: T;
-  success: boolean;
-  message?: string;
-  errors?: string[];
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  totalCount: number;
-  pageNumber: number;
-  pageSize: number;
+export interface PagedResult<T> {
+  page?: number | null;
+  pageSize?: number | null;
+  totalRecords: number;
   totalPages: number;
+  data?: T[] | null;
+}
+
+export interface IdNameDto {
+  id: number;
+  name: string | null;
 }
 
 export interface SelectOption {
@@ -33,21 +37,4 @@ export interface MultiSelectOption extends SelectOption {
   key: string;
   color?: string;
   description?: string;
-}
-
-// Form durumları için
-export type FormMode = 'create' | 'edit' | 'view';
-
-// API istek durumları için
-export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
-
-// Tarih türleri
-export type DateString = string; // ISO format: "2023-12-25T10:30:00Z"
-export type Timestamp = number; // Unix timestamp
-
-// Enum türleri için base
-export interface EnumValue {
-  value: number;
-  label: string;
-  color?: string;
 }

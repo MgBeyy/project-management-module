@@ -1,24 +1,8 @@
-import apiClient from "../api-client";
+﻿import apiClient from "../api-client";
+import type { UpdateProjectPayload } from "@/types";
 
-export interface UpdateProjectData {
-  title: string;
-  plannedStartDate?: number | null;
-  plannedDeadline?: number | null;
-  plannedHours?: number | null;
-  startedAt?: number | null;
-  endAt?: number | null;
-  status: string;
-  priority: string;
-  parentProjectIds?: string[];
-  assignedUsers?: { UserId: number; Role: string }[];
-  labelIds?: string[];
-  clientId?: number | null;
-}
-
-export async function updateProject(projectId: number, data: UpdateProjectData) {
+export async function updateProject(projectId: number, data: UpdateProjectPayload) {
   try {
-    console.log(data);
-    
     const response = await apiClient.put(`/Project/${projectId}`, data, {
       headers: {
         "Content-Type": "application/json",

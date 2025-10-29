@@ -1,97 +1,150 @@
 // src/types/projects/api.ts
 
-import { BaseEntity, DateString } from '../common';
+import type {
+  DateString,
+  DateTimeString,
+  IdNameDto,
+  Nullable,
+  PagedResult,
+} from "../common";
+import type { TaskDto } from "../tasks";
 
-// API'den gelen response türleri
-export interface ProjectDto extends BaseEntity {
-  // camelCase (API standard)
-  code?: string;
-  title?: string;
-  description?: string;
-  plannedStartDate?: DateString;
-  plannedDeadline?: DateString;
-  plannedHours?: number;
-  startedAt?: DateString;
-  endAt?: DateString;
-  status?: ProjectStatus;
-  priority?: ProjectPriority;
-  clientId?: string;
-  clientName?: string;
-  parentProjectIds?: string[];
-  parentProjects?: ProjectDto[];
-  labelIds?: string[];
-  labels?: LabelDto[];
-  Labels?: any[]
-  progress?: number;
-  actualHours?: number;
+export type ProjectStatus =
+  | "Active"
+  | "Inactive"
+  | "Completed"
+  | "Planned"
+  | "WaitingForApproval";
 
-  // PascalCase (mevcut kod uyumluluğu için)
-  Id?: number | null;
-  Code?: string;
-  Title?: string;
-  PlannedStartDate?: string;
-  PlannedDeadLine?: string;
-  PlannedHours?: number;
-  StartedAt?: string | null;
-  EndAt?: string | null;
-  Status?: string;
-  Priority?: string;
-  rawPlannedStartDate?: number | null;
-  rawPlannedDeadline?: number | null;
-  rawStartedAt?: number | null;
-  rawEndAt?: number | null;
-  rawStatus?: number;
-  ClientId?: string;
-  ParentProjectIds?: string[];
-  LabelIds?: string[];
-}
+export type ProjectPriority = "High" | "Regular" | "Low";
 
-// API'ye gönderilen request türleri
-export interface CreateProjectRequest {
-  code?: string;
-  title: string;
-  description?: string;
-  plannedStartDate?: DateString;
-  plannedDeadline?: DateString;
-  plannedHours?: number;
-  startedAt?: DateString;
-  endAt?: DateString;
-  status?: ProjectStatus;
-  priority?: ProjectPriority;
-  clientId?: string;
-  parentProjectIds?: string[];
-  labelIds?: string[];
-}
-
-export interface UpdateProjectRequest extends Partial<CreateProjectRequest> {
+export interface LabelDto {
   id: number;
+  name: string | null;
+  color: string | null;
+  description: string | null;
+  createdAt: DateTimeString;
+  createdById: number;
+  updatedAt: Nullable<DateTimeString>;
+  updatedById: Nullable<number>;
 }
 
-// Enum değerleri
-export enum ProjectStatus {
-  PLANNED = 0,
-  ACTIVE = 1,
-  COMPLETED = 2,
-  INACTIVE = 3,
+export interface ClientDto {
+  id: number;
+  name: string | null;
 }
 
-export enum ProjectPriority {
-  HIGH = 0,
-  MEDIUM = 1,
-  LOW = 2,
+export interface ProjectDto {
+  id: number;
+  code: string | null;
+  title: string | null;
+  plannedStartDate: Nullable<DateString>;
+  plannedDeadline: Nullable<DateString>;
+  plannedHours: Nullable<number>;
+  actualHours: Nullable<number>;
+  startedAt: Nullable<DateString>;
+  endAt: Nullable<DateString>;
+  status: ProjectStatus;
+  priority: ProjectPriority;
+  parentProjectIds: Nullable<number[]>;
+  clientId: Nullable<number>;
+  labels: Nullable<LabelDto[]>;
+  createdById: Nullable<number>;
+  createdAt: DateTimeString;
+  updatedById: Nullable<number>;
+  updatedAt: Nullable<DateTimeString>;
 }
 
-// Label türleri
-export interface LabelDto extends BaseEntity {
+export type ProjectPagedResult = PagedResult<ProjectDto>;
+
+export type ProjectAssignmentRole = "Member" | "Manager" | "Reviewer";
+
+export interface ProjectAssignmentItemPayload {
+  userId: number;
+  role: ProjectAssignmentRole;
+  startedAt?: Nullable<DateString>;
+  endAt?: Nullable<DateString>;
+  expectedHours?: Nullable<number>;
+}
+
+export interface CreateProjectPayload {
+  code: string;
+  title: string;
+  plannedStartDate?: Nullable<number>;
+  plannedDeadline?: Nullable<number>;
+  plannedHours?: Nullable<number>;
+  startedAt?: Nullable<number>;
+  endAt?: Nullable<number>;
+  status?: Nullable<ProjectStatus>;
+  priority?: ProjectPriority;
+  parentProjectIds?: Nullable<number[]>;
+  clientId?: Nullable<number>;
+  labelIds?: Nullable<number[]>;
+  assignedUsers?: Nullable<ProjectAssignmentItemPayload[]>;
+}
+
+export interface UpdateProjectPayload {
+  title: string;
+  plannedStartDate?: Nullable<number>;
+  plannedDeadline?: Nullable<number>;
+  plannedHours?: Nullable<number>;
+  startedAt?: Nullable<number>;
+  endAt?: Nullable<number>;
+  status?: Nullable<ProjectStatus>;
+  priority?: ProjectPriority;
+  parentProjectIds?: Nullable<number[]>;
+  labelIds?: Nullable<number[]>;
+  assignedUsers?: Nullable<ProjectAssignmentItemPayload[]>;
+  clientId?: Nullable<number>;
+}
+
+export interface ProjectAssignmentWithUserDto {
+  id: number;
+  projectId: number;
+  userId: number;
+  user: IdNameDto | null;
+  role: ProjectAssignmentRole;
+  startedAt: Nullable<DateString>;
+  endAt: Nullable<DateString>;
+  expectedHours: Nullable<number>;
+  spentHours: Nullable<number>;
+  createdAt: DateTimeString;
+  createdById: Nullable<number>;
+  updatedAt: Nullable<DateTimeString>;
+  updatedById: Nullable<number>;
+}
+
+export interface DetailedProjectDto {
+  id: number;
+  code: string | null;
+  title: string | null;
+  plannedStartDate: Nullable<number>;
+  plannedDeadline: Nullable<number>;
+  plannedHours: Nullable<number>;
+  actualHours: Nullable<number>;
+  startedAt: Nullable<number>;
+  endAt: Nullable<number>;
+  status: ProjectStatus;
+  priority: ProjectPriority;
+  parentProjects: Nullable<ProjectDto[]>;
+  childProjects: Nullable<ProjectDto[]>;
+  clientId: Nullable<number>;
+  client: ClientDto | null;
+  labels: Nullable<LabelDto[]>;
+  assignedUsers: Nullable<ProjectAssignmentWithUserDto[]>;
+  tasks: Nullable<TaskDto[]>;
+  createdAt: number;
+  createdById: Nullable<number>;
+  createdByUser: IdNameDto | null;
+  updatedAt: Nullable<number>;
+  updatedById: Nullable<number>;
+  updatedByUser: IdNameDto | null;
+}
+
+export interface CreateLabelPayload {
   name: string;
-  description?: string;
-  color: string;
+  color?: Nullable<string>;
+  description?: Nullable<string>;
 }
 
-// Client türü (basit versiyon)
-export interface ClientDto extends BaseEntity {
-  name: string;
-  companyName?: string;
-  email?: string;
-  phone?: string;
-}
+export type UpdateLabelPayload = CreateLabelPayload;

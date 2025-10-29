@@ -9,7 +9,7 @@ import {
 } from "react-icons/ai";
 import DeleteConfirmModal from "./modals/delete-confirm-modal";
 import CreateProjectModal from "./modals/create-project-modal";
-import { useProjectsStore } from "@/store/zustand/projects-store";
+import { ProjectData, useProjectsStore } from "@/store/zustand/projects-store";
 import { useNotification } from "@/hooks/useNotification";
 import { deleteProject } from "@/services/projects/delete-project";
 
@@ -122,7 +122,7 @@ export default function CrudModal() {
         visible={projectModalVisible}
         onClose={() => setProjectModalVisible(false)}
         onSuccess={handleProjectModalSuccess}
-        projectData={selectedProject as any}
+        projectData={selectedProject as ProjectData}
         mode={modalMode}
       />
 

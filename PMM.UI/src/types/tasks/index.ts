@@ -1,4 +1,4 @@
 // src/types/tasks/index.ts
 
-export * from './api';
-export * from './ui';
+export * from "./api";
+export type { TaskModalMode, TaskModalProps, TaskModalTask } from "./ui";
