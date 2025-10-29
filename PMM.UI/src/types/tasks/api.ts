@@ -36,7 +36,7 @@ export interface TaskDto {
   subTasks: Nullable<TaskDto[]>;
 }
 
-export type TaskPagedResult = PagedResult<TaskDto>;
+export type TaskListDto = PagedResult<TaskDto>;
 
 export interface CreateTaskPayload {
   code: string;
@@ -93,10 +93,3 @@ export type TaskQuery = {
   sortDesc?: boolean;
 };
 
-export interface TaskListDto {
-  data: TaskDto[];
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  totalRecords: number;
-}

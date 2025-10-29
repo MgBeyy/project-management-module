@@ -21,8 +21,8 @@ export type {
 
 export type {
   ActivityDto,
-  ActivityPagedResult,
-  CreateActivityPayload,
+  ActivityListDto,
+  CreateActivityData,
   UpdateActivityPayload,
 } from "./activities";
 
@@ -33,7 +33,6 @@ export type {
   ProjectAssignmentItemPayload,
   ProjectAssignmentRole,
   ProjectAssignmentWithUserDto,
-  ProjectPagedResult,
   ProjectPriority,
   ProjectStatus,
   UpdateProjectPayload,
@@ -42,7 +41,7 @@ export type {
 export type {
   CreateTaskPayload,
   TaskDto,
-  TaskPagedResult,
+  TaskListDto,
   TaskStatus,
   UpdateTaskPayload,
 } from "./tasks";

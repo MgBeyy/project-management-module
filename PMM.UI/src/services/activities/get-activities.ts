@@ -1,30 +1,31 @@
+import { ActivityListDto } from "@/types";
 import apiClient from "../api-client";
 
 type ActivityQuery = {
   page?: number;
   pageSize?: number;
-  Id?: number;
-  TaskId?: number;
-  UserId?: number;
-  Description?: string;
-  StartTime?: number;
-  StartTimeMin?: number;
-  StartTimeMax?: number;
-  EndTime?: number;
-  EndTimeMin?: number;
-  EndTimeMax?: number;
-  TotalHours?: number;
-  TotalHoursMin?: number;
-  TotalHoursMax?: number;
-  CreatedAt?: number;
-  CreatedAtMin?: number;
-  CreatedAtMax?: number;
-  Search?: string;
-  SortBy?: string;
-  SortDesc?: boolean;
+  id?: number;
+  taskId?: number;
+  userId?: number;
+  description?: string;
+  startTime?: number;
+  startTimeMin?: number;
+  startTimeMax?: number;
+  endTime?: number;
+  endTimeMin?: number;
+  endTimeMax?: number;
+  totalHours?: number;
+  totalHoursMin?: number;
+  totalHoursMax?: number;
+  createdAt?: number;
+  createdAtMin?: number;
+  createdAtMax?: number;
+  search?: string;
+  sortBy?: string;
+  sortDesc?: boolean;
 };
 
-export async function GetActivities({ query }: { query: ActivityQuery }) {
+export async function GetActivities({ query }: { query: ActivityQuery }): Promise<ActivityListDto> {
   try {
     const response = await apiClient.get("/Activity", {
       params: query,
@@ -35,7 +36,7 @@ export async function GetActivities({ query }: { query: ActivityQuery }) {
       timeout: 15000,
     });
 
-    return response.data;
+    return response.data.result;
   } catch (error) {
     console.error("Error fetching activities:", error);
     throw error;

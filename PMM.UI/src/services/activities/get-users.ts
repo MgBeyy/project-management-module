@@ -1,6 +1,7 @@
+import { UserPagedResult } from "@/types";
 import apiClient from "../api-client";
 
-export async function GetUsers(search?: string) {
+export async function GetUsers(search?: string) : Promise<UserPagedResult> {
   try {
     const response = await apiClient.get("/User", {
       params: {
@@ -12,10 +13,9 @@ export async function GetUsers(search?: string) {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      timeout: 15000,
     });
 
-    return response.data;
+    return response.data.result;
   } catch (error) {
     console.error("Error fetching users:", error);
     throw error;

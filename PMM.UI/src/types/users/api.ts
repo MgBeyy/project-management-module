@@ -18,11 +18,5 @@ export interface ClientDto {
   id: number;
   name: string | null;
 }
-export interface ClientListDto {
-  data: ClientDto[];
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  totalRecords: number;
-}
+export type ClientListDto  = PagedResult<ClientDto>;
 export type UpdateUserPayload = CreateUserPayload;

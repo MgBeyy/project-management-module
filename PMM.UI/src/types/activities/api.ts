@@ -19,14 +19,16 @@ export interface ActivityDto {
 
 export type ActivityPagedResult = PagedResult<ActivityDto>;
 
-export interface CreateActivityPayload {
+export interface CreateActivityData {
   taskId: number;
   userId: number;
   description: string;
-  startTime: DateTimeString;
-  endTime: DateTimeString;
-  isLast?: boolean;
+  startTime: number; // milliseconds
+  endTime: number; // milliseconds
 }
+
+
+export type ActivityListDto = PagedResult<ActivityDto>;
 
 export interface UpdateActivityPayload {
   description: string;

@@ -136,14 +136,14 @@ export default function CreateTaskModal({
         GetTasks({ query: { pageSize: 50 } }),
       ]);
 
-      const projectList: SelectOption[] = projectsRaw.data
+      const projectList: SelectOption[] = (projectsRaw.data || [])
         .map(normalizeProjectOption)
         .filter((o): o is SelectOption => Boolean(o));
 
       setProjectOptions(projectList);
       setDefaultProjectOptions(projectList);
 
-      const taskList = tasksRaw.data
+      const taskList = (tasksRaw.data || [])
         .map(normalizeTaskOption)
         .filter((o): o is SelectOption => Boolean(o));
 
@@ -208,7 +208,7 @@ export default function CreateTaskModal({
       setProjectLoading(true);
       try {
         const projectsRaw = await getMultiSelectSearch(trimmed, "/Project") as ProjectListDto;
-        const list = projectsRaw.data
+        const list = (projectsRaw.data || [])
           .map(normalizeProjectOption)
           .filter((o): o is SelectOption => Boolean(o));
         setProjectOptions(list);
@@ -242,7 +242,7 @@ export default function CreateTaskModal({
           },
         });
 
-        const taskList = tasksRaw.data
+        const taskList = (tasksRaw.data || [])
           .map(normalizeTaskOption)
           .filter((o): o is SelectOption => Boolean(o));
 

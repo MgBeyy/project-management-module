@@ -14,6 +14,7 @@ import UpdateActivityModal from "./modals/update-activity-modal";
 import DeleteActivityModal from "./modals/delete-activity-modal";
 import UserSelect from "./user-select";
 import Spinner from "../common/spinner";
+import { ActivityDto } from "@/types";
 
 interface TimeSlot {
   date: Dayjs;
@@ -59,7 +60,7 @@ export default function ActivitiesCalendar() {
   const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
-  const [selectedActivity, setSelectedActivity] = useState<any>(null);
+  const [selectedActivity, setSelectedActivity] = useState<ActivityDto | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [selectedEndSlot, setSelectedEndSlot] = useState<TimeSlot | null>(null);
 
@@ -85,28 +86,14 @@ export default function ActivitiesCalendar() {
         query: {
           page: 1,
           pageSize: 1000,
-          UserId: selectedUserId || undefined,
+          userId: selectedUserId || undefined,
         },
       });
 
-      const result = response.result || response;
-      const activityData = result.data || [];
+      const activityData = response.data;
 
-      const transformedData = activityData.map((item: any) => ({
-        Id: item.id,
-        TaskId: item.taskId,
-        UserId: item.userId,
-        Description: item.description,
-        StartTime: item.startTime,
-        EndTime: item.endTime,
-        TotalHours: item.totalHours,
-        CreatedAt: item.createdAt,
-        CreatedById: item.createdById,
-        UpdatedAt: item.updatedAt,
-        UpdatedById: item.updatedById,
-      }));
-
-      setActivities(transformedData);
+    
+      setActivities(activityData);
       setIsLoading(false);
     } catch (error) {
       console.error("Error fetching activities:", error);
@@ -188,8 +175,8 @@ export default function ActivitiesCalendar() {
     minute: number
   ) => {
     return activities.filter((activity) => {
-      const startTime = dayjs(activity.StartTime);
-      const endTime = dayjs(activity.EndTime);
+      const startTime = dayjs(activity.startTime);
+      const endTime = dayjs(activity.endTime);
 
       const startsHere =
         startTime.isSame(date, "day") &&
@@ -214,9 +201,9 @@ export default function ActivitiesCalendar() {
   };
 
   // Aktivite süresi (slot sayısı)
-  const getActivityDuration = (activity: any, currentDate: Dayjs) => {
-    const startTime = dayjs(activity.StartTime);
-    const endTime = dayjs(activity.EndTime);
+  const getActivityDuration = (activity: ActivityDto, currentDate: Dayjs) => {
+    const startTime = dayjs(activity.startTime);
+    const endTime = dayjs(activity.endTime);
 
     if (startTime.isSame(endTime, "day")) {
       const durationMinutes = endTime.diff(startTime, "minute");
@@ -259,30 +246,30 @@ export default function ActivitiesCalendar() {
 
   // Çakışma konum hesaplama (aynı gün içindeki aktiviteler)
   const getActivityPosition = (activity: any, allActivitiesInDay: any[]) => {
-    const startTime = dayjs(activity.StartTime);
-    const endTime = dayjs(activity.EndTime);
+    const startTime = dayjs(activity.startTime);
+    const endTime = dayjs(activity.endTime);
 
     const overlappingActivities = allActivitiesInDay.filter((otherActivity) => {
-      const otherStart = dayjs(otherActivity.StartTime);
-      const otherEnd = dayjs(otherActivity.EndTime);
+      const otherStart = dayjs(otherActivity.startTime);
+      const otherEnd = dayjs(otherActivity.endTime);
       return startTime.isBefore(otherEnd) && endTime.isAfter(otherStart);
     });
 
     const sortedActivities = overlappingActivities.sort((a, b) => {
-      const aStart = dayjs(a.StartTime).valueOf();
-      const bStart = dayjs(b.StartTime).valueOf();
+      const aStart = dayjs(a.startTime).valueOf();
+      const bStart = dayjs(b.startTime).valueOf();
       if (aStart !== bStart) return aStart - bStart;
-      return dayjs(a.EndTime).valueOf() - dayjs(b.EndTime).valueOf();
+      return dayjs(a.endTime).valueOf() - dayjs(b.endTime).valueOf();
     });
 
     const lanes: any[][] = [];
     for (const act of sortedActivities) {
-      const actStart = dayjs(act.StartTime);
+      const actStart = dayjs(act.startTime);
       let placed = false;
       for (let i = 0; i < lanes.length; i++) {
         const lane = lanes[i];
         const lastInLane = lane[lane.length - 1];
-        const lastEnd = dayjs(lastInLane.EndTime);
+        const lastEnd = dayjs(lastInLane.endTime);
         if (!actStart.isBefore(lastEnd)) {
           lane.push(act);
           placed = true;
@@ -294,7 +281,7 @@ export default function ActivitiesCalendar() {
 
     let columnIndex = 0;
     for (let i = 0; i < lanes.length; i++) {
-      if (lanes[i].some((a) => a.Id === activity.Id)) {
+      if (lanes[i].some((a) => a.id === activity.id)) {
         columnIndex = i;
         break;
       }
@@ -577,7 +564,7 @@ export default function ActivitiesCalendar() {
                         minute
                       );
                       const allActivitiesInDay = activities.filter((act) =>
-                        dayjs(act.StartTime).isSame(day, "day")
+                        dayjs(act.startTime).isSame(day, "day")
                       );
 
                       const selected = isSlotSelected(day, hour, minute);
@@ -654,7 +641,7 @@ export default function ActivitiesCalendar() {
                           )}
 
                           {/* Etkinlik Kartları */}
-                          {slotActivities.map((activity: any) => {
+                          {slotActivities.map((activity: ActivityDto) => {
                             const duration = getActivityDuration(
                               activity,
                               day
@@ -662,7 +649,7 @@ export default function ActivitiesCalendar() {
                             const activityHeight =
                               duration * SLOT_HEIGHT - 4;
 
-                            const userColor = getUserColor(activity.UserId);
+                            const userColor = getUserColor(activity.userId);
                             const {
                               totalColumns,
                               columnIndex,
@@ -674,8 +661,8 @@ export default function ActivitiesCalendar() {
                             const leftOffset = columnWidth * columnIndex;
                             const isRightmost = columnIndex === totalColumns - 1;
 
-                            const startTime = dayjs(activity.StartTime);
-                            const endTime = dayjs(activity.EndTime);
+                            const startTime = dayjs(activity.startTime);
+                            const endTime = dayjs(activity.endTime);
                             const hoverHitsActivity =
                               !!hoveredDT &&
                               (hoveredDT.isAfter(startTime) ||
@@ -684,7 +671,7 @@ export default function ActivitiesCalendar() {
 
                             return (
                               <div
-                                key={activity.Id}
+                                key={activity.id}
                                 style={{
                                   padding: "4px 6px",
                                   marginBottom: "2px",
@@ -719,10 +706,10 @@ export default function ActivitiesCalendar() {
                                   setSelectedActivity(activity);
                                   setIsUpdateModalVisible(true);
                                 }}
-                                title={`${activity.Description}\n${dayjs(
-                                  activity.StartTime
+                                title={`${activity.description}\n${dayjs(
+                                  activity.startTime
                                 ).format("HH:mm")} - ${dayjs(
-                                  activity.EndTime
+                                  activity.endTime
                                 ).format("HH:mm")}`}
                               >
                                 <div
@@ -734,7 +721,7 @@ export default function ActivitiesCalendar() {
                                     whiteSpace: "nowrap",
                                   }}
                                 >
-                                  {activity.Description}
+                                  {activity.description}
                                 </div>
                                 <div
                                   style={{
@@ -745,8 +732,8 @@ export default function ActivitiesCalendar() {
                                     whiteSpace: "nowrap",
                                   }}
                                 >
-                                  {dayjs(activity.StartTime).format("HH:mm")} -{" "}
-                                  {dayjs(activity.EndTime).format("HH:mm")}
+                                  {dayjs(activity.startTime).format("HH:mm")} -{" "}
+                                  {dayjs(activity.endTime).format("HH:mm")}
                                 </div>
                               </div>
                             );

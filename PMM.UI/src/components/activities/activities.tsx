@@ -6,7 +6,6 @@ export default function Activities() {
       <h1 style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "16px" }}>
         Etkinlikler
       </h1>
-
       <ActivitiesCalendar />
     </div>
   );
