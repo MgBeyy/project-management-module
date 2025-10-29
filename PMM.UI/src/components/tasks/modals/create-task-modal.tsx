@@ -643,7 +643,7 @@ export default function CreateTaskModal({
         onCancel={handleCancel}
         footer={null}
         width={1200}
-        destroyOnClose
+        destroyOnHidden
         styles={{ body: { maxHeight: "70vh", overflowY: "auto" } }}
       >
         <Form

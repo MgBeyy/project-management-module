@@ -594,7 +594,7 @@ export default function CreateProjectModal({
         onCancel={handleModalClose}
         footer={null}
         width={1200}
-        destroyOnClose
+        destroyOnHidden
         styles={{ body: { maxHeight: "70vh", overflowY: "auto" } }}
       >
         {isLoadingDetails ? (

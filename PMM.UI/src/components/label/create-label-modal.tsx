@@ -93,7 +93,7 @@ export default function CreateLabelModal({
       onCancel={handleCancel}
       footer={null}
       width={600}
-      destroyOnClose={true}
+      destroyOnHidden={true}
     >
       <Form
         form={form}
