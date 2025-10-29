@@ -324,7 +324,6 @@ export default function CreateProjectModal({
       const initialClientId: number | undefined = fullProjectDetails?.clientId ?? undefined;
 
       // Set form values
-      console.log(fullProjectDetails?.startedAt);
 
       form.setFieldsValue({
         code: fullProjectDetails?.code ,
@@ -564,7 +563,6 @@ export default function CreateProjectModal({
           clientId: typeof values.customer === "number" ? values.customer : null,
         } as const;
 
-        console.log(updateData);
 
         await updateProject(projectData.id, updateData);
         showNotification.success("Proje Güncellendi", " Proje başarıyla güncellendi!");
@@ -587,7 +585,6 @@ export default function CreateProjectModal({
               ? selectedUsers.map((u) => ({ userId: parseInt(u.userId, 10), role: u.role }))
               : undefined,
         } as const;
-        console.log(createData);
 
 
         await createProject(createData);
