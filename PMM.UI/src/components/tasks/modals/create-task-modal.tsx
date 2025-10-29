@@ -11,7 +11,7 @@ import { createTask } from "@/services/tasks/create-task";
 import { GetTasks } from "@/services/tasks/get-tasks";
 import { updateTask } from "@/services/tasks/update-task";
 import type { TaskDto, TaskModalProps } from "@/types/tasks";
-import type { IdNameDto, MultiSelectOption, ProjectDto, ProjectListDto } from "@/types";
+import type { IdNameDto, MultiSelectOption, ProjectListDto } from "@/types";
 
 import MultiSelectSearch, {
   MultiSelectOption as MultiSelectSearchOption,
