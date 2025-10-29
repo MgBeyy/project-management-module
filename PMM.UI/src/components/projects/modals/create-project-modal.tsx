@@ -205,9 +205,9 @@ export default function CreateProjectModal({
   }, [form]);
 
   const labelTagRender: SelectProps["tagRender"] = (tagProps) => {
-    const { label, value, closable, onClose } = tagProps;
+    const { value, closable, onClose } = tagProps;
     const option = (tagProps as any)?.option;
-
+    
     const handleMouseDown = (event: MouseEvent<HTMLSpanElement>) => {
       event.preventDefault();
       event.stopPropagation();
@@ -220,7 +220,7 @@ export default function CreateProjectModal({
       const labelOption = labelSelectOptions.find((opt) => opt.value === String(value));
       const labelData = {
         id: String(value),
-        name: labelOption?.name || (typeof labelOption?.label === "string" ? labelOption?.label : ""),
+        name: labelOption?.name,
         description: (labelOption as any)?.description || "",
         color: (option as any)?.color || (labelOption as any)?.color || "#1890ff",
       };
@@ -245,7 +245,7 @@ export default function CreateProjectModal({
           paddingInlineEnd: isViewMode ? 8 : 4,
         }}
       >
-        <span>{label}</span>
+        <span>{option?.label}</span>
         {!isViewMode && (
           <Button type="text" size="small" icon={<AiOutlineEdit />} onClick={handleEditClick} />
         )}

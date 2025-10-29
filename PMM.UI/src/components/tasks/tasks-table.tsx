@@ -1,7 +1,6 @@
 import { Table, Tag, Tooltip } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import type { ColumnsType } from "antd/es/table";
-import { Resizable } from "react-resizable";
 import { useTasksStore } from "@/store/zustand/tasks-store";
 import { GetTasks } from "@/services/tasks/get-tasks";
 import Spinner from "../common/spinner";
@@ -181,7 +180,7 @@ export default function TasksCustomTable() {
           cell: ResizableTitle,
         },
       }}
-      tableLayout="fixed"          // önemli!
+      tableLayout="fixed"    
       scroll={{ x: totalWidth, y: "35vh" }}
       pagination={{
         current: currentPage,
