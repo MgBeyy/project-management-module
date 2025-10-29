@@ -15,11 +15,11 @@ export interface ApiResponse<T = unknown> {
 }
 
 export interface PagedResult<T> {
-  page?: number | null;
-  pageSize?: number | null;
+  page?: number;
+  pageSize?: number;
   totalRecords: number;
   totalPages: number;
-  data?: T[] | null;
+  data: T[];
 }
 
 export interface IdNameDto {

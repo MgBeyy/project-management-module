@@ -45,15 +45,8 @@ export interface ProjectDto {
   updatedAt: Nullable<DateTimeString>;
 }
 
-export interface ProjectListDto {
-  data: ProjectDto[];
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  totalRecords: number;
-}
 
-export type ProjectPagedResult = PagedResult<ProjectDto>;
+export type ProjectListDto = PagedResult<ProjectDto>;
 
 export type ProjectAssignmentRole = "Member" | "Manager" | "Reviewer";
 

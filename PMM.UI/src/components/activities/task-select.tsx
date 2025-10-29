@@ -36,16 +36,16 @@ export default function TaskSelect({
           query: {
             page: 1,
             pageSize: 50,
-            Search: search || undefined,
-            AssignedUserId: userId,
+            search: search || undefined,
+            assignedUserId: userId,
           },
         });
 
-        const result = response.result || response;
+        const result = response;
         const taskData = result.data || [];
 
         const formattedTasks = taskData.map((task: any) => {
-          const taskCode = task?.code ?? task?.Code ?? "";
+          const taskCode = task?.code;
           const labelSuffix = taskCode ? `Kod: ${taskCode}` : `ID: ${task?.id}`;
 
           return {

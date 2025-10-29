@@ -1,18 +1,5 @@
+import { ActivityDto } from "@/types";
 import { create } from "zustand";
-
-interface ActivityData {
-  Id: number;
-  TaskId: number;
-  UserId: number;
-  Description: string;
-  StartTime: string;
-  EndTime: string;
-  TotalHours: number;
-  CreatedAt: string;
-  CreatedById: number;
-  UpdatedAt: string | null;
-  UpdatedById: number | null;
-}
 
 interface ActivityFilters {
   Search?: string;
@@ -27,8 +14,8 @@ interface ActivityFilters {
 }
 
 interface ActivitiesStore {
-  activities: ActivityData[];
-  selectedActivity: ActivityData | null;
+  activities: ActivityDto[];
+  selectedActivity: ActivityDto | null;
   filters: ActivityFilters;
   currentPage: number;
   pageSize: number;
@@ -36,8 +23,8 @@ interface ActivitiesStore {
   isLoading: boolean;
   refreshTrigger: number;
   
-  setActivities: (activities: ActivityData[]) => void;
-  setSelectedActivity: (activity: ActivityData | null) => void;
+  setActivities: (activities: ActivityDto[]) => void;
+  setSelectedActivity: (activity: ActivityDto | null) => void;
   setFilters: (filters: ActivityFilters) => void;
   resetFilters: () => void;
   setCurrentPage: (page: number) => void;

@@ -156,7 +156,7 @@ export default function CreateProjectModal({
         getMultiSelectSearch("", "/Project"),
       ]);
 
-      const clientOptions = clientsRaw.data
+      const clientOptions = (clientsRaw.data || [])
         .map((item: any) => {
           if (item?.id == null || !item?.name) return null;
           return { value: Number(item.id), label: String(item.name) };

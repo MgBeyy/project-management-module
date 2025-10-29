@@ -1,6 +1,7 @@
 import { Select, Spin } from "antd";
 import { useState, useEffect } from "react";
 import { GetUsers } from "../../services/activities/get-users";
+import { UserDto } from "@/types";
 
 interface UserSelectProps {
   value?: number;
@@ -26,18 +27,15 @@ export default function UserSelect({
     try {
       setLoading(true);
       const response = await GetUsers(search);
-      
-      
-      const result = response.result || response;
-      const userData = result.data || [];
-      
-      const formattedUsers = userData.map((user: any) => ({
+      const userData = response.data || [];
+
+      const formattedUsers = userData.map((user: UserDto) => ({
         value: user.id,
         label: `${user.name} (${user.email})`,
         name: user.name,
         email: user.email,
       }));
-      
+
       setUsers(formattedUsers);
       setLoading(false);
     } catch (error) {
