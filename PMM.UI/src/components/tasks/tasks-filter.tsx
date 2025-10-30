@@ -130,17 +130,18 @@ export default function TasksFilter() {
 
   const handleSubmit = (values: any) => {
     const serializedPayload = {
-      Title: values.title || undefined,
-      Description: values.description || undefined,
-      ProjectId: values.projectId || undefined,
-      Status: (values.status as TaskStatus) || undefined,
-      PlannedHours: values.plannedHours || undefined,
-      PlannedHoursMin: values.plannedHoursMin || undefined,
-      PlannedHoursMax: values.plannedHoursMax || undefined,
-      CreatedAtMin: values.createdAtMin
+      title: values.title || undefined,
+      code: values.code || undefined,
+      description: values.description || undefined,
+      projectId: values.projectId || undefined,
+      status: (values.status as TaskStatus) || undefined,
+      plannedHours: values.plannedHours || undefined,
+      plannedHoursMin: values.plannedHoursMin || undefined,
+      plannedHoursMax: values.plannedHoursMax || undefined,
+      createdAtMin: values.createdAtMin
         ? values.createdAtMin.valueOf()
         : undefined,
-      CreatedAtMax: values.createdAtMax
+      createdAtMax: values.createdAtMax
         ? values.createdAtMax.valueOf()
         : undefined,
       page: 1,
@@ -182,6 +183,9 @@ export default function TasksFilter() {
         }}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-2"
       >
+        <Form.Item label="Kod" name="code" className="mb-3">
+          <Input placeholder="Kod" size="middle" />
+        </Form.Item>
         <Form.Item label="Başlık" name="title" className="mb-3">
           <Input placeholder="Başlık" size="middle" />
         </Form.Item>
