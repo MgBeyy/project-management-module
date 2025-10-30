@@ -220,7 +220,7 @@ export default function CustomTable() {
         width: 120,
         ellipsis: { showTitle: false },
         render: (text: number) => (
-          <span title={text?.toString()}>{text === 0 || text === null ? "-" : text} saat</span>
+          <span title={text?.toString()}>{text === 0 || text === null ? "-" : (text + " saat")}</span>
         ),
       },
       {
