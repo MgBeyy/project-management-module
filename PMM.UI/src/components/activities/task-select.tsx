@@ -14,7 +14,7 @@ interface TaskSelectProps {
 export default function TaskSelect({
   value,
   onChange,
-  placeholder = "Gorev secin...",
+  placeholder = "örev seçin...",
   style,
   assignedUserId,
   disabled = false,
@@ -97,13 +97,13 @@ export default function TaskSelect({
       disabled={disabled}
       notFoundContent={
         disabled ? (
-          "Once kullanici seciniz"
+          "Önce kullanıcı seçiniz"
         ) : loading ? (
           <div style={{ textAlign: "center", padding: "8px" }}>
             <Spin size="small" />
           </div>
         ) : (
-          "Gorev bulunamadi"
+          "örev bulunamadı"
         )
       }
       options={tasks}
