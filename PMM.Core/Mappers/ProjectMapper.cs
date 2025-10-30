@@ -44,6 +44,7 @@ namespace PMM.Core.Mappers
                     .ToList(),
                 ClientId = project.ClientId,
                 Labels = project.ProjectLabels?
+                    .Where(pl => pl.Label != null)
                     .Select(pl => LabelMapper.Map(pl.Label))
                     .ToList(),
                 CreatedAt = project.CreatedAt,
@@ -75,6 +76,7 @@ namespace PMM.Core.Mappers
                 Priority = project.Priority,
                 ClientId = project.ClientId,
                 Labels = project.ProjectLabels?
+                    .Where(pl => pl.Label != null)
                     .Select(pl => LabelMapper.Map(pl.Label))
                     .ToList(),
                 CreatedAt = project.CreatedAt,
@@ -114,6 +116,7 @@ namespace PMM.Core.Mappers
                 Priority = project.Priority,
                 ClientId = project.ClientId,
                 Labels = project.ProjectLabels?
+                    .Where(pl => pl.Label != null)
                     .Select(pl => LabelMapper.Map(pl.Label))
                     .ToList(),
                 CreatedAt = project.CreatedAt,

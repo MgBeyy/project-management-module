@@ -38,6 +38,7 @@ namespace PMM.Core.Mappers
                 ActualHours = task.ActualHours,
                 IsLast = task.IsLast,
                 Labels = task.TaskLabels?
+                    .Where(tl => tl.Label != null)
                     .Select(tl => LabelMapper.Map(tl.Label))
                     .ToList(),
                 AssignedUsers = task.TaskAssignments?
