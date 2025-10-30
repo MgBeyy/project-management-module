@@ -209,7 +209,6 @@ namespace PMM.Core.Services
 
             var oldStatus = project.Status;
 
-            // Proje tamamlanma validasyonu
             if (project.Status != form.Status && form.Status == EProjectStatus.Completed)
             {
                 await ValidateProjectCompletionAsync(projectId);
@@ -228,15 +227,21 @@ namespace PMM.Core.Services
 
             if (form.ParentProjectIds != null && form.ParentProjectIds.Count != 0)
             {
+                var foundProjectsCount = await _projectRepository.Query(p => form.ParentProjectIds.Contains(p.Id)).CountAsync();
+                if (foundProjectsCount != form.ParentProjectIds.Count)
+                {
+                    throw new NotFoundException("Gönderilen üst proje ID'lerinden bazıları sistemde bulunamadı.");
+                }
+
+                var childProjects = await _projectRelationRepository.GetByParentProjectIdAsync(projectId);
+                var childProjectIds = childProjects.Select(c => c.ChildProjectId).ToHashSet();
+
                 foreach (var parentId in form.ParentProjectIds)
                 {
                     if (parentId == projectId)
                         throw new BusinessException("Bir proje kendi parent'ı olamaz!");
 
-                    _ = await _projectRepository.GetByIdAsync(parentId) ?? throw new NotFoundException($"ID {parentId} ile üst proje bulunamadı!");
-
-                    var childProjects = await _projectRelationRepository.GetByParentProjectIdAsync(projectId);
-                    if (childProjects.Any(c => c.ChildProjectId == parentId))
+                    if (childProjectIds.Contains(parentId))
                         throw new BusinessException("Bir proje, kendi alt projelerinden birine üst proje olarak atanamaz.");
 
                     var hasCircularDependency = await _projectRelationRepository.HasCircularDependencyAsync(projectId, parentId);
@@ -247,22 +252,28 @@ namespace PMM.Core.Services
 
             if (form.LabelIds != null && form.LabelIds.Count != 0)
             {
-                foreach (var labelId in form.LabelIds)
-                    _ = await _labelRepository.GetByIdAsync(labelId) ?? throw new NotFoundException($"ID {labelId} ile etiket bulunamadı!");
+                var foundLabelsCount = await _labelRepository.Query(l => form.LabelIds.Contains(l.Id)).CountAsync();
+                if (foundLabelsCount != form.LabelIds.Count)
+                {
+                    throw new NotFoundException("Gönderilen etiket ID'lerinden bazıları sistemde bulunamadı.");
+                }
             }
 
             if (form.AssignedUsers != null && form.AssignedUsers.Count != 0)
             {
-                // Duplicate user kontrolü
                 var userIds = form.AssignedUsers.Select(au => au.UserId).ToList();
                 var duplicateUserIds = userIds.GroupBy(x => x).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
                 if (duplicateUserIds.Any())
                     throw new BusinessException($"Aynı kullanıcı birden fazla kez atanamaz. Tekrarlanan kullanıcı ID'leri: {string.Join(", ", duplicateUserIds)}");
 
+                var foundUsersCount = await _userRepository.Query(u => userIds.Contains(u.Id)).CountAsync();
+                if (foundUsersCount != userIds.Count)
+                {
+                    throw new NotFoundException("Atanan kullanıcılardan bazıları sistemde bulunamadı.");
+                }
+
                 foreach (var assignedUser in form.AssignedUsers)
                 {
-                    _ = await _userRepository.GetByIdAsync(assignedUser.UserId) ?? throw new NotFoundException($"ID {assignedUser.UserId} ile kullanıcı bulunamadı!");
-
                     if (assignedUser.EndAt is not null && assignedUser.StartedAt is not null)
                     {
                         if (assignedUser.EndAt < assignedUser.StartedAt)
@@ -276,7 +287,7 @@ namespace PMM.Core.Services
             if (project.Status == EProjectStatus.Completed)
             {
                 if (project.StartedAt == null || project.EndAt == null || project.PlannedStartDate == null || project.PlannedDeadline == null || project.PlannedHours == null)
-                    throw new BusinessException("Tamamlanmış bir proje için başlangıç, bitiş, planlanan başlangıç, planlanan bitiş tarihleri ve planlanan çalışma saati zorunludur.");
+                    throw new BusinessException("Tamamlanmış bir proje için başlangıç, bitiş, planlanan başlangıç, planlanan bitiş tarihleri ve planlanan çalışma saati zorunludür.");
             }
 
             _projectRepository.Update(project);
@@ -362,9 +373,9 @@ namespace PMM.Core.Services
                     if (existingAssignment != null)
                     {
                         var hasChanges = existingAssignment.Role != assignedUser.Role ||
-                                       existingAssignment.StartedAt != assignedUser.StartedAt ||
-                                       existingAssignment.EndAt != assignedUser.EndAt ||
-                                       existingAssignment.ExpectedHours != assignedUser.ExpectedHours;
+                                         existingAssignment.StartedAt != assignedUser.StartedAt ||
+                                         existingAssignment.EndAt != assignedUser.EndAt ||
+                                         existingAssignment.ExpectedHours != assignedUser.ExpectedHours;
 
                         if (hasChanges)
                         {
@@ -409,6 +420,7 @@ namespace PMM.Core.Services
 
             return ProjectMapper.Map(updatedProject);
         }
+
 
         public async Task<PagedResult<ProjectDto>> Query(QueryProjectForm form)
         {
