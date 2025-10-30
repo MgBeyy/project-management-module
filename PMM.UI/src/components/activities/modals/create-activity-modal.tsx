@@ -89,29 +89,29 @@ export default function CreateActivityModal({
 
   return (
     <Modal
-      title="Yeni Etkinlik Olustur"
+      title="Yeni Etkinlik Oluştur"
       open={visible}
       onOk={() => form.submit()}
       onCancel={handleCancel}
-      okText="Olustur"
-      cancelText="Iptal"
+      okText="Oluştur"
+      cancelText="İptal"
       width={600}
     >
       <Form form={form} layout="vertical" onFinish={handleCreate}>
         <Form.Item
-          label="Kullanici"
+          label="Kullanıcı"
           name="userId"
-          rules={[{ required: true, message: "Kullanici secimi gereklidir" }]}
+          rules={[{ required: true, message: "Kullanıcı seçimi gereklidir" }]}
         >
-          <UserSelect placeholder="Kullanici ara ve sec..." style={{ width: "100%" }} />
+          <UserSelect placeholder="Kullanıcı ara ve seç..." style={{ width: "100%" }} />
         </Form.Item>
         <Form.Item
-          label="Gorev"
+          label="Görev"
           name="taskId"
-          rules={[{ required: true, message: "Gorev secimi gereklidir" }]}
+          rules={[{ required: true, message: "Görev seçimi gereklidir" }]}
         >
           <TaskSelect
-            placeholder="Gorev ara ve sec..."
+            placeholder="Görev ara ve seç..."
             style={{ width: "100%" }}
             assignedUserId={selectedUser}
             disabled={!selectedUser}
@@ -119,17 +119,17 @@ export default function CreateActivityModal({
         </Form.Item>
 
         <Form.Item
-          label="Aciklama"
+          label="Açıklama"
           name="description"
-          rules={[{ required: true, message: "Aciklama gereklidir" }]}
+          rules={[{ required: true, message: "Açıklama gereklidir" }]}
         >
-          <TextArea rows={4} placeholder="Etkinlik aciklamasi..." />
+          <TextArea rows={4} placeholder="Etkinlik açıklaması..." />
         </Form.Item>
 
         <Form.Item
-          label="Baslangic Zamani"
+          label="Başlangıç Zamanı"
           name="startTime"
-          rules={[{ required: true, message: "Baslangic zamani gereklidir" }]}
+          rules={[{ required: true, message: "Başlangıç zamanı gereklidir" }]}
         >
           <DatePicker
             showTime={{ format: "HH:mm", minuteStep: 15 }}
@@ -140,15 +140,15 @@ export default function CreateActivityModal({
         </Form.Item>
 
         <Form.Item
-          label="Bitis Zamani"
+          label="Bitiş Zamanı"
           name="endTime"
-          rules={[{ required: true, message: "Bitis zamani gereklidir" }]}
+          rules={[{ required: true, message: "Bitiş zamanı gereklidir" }]}
         >
           <DatePicker
             showTime={{ format: "HH:mm", minuteStep: 15 }}
             format="DD-MM-YYYY HH:mm"
             style={{ width: "100%" }}
-            placeholder="Bitis zamani secin"
+            placeholder="Bitiş zamanı seçin"
           />
         </Form.Item>
       </Form>
