@@ -127,6 +127,9 @@ namespace PMM.Core.Services
             if (form.TaskId.HasValue)
                 query = query.Where(a => a.TaskId == form.TaskId.Value);
 
+            if (form.ProjectId.HasValue)
+                query = query.Where(a => a.Task.ProjectId == form.ProjectId.Value);
+
             if (form.UserId.HasValue)
                 query = query.Where(a => a.UserId == form.UserId.Value);
 
