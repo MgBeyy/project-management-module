@@ -76,36 +76,10 @@ namespace PMM.Core.Services
             var isFirstActivity = !await _activityRepository.Query(a => a.TaskId == form.TaskId).AnyAsync();
             if (isFirstActivity)
             {
-                bool taskUpdated = false;
-                bool projectUpdated = false;
-
-                if (task.Status == ETaskStatus.Todo)
-                {
-                    task.Status = ETaskStatus.InProgress;
-                    taskUpdated = true;
-                }
-
-                if (project.Status == EProjectStatus.Planned)
-                {
-                    project.Status = EProjectStatus.Active;
-                    projectUpdated = true;
-                }
-
-                if (taskUpdated || projectUpdated)
-                {
-                    if (taskUpdated)
-                    {
-                        _taskRepository.Update(task);
-                    }
-
-                    if (projectUpdated)
-                    {
-                        _projectRepository.Update(project);
-                    }
-
-                    await _taskRepository.SaveChangesAsync();
-                    await _projectRepository.SaveChangesAsync();
-                }
+                await ActivateTaskHierarchy(task.Id);
+                await ActivateProjectHierarchy(project.Id);
+                await _taskRepository.SaveChangesAsync();
+                await _projectRepository.SaveChangesAsync();
             }
 
             var activity = ActivityMapper.Map(form);
@@ -333,6 +307,35 @@ namespace PMM.Core.Services
             foreach (var relation in parentRelations)
             {
                 await UpdateProjectAndParentHours(relation.ParentProjectId, hoursChange);
+            }
+        }
+
+        private async Task ActivateTaskHierarchy(int taskId)
+        {
+            var task = await _taskRepository.GetByIdAsync(taskId);
+            if (task == null || task.Status != ETaskStatus.Todo) return;
+
+            task.Status = ETaskStatus.InProgress;
+            _taskRepository.Update(task);
+
+            if (task.ParentTaskId.HasValue)
+            {
+                await ActivateTaskHierarchy(task.ParentTaskId.Value);
+            }
+        }
+
+        private async Task ActivateProjectHierarchy(int projectId)
+        {
+            var project = await _projectRepository.GetByIdAsync(projectId);
+            if (project == null || project.Status != EProjectStatus.Planned) return;
+
+            project.Status = EProjectStatus.Active;
+            _projectRepository.Update(project);
+
+            var parentRelations = await _projectRelationRepository.GetByChildProjectIdAsync(projectId);
+            foreach (var relation in parentRelations)
+            {
+                await ActivateProjectHierarchy(relation.ParentProjectId);
             }
         }
     }
