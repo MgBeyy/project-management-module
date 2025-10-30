@@ -96,8 +96,11 @@ namespace PMM.Core.Services
 
             if (form.ParentProjectIds != null && form.ParentProjectIds.Count != 0)
             {
-                foreach (var parentId in form.ParentProjectIds)
-                    _ = await _projectRepository.GetByIdAsync(parentId) ?? throw new NotFoundException($"ID {parentId} ile ebeveyn proje bulunamadı!");
+                var foundProjectsCount = await _projectRepository.Query(p => form.ParentProjectIds.Contains(p.Id)).CountAsync();
+                if (foundProjectsCount != form.ParentProjectIds.Count)
+                {
+                    throw new NotFoundException("Gönderilen ebeveyn proje ID'lerinden bazıları sistemde bulunamadı.");
+                }
             }
 
             if (form.ClientId is not null)
@@ -105,8 +108,11 @@ namespace PMM.Core.Services
 
             if (form.LabelIds != null && form.LabelIds.Count != 0)
             {
-                foreach (var labelId in form.LabelIds)
-                    _ = await _labelRepository.GetByIdAsync(labelId) ?? throw new NotFoundException($"ID {labelId} ile etiket bulunamadı!");
+                var foundLabelsCount = await _labelRepository.Query(l => form.LabelIds.Contains(l.Id)).CountAsync();
+                if (foundLabelsCount != form.LabelIds.Count)
+                {
+                    throw new NotFoundException("Gönderilen etiket ID'lerinden bazıları sistemde bulunamadı.");
+                }
             }
 
             if (form.AssignedUsers != null && form.AssignedUsers.Count != 0)
@@ -116,10 +122,14 @@ namespace PMM.Core.Services
                 if (duplicateUserIds.Any())
                     throw new BusinessException($"Aynı kullanıcı birden fazla kez atanamaz. Tekrarlanan kullanıcı ID'leri: {string.Join(", ", duplicateUserIds)}");
 
+                var foundUsersCount = await _userRepository.Query(u => userIds.Contains(u.Id)).CountAsync();
+                if (foundUsersCount != userIds.Count)
+                {
+                    throw new NotFoundException("Atanan kullanıcılardan bazıları sistemde bulunamadı.");
+                }
+
                 foreach (var assignedUser in form.AssignedUsers)
                 {
-                    _ = await _userRepository.GetByIdAsync(assignedUser.UserId) ?? throw new NotFoundException($"ID {assignedUser.UserId} ile kullanıcı bulunamadı!");
-
                     if (assignedUser.EndAt is not null && assignedUser.StartedAt is not null)
                     {
                         if (assignedUser.EndAt < assignedUser.StartedAt)
