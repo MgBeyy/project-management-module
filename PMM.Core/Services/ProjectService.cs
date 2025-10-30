@@ -131,7 +131,6 @@ namespace PMM.Core.Services
             var project = ProjectMapper.Map(form);
 
             _projectRepository.Create(project);
-            await _projectRepository.SaveChangesAsync();
 
             if (form.ParentProjectIds != null && form.ParentProjectIds.Count != 0)
             {
@@ -144,7 +143,6 @@ namespace PMM.Core.Services
                     };
                     _projectRelationRepository.Create(relation);
                 }
-                await _projectRelationRepository.SaveChangesAsync();
             }
 
             if (form.LabelIds != null && form.LabelIds.Count != 0)
@@ -158,7 +156,6 @@ namespace PMM.Core.Services
                     };
                     _projectLabelRepository.Create(projectLabel);
                 }
-                await _projectLabelRepository.SaveChangesAsync();
             }
 
             if (form.AssignedUsers != null && form.AssignedUsers.Count != 0)
@@ -176,8 +173,9 @@ namespace PMM.Core.Services
                     };
                     _projectAssignmentRepository.Create(projectAssignment);
                 }
-                await _projectAssignmentRepository.SaveChangesAsync();
             }
+
+            await _projectRepository.SaveChangesAsync();
 
             var createdProject = await _projectRepository.Query(p => p.Id == project.Id)
                 .Include(p => p.ParentRelations)
