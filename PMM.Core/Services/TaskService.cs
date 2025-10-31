@@ -65,6 +65,12 @@ namespace PMM.Core.Services
             if (project.Status == EProjectStatus.Inactive || project.Status == EProjectStatus.Completed || project.Status == EProjectStatus.WaitingForApproval)
                 throw new BusinessException("Bu proje durumu nedeniyle görev eklenemez. Proje durumu Pasif, Tamamlandı veya Onay Bekliyor ise görev eklenemez.");
 
+            if (form.Status == ETaskStatus.InProgress || form.Status == ETaskStatus.Done || form.Status == ETaskStatus.WaitingForApproval)
+            {
+                if (project.Status != EProjectStatus.Active)
+                    throw new BusinessException("Görev durumu Devam Ediyor, Tamamlandı veya Onay Bekliyor ise proje durumu Aktif olmalıdır.");
+            }
+
             if (form.ParentTaskId.HasValue)
                 _ = await _taskRepository.GetByIdAsync(form.ParentTaskId) ?? throw new NotFoundException("İlgili üst görev Bulunamadı!");
 
@@ -147,6 +153,12 @@ namespace PMM.Core.Services
             if (task.Status != form.Status)
             {
                 await ValidateTaskStatusChangeAsync(taskId, form.Status);
+
+                if (form.Status == ETaskStatus.InProgress || form.Status == ETaskStatus.Done || form.Status == ETaskStatus.WaitingForApproval)
+                {
+                    if (project.Status != EProjectStatus.Active)
+                        throw new BusinessException("Görev durumu Devam Ediyor, Tamamlandı veya Onay Bekliyor ise proje durumu Aktif olmalıdır.");
+                }
             }
 
             if (form.LabelIds != null && form.LabelIds.Count != 0)
@@ -384,6 +396,20 @@ namespace PMM.Core.Services
                     if (task.Status != form.Status)
                     {
                         await ValidateTaskStatusChangeAsync(task.Id, form.Status);
+                    }
+                }
+            }
+
+            // Proje durumu kontrolü
+            foreach (var task in tasks)
+            {
+                if (task.Status != form.Status)
+                {
+                    if (form.Status == ETaskStatus.InProgress || form.Status == ETaskStatus.Done || form.Status == ETaskStatus.WaitingForApproval)
+                    {
+                        var project = await _projectRepository.GetByIdAsync(task.ProjectId);
+                        if (project.Status != EProjectStatus.Active)
+                            throw new BusinessException($"Görev {task.Id} için proje durumu Aktif olmalıdır.");
                     }
                 }
             }
