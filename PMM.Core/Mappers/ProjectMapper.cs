@@ -96,6 +96,7 @@ namespace PMM.Core.Mappers
             project.EndAt = form.EndAt;
             project.Status = (EProjectStatus)form.Status;
             project.Priority = form.Priority;
+            project.ClientId = form.ClientId;
             return project;
         }
 

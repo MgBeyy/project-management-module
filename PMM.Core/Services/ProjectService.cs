@@ -212,6 +212,9 @@ namespace PMM.Core.Services
 
             var project = await _projectRepository.GetByIdAsync(projectId) ?? throw new NotFoundException("Proje Bulunamadı!");
 
+            if (form.ClientId is not null && project.ClientId.HasValue && form.ClientId != project.ClientId.Value)
+                throw new BusinessException("Müşteri projeye atandıktan sonra değiştirilemez.");
+
             var oldStatus = project.Status;
 
             if (project.Status != form.Status && form.Status == EProjectStatus.Completed)
@@ -254,6 +257,9 @@ namespace PMM.Core.Services
                         throw new BusinessException($"Proje {parentId} ile döngüsel bağımlılık oluşturulamaz!");
                 }
             }
+
+            if (form.ClientId is not null)
+                _ = await _clientRepository.GetByIdAsync(form.ClientId) ?? throw new NotFoundException("Müşteri Bulunamadı!");
 
             if (form.LabelIds != null && form.LabelIds.Count != 0)
             {
