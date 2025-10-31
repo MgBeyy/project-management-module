@@ -154,7 +154,7 @@ namespace PMM.Core.Services
                     var relation = new ProjectRelation
                     {
                         ParentProjectId = parentId,
-                        ChildProjectId = project.Id
+                        ChildProject = project
                     };
                     _projectRelationRepository.Create(relation);
                 }
@@ -166,7 +166,7 @@ namespace PMM.Core.Services
                 {
                     var projectLabel = new ProjectLabel
                     {
-                        ProjectId = project.Id,
+                        Project = project,
                         LabelId = labelId
                     };
                     _projectLabelRepository.Create(projectLabel);
@@ -179,7 +179,7 @@ namespace PMM.Core.Services
                 {
                     var projectAssignment = new ProjectAssignment
                     {
-                        ProjectId = project.Id,
+                        Project = project,
                         UserId = assignedUser.UserId,
                         Role = assignedUser.Role,
                         StartedAt = assignedUser.StartedAt,
