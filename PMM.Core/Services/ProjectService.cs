@@ -88,6 +88,11 @@ namespace PMM.Core.Services
                 }
             }
 
+            if (form.Status == EProjectStatus.Active && form.StartedAt == null)
+            {
+                form.StartedAt = DateOnly.FromDateTime(DateTime.UtcNow);
+            }
+
             if (form.Status == EProjectStatus.Completed)
             {
                 if (form.StartedAt == null || form.EndAt == null || form.PlannedStartDate == null || form.PlannedDeadline == null || form.PlannedHours == null)
@@ -280,6 +285,11 @@ namespace PMM.Core.Services
                             throw new BusinessException($"Kullanıcı {assignedUser.UserId} için projeden ayrılma tarihi başlama tarihinden önce olamaz.");
                     }
                 }
+            }
+
+            if (project.Status == EProjectStatus.Planned && form.Status == EProjectStatus.Active && form.StartedAt == null)
+            {
+                form.StartedAt = DateOnly.FromDateTime(DateTime.UtcNow);
             }
 
             project = ProjectMapper.Map(form, project);

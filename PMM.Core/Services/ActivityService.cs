@@ -333,6 +333,10 @@ namespace PMM.Core.Services
             if (project == null || project.Status != EProjectStatus.Planned) return;
 
             project.Status = EProjectStatus.Active;
+            if (project.StartedAt == null)
+            {
+                project.StartedAt = DateOnly.FromDateTime(DateTime.UtcNow);
+            }
             _projectRepository.Update(project);
 
             var parentRelations = await _projectRelationRepository.GetByChildProjectIdAsync(projectId);
