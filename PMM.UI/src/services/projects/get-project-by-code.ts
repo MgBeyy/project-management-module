@@ -32,28 +32,17 @@ function normalize(item: any): DetailedProjectDto {
 }
 
 // Tries multiple endpoints to improve compatibility
-export async function getProjectById(id: string): Promise<DetailedProjectDto | null> {
+export async function getProjectById(id: string): Promise<DetailedProjectDto> {
   // Attempt 1: RESTful by id: /Project/{id}
   try {
     const res = await apiClient.get(`Project/detailed/${encodeURIComponent(id)}`);
     const raw = res.data?.result ?? res.data;
     if (raw) {
       return normalize(raw);
+    } else {
+      throw new Error("Proje bulunamadı");
     }
   } catch (e) {
-    // silently fall through to next option
+      throw e;
   }
-
-  // Attempt 2: query param: /Project?Id={id}
-  try {
-    const res = await apiClient.get(`Project?Id=${encodeURIComponent(id)}&page=1&pageSize=1`);
-    const list = res.data?.result?.data ?? res.data?.data ?? res.data;
-    if (Array.isArray(list) && list.length > 0) {
-      return normalize(list[0]);
-    }
-  } catch (e) {
-    // ignore, return null below
-  }
-
-  return null;
 }

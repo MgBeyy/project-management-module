@@ -2,7 +2,10 @@
 import type { GraphData, EdgeData, NodeData as G6NodeData } from '@antv/g6';
 import { OrganizationChart } from '@ant-design/graphs';
 import type { OrganizationChartOptions } from '@ant-design/graphs';
+import { Button } from 'antd';
+import { DownloadOutlined } from '@ant-design/icons';
 
+// ---- Tipler ----
 type ChartNodeType = 'program' | 'project' | 'subproject' | 'task' | 'subtask' | 'activity';
 
 interface ChartNodeMeta {
@@ -45,16 +48,40 @@ interface DisplayGraphData {
 }
 
 interface ProjectOrganizationDiagramProps {
-  project: any;
+  project: any; // ProjectHierarchyDto
 }
 
+// ---- Görsel ayarlar ----
 const NODE_TYPE_CONFIG: Record<ChartNodeType, { color: string; title: string }> = {
   program: { color: '#2563eb', title: 'Program' },
   project: { color: '#2563eb', title: 'Proje' },
   subproject: { color: '#2563eb', title: 'Alt Proje' },
-  task: { color: '#f97316', title: 'Gorev' },
-  subtask: { color: '#f97316', title: 'Alt Gorev' },
+  task: { color: '#f97316', title: 'Görev' },
+  subtask: { color: '#f97316', title: 'Alt Görev' },
   activity: { color: '#f97316', title: 'Aktivite' },
+};
+
+const fmtDate = (ts?: number | null) =>
+  typeof ts === 'number' && Number.isFinite(ts) ? new Date(ts).toISOString().slice(0, 10) : undefined;
+
+const statusTR = (s?: string) => {
+  switch (s) {
+    case 'Active': return 'Aktif';
+    case 'Inactive': return 'Pasif';
+    case 'Completed': return 'Tamamlandı';
+    case 'Planned': return 'Planlandı';
+    case 'WaitingForApproval': return 'Onay Bekliyor';
+    default: return s ?? '';
+  }
+};
+
+const priorityTR = (p?: string) => {
+  switch (p) {
+    case 'High': return 'Yüksek';
+    case 'Regular': return 'Normal';
+    case 'Low': return 'Düşük';
+    default: return p ?? '';
+  }
 };
 
 const ProjectNodeCard = ({ datum }: { datum: G6NodeData }) => {
@@ -62,8 +89,8 @@ const ProjectNodeCard = ({ datum }: { datum: G6NodeData }) => {
   const config = NODE_TYPE_CONFIG[meta.type || 'project'];
   const metrics: Array<{ label: string; value: string }> = [];
 
-  if (meta.priority) metrics.push({ label: 'Oncelik', value: meta.priority });
-  if (meta.progress !== undefined) metrics.push({ label: 'Ilerleme', value: `${meta.progress}%` });
+  if (meta.priority) metrics.push({ label: 'Öncelik', value: meta.priority });
+  if (typeof meta.progress === 'number') metrics.push({ label: 'İlerleme', value: `${meta.progress}%` });
   if (meta.dueDate) metrics.push({ label: 'Termin', value: meta.dueDate });
   if (meta.startDate && meta.endDate) metrics.push({ label: 'Takvim', value: `${meta.startDate} - ${meta.endDate}` });
   if (meta.owner) metrics.push({ label: 'Sorumlu', value: meta.owner });
@@ -87,7 +114,7 @@ const ProjectNodeCard = ({ datum }: { datum: G6NodeData }) => {
         width: '100%',
         height: '100%',
         borderRadius: 16,
-        background: meta.isCurrent ? 'linear-gradient(180deg, #f8fafc 0%, #ffffff 80%)' : '#ffffff',
+        background: meta.isCurrent ? 'linear-gradient(180deg, #eef2ff 0%, #ffffff 75%)' : '#ffffff',
         border: `${borderWidth}px ${borderStyle} ${accentColor}`,
         boxShadow: meta.isCurrent ? highlightShadow : baseShadow,
         display: 'flex',
@@ -128,19 +155,12 @@ const toProgress = (estimated?: number, logged?: number) => {
   return Number.isFinite(ratio) ? ratio : undefined;
 };
 
-const PROJECT_ID_KEYS = ['id', 'code', 'projectCode', 'reference', 'externalId'];
-
+// ---- Kimlik yardımcıları (hierarchy uyumlu) ----
 const getProjectIdentifier = (project: any): string | undefined => {
   if (!project || typeof project !== 'object') return undefined;
-  for (const key of PROJECT_ID_KEYS) {
-    const value = project[key];
-    if (value !== undefined && value !== null && `${value}`.trim() !== '') {
-      return `${value}`;
-    }
-  }
-  if (typeof project.name === 'string' && project.name.trim() !== '') {
-    return project.name.trim();
-  }
+  if (project.code && `${project.code}`.trim()) return `${project.code}`;
+  if (project.id !== null && project.id !== undefined) return `${project.id}`;
+  if (project.title && `${project.title}`.trim()) return `${project.title}`.trim();
   return undefined;
 };
 
@@ -156,35 +176,28 @@ const makeProjectNodeId = (value: any): string | undefined => {
 
 const normalizeProjectRef = (value: any): any | undefined => {
   if (value === null || value === undefined) return undefined;
-  if (typeof value === 'object') return value;
-  if (typeof value === 'string' || typeof value === 'number') {
-    return { id: value };
-  }
+  if (typeof value === 'object') return value; // ProjectDto
+  if (typeof value === 'string' || typeof value === 'number') return { id: value };
   return undefined;
 };
 
 const collectParentRefs = (project: any): string[] => {
   const refs = new Set<string>();
-  if (Array.isArray(project?.parentIds)) {
-    project.parentIds.forEach((pid: any) => {
+
+  if (Array.isArray(project?.parentProjectIds)) {
+    project.parentProjectIds.forEach((pid: any) => {
       if (pid !== null && pid !== undefined) refs.add(`${pid}`);
     });
   }
-  if (project?.parentId !== null && project?.parentId !== undefined) {
-    refs.add(`${project.parentId}`);
-  }
-  const appendParentProjectRefs = (parent: any) => {
-    const normalized = normalizeProjectRef(parent);
-    if (!normalized) return;
-    const identifier = getProjectIdentifier(normalized);
-    if (identifier) refs.add(identifier);
-  };
+
   if (Array.isArray(project?.parentProjects)) {
-    project.parentProjects.forEach((parent: any) => appendParentProjectRefs(parent));
+    project.parentProjects.forEach((parent: any) => {
+      const norm = normalizeProjectRef(parent);
+      const idf = getProjectIdentifier(norm);
+      if (idf) refs.add(idf);
+    });
   }
-  if (project?.parentProject) {
-    appendParentProjectRefs(project.parentProject);
-  }
+
   return Array.from(refs);
 };
 
@@ -198,41 +211,51 @@ const NODE_TYPE_PRIORITY: Record<ChartNodeType, number> = {
 };
 
 const pickNodeType = (left?: ChartNodeType, right?: ChartNodeType): ChartNodeType | undefined => {
-  if (left && right) {
-    return NODE_TYPE_PRIORITY[left] <= NODE_TYPE_PRIORITY[right] ? left : right;
-  }
+  if (left && right) return NODE_TYPE_PRIORITY[left] <= NODE_TYPE_PRIORITY[right] ? left : right;
   return left ?? right;
 };
 
 const mergeNodeMeta = (existing: ChartNodeMeta, incoming: ChartNodeMeta): ChartNodeMeta => {
   const { type: incomingType, ...restIncoming } = incoming;
   const merged: ChartNodeMeta = { ...existing };
-
   (Object.entries(restIncoming) as Array<[keyof ChartNodeMeta, ChartNodeMeta[keyof ChartNodeMeta]]>).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      (merged as any)[key] = value;
-    }
+    if (value !== undefined && value !== null) (merged as any)[key] = value;
   });
-
   merged.isCurrent = Boolean(existing.isCurrent || incoming.isCurrent);
   merged.type = pickNodeType(existing.type, incomingType) ?? existing.type ?? incomingType ?? 'project';
   return merged;
 };
 
+// ---- Meta üreticileri ----
 const createProjectMeta = (project: any, options: { nodeType?: ChartNodeType; isCurrent?: boolean }) => {
   const identifier = getProjectIdentifier(project);
-  const label = project?.code || (identifier ? `PRJ-${identifier}` : 'PRJ-UNKNOWN');
+  // Başlık: title varsa başlıkta title göster; yoksa code; o da yoksa fallback
+  const label = (project?.title && `${project.title}`.trim())
+    ? `${project.title}`.trim()
+    : (project?.code ?? (identifier ? `PRJ-${identifier}` : 'PRJ-UNKNOWN'));
+
+  // Alt satır: varsa code'u gösterelim
+  const secondaryName = (project?.code && `${project.code}`.trim()) ? `${project.code}`.trim() : undefined;
+
+  const firstAssigneeName =
+    Array.isArray(project?.assignedUsers) && project.assignedUsers.length
+      ? (project.assignedUsers.find((x: any) => x?.role === 'Manager')?.user?.name ??
+         project.assignedUsers[0]?.user?.name)
+      : undefined;
 
   return {
     label,
-    name: project?.name,
+    name: secondaryName ?? project?.title ?? undefined,
     type: options.nodeType ?? (collectParentRefs(project).length ? 'project' : 'program'),
-    status: project?.status,
-    priority: project?.priority,
-    progress: typeof project?.progress === 'number' ? project.progress : undefined,
-    startDate: project?.startDate,
-    endDate: project?.endDate,
-    owner: project?.members?.[0]?.name,
+    status: statusTR(project?.status),
+    priority: priorityTR(project?.priority),
+    progress:
+      typeof project?.plannedHours === 'number' && project.plannedHours > 0
+        ? Math.min(100, Math.round(((project?.actualHours ?? 0) / project.plannedHours) * 100))
+        : undefined,
+    startDate: fmtDate(project?.plannedStartDate),
+    endDate: fmtDate(project?.plannedDeadline),
+    owner: firstAssigneeName,
     isCurrent: options.isCurrent ?? Boolean(project?.isCurrent),
   } as ChartNodeMeta;
 };
@@ -242,22 +265,34 @@ const createFallbackProjectMeta = (rawId: string): ChartNodeMeta => ({
   type: 'program',
 });
 
+const statusTRTask = (s?: string) => {
+  const v = (s ?? '').toLowerCase();
+  if (v === 'todo') return 'Yapılacak';
+  if (v === 'inactive') return 'Pasif';
+  if (v === 'active') return 'Aktif';
+  if (v === 'inprogress' || v === 'progress') return 'Devam ediyor';
+  if (v === 'completed' || v === 'done') return 'Tamamlandı';
+  if (v === 'blocked') return 'Engellendi';
+  if (v === 'onhold') return 'Beklemede';
+  return s ?? '';
+};
+
 const createTaskMeta = (task: any): ChartNodeMeta => ({
   label: task?.title ?? `Task-${task?.id ?? ''}`,
   name: task?.assignee,
-  status: task?.status,
-  priority: task?.priority,
+  status: statusTRTask(task?.status),
+  priority: priorityTR(task?.priority),
   dueDate: task?.dueDate,
-  progress: toProgress(task?.estimatedHours, task?.loggedHours),
-  estimatedHours: task?.estimatedHours,
-  loggedHours: task?.loggedHours,
+  progress: toProgress(task?.plannedHours ?? task?.estimatedHours, task?.actualHours ?? task?.loggedHours),
+  estimatedHours: task?.plannedHours ?? task?.estimatedHours,
+  loggedHours: task?.actualHours ?? task?.loggedHours,
   type: 'task',
 });
 
 const createSubtaskMeta = (subtask: any): ChartNodeMeta => ({
   label: subtask?.title ?? `Subtask-${subtask?.id ?? ''}`,
-  name: subtask?.status,
-  status: subtask?.status,
+  name: subtask?.description ?? subtask?.status,
+  status: statusTRTask(subtask?.status),
   type: 'subtask',
 });
 
@@ -268,6 +303,7 @@ const createActivityMeta = (activity: any): ChartNodeMeta => ({
   type: 'activity',
 });
 
+// ---- Graph Builder ----
 class ChartGraphBuilder {
   nodes = new Map<string, ChartNode>();
   edges = new Map<string, EdgeData>();
@@ -278,11 +314,8 @@ class ChartGraphBuilder {
 
   upsertNode(node: ChartNode) {
     const existing = this.nodes.get(node.id);
-    if (existing) {
-      this.nodes.set(node.id, { id: node.id, data: mergeNodeMeta(existing.data, node.data) });
-    } else {
-      this.nodes.set(node.id, node);
-    }
+    if (existing) this.nodes.set(node.id, { id: node.id, data: mergeNodeMeta(existing.data, node.data) });
+    else this.nodes.set(node.id, node);
   }
 
   addEdge(sourceId: string, targetId: string) {
@@ -303,9 +336,7 @@ class ChartGraphBuilder {
   queueParentLinks(childId: string, parentRefs: string[]) {
     if (!childId || !parentRefs.length) return;
     const bucket = this.pendingParents.get(childId) ?? new Set<string>();
-    parentRefs.forEach((ref) => {
-      if (ref !== undefined && ref !== null) bucket.add(ref);
-    });
+    parentRefs.forEach((ref) => { if (ref !== undefined && ref !== null) bucket.add(ref); });
     if (bucket.size) this.pendingParents.set(childId, bucket);
   }
 
@@ -332,13 +363,7 @@ class ChartGraphBuilder {
   }
 
   toResult(): ChartGraphResult {
-    return {
-      nodes: this.nodes,
-      edges: this.edges,
-      children: this.children,
-      parents: this.parents,
-      currentNodeId: this.currentNodeId,
-    };
+    return { nodes: this.nodes, edges: this.edges, children: this.children, parents: this.parents, currentNodeId: this.currentNodeId };
   }
 }
 
@@ -348,14 +373,12 @@ interface RegisterProjectOptions {
   visited: Set<string>;
 }
 
+// ---- Alt öğeler ----
 const registerActivity = (builder: ChartGraphBuilder, activity: any, parentId: string) => {
   if (!activity) return;
   const key = activity?.id ?? `${parentId}-activity-${activity?.description ?? 'activity'}-${activity?.date ?? ''}`;
   const nodeId = `activity-${key}`;
-  builder.upsertNode({
-    id: nodeId,
-    data: createActivityMeta(activity),
-  });
+  builder.upsertNode({ id: nodeId, data: createActivityMeta(activity) });
   builder.addEdge(parentId, nodeId);
 };
 
@@ -364,11 +387,13 @@ const registerSubtask = (builder: ChartGraphBuilder, subtask: any, parentId: str
   const identifier = subtask?.id ?? subtask?.code ?? subtask?.title;
   if (identifier === undefined || identifier === null) return;
   const nodeId = `subtask-${identifier}`;
-  builder.upsertNode({
-    id: nodeId,
-    data: createSubtaskMeta(subtask),
-  });
+  builder.upsertNode({ id: nodeId, data: createSubtaskMeta(subtask) });
   builder.addEdge(parentId, nodeId);
+
+  // iç içe alt görevler (subTasks / subtasks) desteklenir
+  const nested = (Array.isArray(subtask?.subTasks) ? subtask.subTasks : [])
+    .concat(Array.isArray(subtask?.subtasks) ? subtask.subtasks : []);
+  nested.forEach((st: any) => registerSubtask(builder, st, nodeId));
 };
 
 const registerTask = (builder: ChartGraphBuilder, task: any, parentId: string) => {
@@ -376,56 +401,18 @@ const registerTask = (builder: ChartGraphBuilder, task: any, parentId: string) =
   const identifier = task?.id ?? task?.code ?? task?.title;
   if (identifier === undefined || identifier === null) return;
   const nodeId = `task-${identifier}`;
-  builder.upsertNode({
-    id: nodeId,
-    data: createTaskMeta(task),
-  });
+  builder.upsertNode({ id: nodeId, data: createTaskMeta(task) });
   builder.addEdge(parentId, nodeId);
 
-  if (Array.isArray(task?.subtasks)) {
-    task.subtasks.forEach((sub: any) => registerSubtask(builder, sub, nodeId));
-  }
+  // hem subTasks (DTO) hem subtasks (eski) destekle
+  const subs = (Array.isArray(task?.subTasks) ? task.subTasks : [])
+    .concat(Array.isArray(task?.subtasks) ? task.subtasks : []);
+  subs.forEach((sub: any) => registerSubtask(builder, sub, nodeId));
 
-  if (Array.isArray(task?.activities)) {
-    task.activities.forEach((activity: any) => registerActivity(builder, activity, nodeId));
-  }
+  if (Array.isArray(task?.activities)) task.activities.forEach((activity: any) => registerActivity(builder, activity, nodeId));
 };
 
-const registerProject = (builder: ChartGraphBuilder, project: any, options: RegisterProjectOptions): string | undefined => {
-  const identifier = getProjectIdentifier(project);
-  if (!identifier) return undefined;
-  const nodeId = `project-${identifier}`;
-  const nodeType = options.nodeType ?? (collectParentRefs(project).length ? 'project' : 'program');
-
-  builder.upsertNode({
-    id: nodeId,
-    data: createProjectMeta(project, { nodeType, isCurrent: options.isCurrent }),
-  });
-
-  if (options.isCurrent) {
-    builder.currentNodeId = nodeId;
-  }
-
-  const alreadyVisited = options.visited.has(nodeId);
-  if (!alreadyVisited) {
-    options.visited.add(nodeId);
-
-    if (Array.isArray(project?.tasks)) {
-      project.tasks.forEach((task: any) => registerTask(builder, task, nodeId));
-    }
-  }
-
-  if (Array.isArray(project?.subprojects)) {
-    project.subprojects.forEach((sub: any) => {
-      const childId = registerProject(builder, sub, { nodeType: 'subproject', visited: options.visited });
-      if (childId) builder.addEdge(nodeId, childId);
-    });
-  }
-
-  builder.queueParentLinks(nodeId, collectParentRefs(project));
-  return nodeId;
-};
-
+// ---- Parent lookup (hierarchy) ----
 const buildParentLookup = (project: any): Map<string, any> => {
   const lookup = new Map<string, any>();
   if (!project) return lookup;
@@ -460,35 +447,50 @@ const buildParentLookup = (project: any): Map<string, any> => {
     const { value } = queue.shift()!;
     if (!value || typeof value !== 'object') continue;
 
-    if (Array.isArray(value?.subprojects)) {
-      value.subprojects.forEach((sub: any) => enqueue(sub, 'sub'));
-    }
-
-    if (Array.isArray(value?.parentProjects)) {
-      value.parentProjects.forEach((parent: any) => registerParentCandidate(parent));
-    }
-
-    if (value?.parentProject) {
-      registerParentCandidate(value.parentProject);
-    }
+    if (Array.isArray(value?.childProjects)) value.childProjects.forEach((sub: any) => enqueue(sub, 'sub'));
+    if (Array.isArray(value?.parentProjects)) value.parentProjects.forEach((parent: any) => registerParentCandidate(parent));
   }
 
   const rootIdentifier = getProjectIdentifier(project);
-  if (rootIdentifier) {
-    lookup.delete(rootIdentifier);
-  }
+  if (rootIdentifier) lookup.delete(rootIdentifier);
 
   return lookup;
 };
 
+// ---- Proje kaydı (hierarchy) ----
+const registerProject = (builder: ChartGraphBuilder, project: any, options: RegisterProjectOptions): string | undefined => {
+  const identifier = getProjectIdentifier(project);
+  if (!identifier) return undefined;
+  const nodeId = `project-${identifier}`;
+  const nodeType = options.nodeType ?? (collectParentRefs(project).length ? 'project' : 'program');
+
+  builder.upsertNode({ id: nodeId, data: createProjectMeta(project, { nodeType, isCurrent: options.isCurrent }) });
+
+  if (options.isCurrent) builder.currentNodeId = nodeId;
+
+  const alreadyVisited = options.visited.has(nodeId);
+  if (!alreadyVisited) {
+    options.visited.add(nodeId);
+    if (Array.isArray(project?.tasks)) project.tasks.forEach((task: any) => registerTask(builder, task, nodeId));
+  }
+
+  if (Array.isArray(project?.childProjects)) {
+    project.childProjects.forEach((sub: any) => {
+      const childId = registerProject(builder, sub, { nodeType: 'subproject', visited: options.visited });
+      if (childId) builder.addEdge(nodeId, childId);
+    });
+  }
+
+  builder.queueParentLinks(nodeId, collectParentRefs(project));
+  return nodeId;
+};
+
+// ---- Graph kurucular ----
 const buildOrganizationChartGraph = (project: any): ChartGraphResult => {
   const builder = new ChartGraphBuilder();
 
   if (!project) {
-    builder.upsertNode({
-      id: 'empty-project',
-      data: { label: 'Veri yok', name: 'Organizasyon icin veri tanimli degil', type: 'project' } as ChartNodeMeta,
-    });
+    builder.upsertNode({ id: 'empty-project', data: { label: 'Veri yok', name: 'Organizasyon için veri tanımlı değil', type: 'project' } as ChartNodeMeta });
     return builder.toResult();
   }
 
@@ -499,11 +501,7 @@ const buildOrganizationChartGraph = (project: any): ChartGraphResult => {
     registerProject(builder, parentProject, { visited: visitedProjects });
   });
 
-  registerProject(builder, project, {
-    visited: visitedProjects,
-    isCurrent: true,
-    nodeType: collectParentRefs(project).length ? 'project' : 'program',
-  });
+  registerProject(builder, project, { visited: visitedProjects, isCurrent: true, nodeType: collectParentRefs(project).length ? 'project' : 'program' });
 
   builder.resolveParentLinks((rawId) => parentLookup.get(rawId));
 
@@ -521,9 +519,7 @@ const collectAncestors = (graph: ChartGraphResult, startId?: string): Set<string
     result.add(nodeId);
 
     const parents = graph.parents.get(nodeId);
-    if (parents) {
-      parents.forEach((parentId) => stack.push(parentId));
-    }
+    if (parents) parents.forEach((parentId) => stack.push(parentId));
   }
 
   return result;
@@ -540,9 +536,7 @@ const collectDescendants = (graph: ChartGraphResult, startId?: string): Set<stri
     result.add(nodeId);
 
     const children = graph.children.get(nodeId);
-    if (children) {
-      children.forEach((childId) => stack.push(childId));
-    }
+    if (children) children.forEach((childId) => stack.push(childId));
   }
 
   return result;
@@ -569,7 +563,6 @@ const buildDisplayGraphData = (graph: ChartGraphResult, expandedOriginIds: Set<s
       const parentId = queue.shift()!;
       const childSet = graph.children.get(parentId);
       if (!childSet) continue;
-
       childSet.forEach((childId) => {
         if (!graph.nodes.has(childId)) return;
         if (!primaryParent.has(childId)) {
@@ -581,27 +574,13 @@ const buildDisplayGraphData = (graph: ChartGraphResult, expandedOriginIds: Set<s
   };
 
   const roots: string[] = [];
-  graph.nodes.forEach((_, nodeId) => {
-    if ((graph.parents.get(nodeId)?.size ?? 0) === 0) {
-      roots.push(nodeId);
-    }
-  });
-
-  if (!roots.length && graph.currentNodeId) {
-    roots.push(graph.currentNodeId);
-  }
-
-  if (!roots.length) {
-    roots.push(...Array.from(graph.nodes.keys()));
-  }
+  graph.nodes.forEach((_, nodeId) => { if ((graph.parents.get(nodeId)?.size ?? 0) === 0) roots.push(nodeId); });
+  if (!roots.length && graph.currentNodeId) roots.push(graph.currentNodeId);
+  if (!roots.length) roots.push(...Array.from(graph.nodes.keys()));
 
   assignPrimaryParents(roots);
 
-  graph.nodes.forEach((_, nodeId) => {
-    if (!primaryParent.has(nodeId)) {
-      assignPrimaryParents([nodeId]);
-    }
-  });
+  graph.nodes.forEach((_, nodeId) => { if (!primaryParent.has(nodeId)) assignPrimaryParents([nodeId]); });
 
   graph.nodes.forEach((node, originId) => {
     const data = { ...node.data, originId } as unknown as Record<string, unknown>;
@@ -609,9 +588,7 @@ const buildDisplayGraphData = (graph: ChartGraphResult, expandedOriginIds: Set<s
     displayNodes.set(originId, displayNode);
     originToDisplays.set(originId, [originId]);
     primaryDisplayIds.set(originId, originId);
-    if (expandedOriginIds.has(originId)) {
-      expandedDisplayIds.add(originId);
-    }
+    if (expandedOriginIds.has(originId)) expandedDisplayIds.add(originId);
   });
 
   primaryParent.forEach((parentId, childId) => {
@@ -619,16 +596,13 @@ const buildDisplayGraphData = (graph: ChartGraphResult, expandedOriginIds: Set<s
     const parentNode = displayNodes.get(parentId);
     const childNode = displayNodes.get(childId);
     if (!parentNode || !childNode) return;
-
     const children = Array.isArray(parentNode.children) ? [...(parentNode.children as string[])] : [];
     children.push(childId);
     parentNode.children = children;
   });
 
   displayNodes.forEach((node, originId) => {
-    if (Array.isArray(node.children) && node.children.length) {
-      node.style = { ...(node.style ?? {}), collapsed: !expandedOriginIds.has(originId) };
-    }
+    if (Array.isArray(node.children) && node.children.length) node.style = { ...(node.style ?? {}), collapsed: !expandedOriginIds.has(originId) } as any;
   });
 
   const edges: EdgeData[] = [];
@@ -636,11 +610,7 @@ const buildDisplayGraphData = (graph: ChartGraphResult, expandedOriginIds: Set<s
 
   primaryParent.forEach((parentId, childId) => {
     if (!parentId) return;
-    edges.push({
-      id: `edge-${parentId}-${childId}-${edgeIndex++}`,
-      source: parentId,
-      target: childId,
-    });
+    edges.push({ id: `edge-${parentId}-${childId}-${edgeIndex++}`, source: parentId, target: childId });
   });
 
   const seenExtra = new Set<string>();
@@ -651,27 +621,19 @@ const buildDisplayGraphData = (graph: ChartGraphResult, expandedOriginIds: Set<s
       const key = `${parentId}-${childId}`;
       if (seenExtra.has(key)) return;
       seenExtra.add(key);
-      edges.push({
-        id: `edge-extra-${key}-${edgeIndex++}`,
-        source: parentId,
-        target: childId,
-        style: { stroke: '#94a3b8', lineDash: [6, 4], endArrow: true, opacity: 0.8 },
-      });
+      edges.push({ id: `edge-extra-${key}-${edgeIndex++}`, source: parentId, target: childId, style: { stroke: '#94a3b8', lineDash: [6, 4], endArrow: true, opacity: 0.8 } as any });
     });
   });
 
-  return {
-    graphData: { nodes: Array.from(displayNodes.values()), edges },
-    originToDisplays,
-    primaryDisplayIds,
-    expandedDisplayIds,
-  };
+  return { graphData: { nodes: Array.from(displayNodes.values()), edges }, originToDisplays, primaryDisplayIds, expandedDisplayIds };
 };
 
+// ---- Ana bileşen ----
 const ProjectOrganizationDiagram = ({ project }: ProjectOrganizationDiagramProps) => {
   const chartGraph = useMemo(() => buildOrganizationChartGraph(project), [project]);
   const currentNodeId = chartGraph.currentNodeId;
   const focusPathCandidates = project?.focusPathCandidates;
+  const graphRef = useRef<any>(null);
 
   const ancestors = useMemo(() => collectAncestors(chartGraph, currentNodeId), [chartGraph, currentNodeId]);
   const descendants = useMemo(() => collectDescendants(chartGraph, currentNodeId), [chartGraph, currentNodeId]);
@@ -684,10 +646,7 @@ const ProjectOrganizationDiagram = ({ project }: ProjectOrganizationDiagramProps
     if (Array.isArray(focusPathCandidates)) {
       focusPathCandidates.forEach((path: any) => {
         if (!Array.isArray(path)) return;
-        path.forEach((ref) => {
-          const nodeId = makeProjectNodeId(ref);
-          if (nodeId) expanded.add(nodeId);
-        });
+        path.forEach((ref) => { const nodeId = makeProjectNodeId(ref); if (nodeId) expanded.add(nodeId); });
       });
     }
     return expanded;
@@ -696,133 +655,77 @@ const ProjectOrganizationDiagram = ({ project }: ProjectOrganizationDiagramProps
   const displayGraph = useMemo(() => buildDisplayGraphData(chartGraph, expandedOriginIds), [chartGraph, expandedOriginIds]);
   const baseData = displayGraph.graphData;
   const expandedDisplayIds = displayGraph.expandedDisplayIds;
-  const currentDisplayId = currentNodeId ? displayGraph.primaryDisplayIds.get(currentNodeId) : undefined;
-  const graphRef = useRef<any>(null);
 
-  const applyPathExpansion = useCallback(
-    (graph: any) => {
-      if (!graph) return;
-      try {
-        const nodes = graph.getNodes?.() ?? [];
-        let changed = false;
-
-        nodes.forEach((node: any) => {
-          const model = node.getModel?.() ?? {};
-          const nodeId = model.id;
-          if (!nodeId) return;
-
-          const hasChildren = Array.isArray(model.children) && model.children.length > 0;
-          if (!hasChildren) return;
-
-          const targetCollapsed = !expandedDisplayIds.has(nodeId);
-          const currentCollapsed = model?.style?.collapsed === true;
-          if (currentCollapsed === targetCollapsed) return;
-
-          try {
-            if (targetCollapsed) {
-              graph.collapseElement?.(nodeId);
-            } else {
-              graph.expandElement?.(nodeId);
-            }
-          } catch { }
-          try {
-            const nextStyle = { ...(model.style ?? {}), collapsed: targetCollapsed };
-            graph.updateItem?.(node, { style: nextStyle });
-          } catch { }
-          changed = true;
-        });
-
-        if (changed) {
-          graph.layout?.();
-          graph.fitView?.({ padding: 24 });
-        }
-      } catch { }
-    },
-    [expandedDisplayIds],
-  );
-
-  // helper: current düğümü tam ekran merkezine getir
-  const centerOnItem = useCallback((graph: any, itemId?: string) => {
-    graph.fitView?.({ padding: 24 });
-    if (!itemId) return;
+  const applyPathExpansion = useCallback((graph: any) => {
+    if (!graph) return;
     try {
-      graph.focusItem(itemId, false); // zoom'u değiştirmeden odaklan
-      const item = graph.findById(itemId);
-      const { x, y } = item.getModel();
-      const p = graph.getCanvasByPoint(x, y);
-      graph.translate(graph.getWidth() / 2 - p.x, graph.getHeight() / 2 - p.y);
-    } catch { }
-  }, []);
+      const nodes = graph.getNodes?.() ?? [];
+      let changed = false;
+      nodes.forEach((node: any) => {
+        const model = node.getModel?.() ?? {};
+        const nodeId = model.id;
+        if (!nodeId) return;
+        const hasChildren = Array.isArray(model.children) && model.children.length > 0;
+        if (!hasChildren) return;
+        const targetCollapsed = !expandedDisplayIds.has(nodeId);
+        const currentCollapsed = model?.style?.collapsed === true;
+        if (currentCollapsed === targetCollapsed) return;
+        try { targetCollapsed ? graph.collapseElement?.(nodeId) : graph.expandElement?.(nodeId); } catch {}
+        try { const nextStyle = { ...(model.style ?? {}), collapsed: targetCollapsed }; graph.updateItem?.(node, { style: nextStyle }); } catch {}
+        changed = true;
+      });
+      if (changed) { graph.layout?.(); graph.fitView?.({ padding: 24 }); }
+    } catch {}
+  }, [expandedDisplayIds]);
 
   useEffect(() => {
-    const graph = graphRef.current;
+    const graph = (graphRef as any).current;
     if (!graph) return;
     applyPathExpansion(graph);
   }, [applyPathExpansion, baseData]);
 
-  const config = useMemo<OrganizationChartOptions>(
-    () => ({
-      data: baseData,
-      direction: 'vertical',
-      animate: false,
-      animation: false,
-      layout: { type: 'dagre', rankdir: 'TB', ranksep: 80, nodesep: 32 },
-      node: {
-        type: 'react',
-        style: { size: [320, 168], component: (datum: G6NodeData) => <ProjectNodeCard datum={datum} /> },
-      },
-      edge: { type: 'polyline', style: { stroke: '#cbd5f5', lineWidth: 1.4, endArrow: true } },
+  const config = useMemo<OrganizationChartOptions>(() => ({
+    data: baseData,
+    direction: 'vertical',
+    animate: false,
+    animation: false,
+    layout: { type: 'dagre', rankdir: 'TB', ranksep: 80, nodesep: 32 },
+    node: { type: 'react', style: { size: [320, 168], component: (datum: G6NodeData) => <ProjectNodeCard datum={datum} /> } },
+    edge: { type: 'polyline', style: { stroke: '#cbd5f5', lineWidth: 1.4, endArrow: true } as any },
+    behaviors: ['drag-canvas', 'zoom-canvas',     'drag-element'],
+    containerStyle: { width: '100%', height: 740 },
+    autoFit: { type: 'view' },
+    fitCenter: true,
+    transforms: [
+      'translate-react-node-origin',
+      {
+        type: 'collapse-expand-react-node',
+        trigger: 'icon',
+        direction: 'out',
+        iconType: 'plus-minus',
+        iconPlacement: 'bottom',
+        iconOffsetX: 8,
+        iconOffsetY: 0,
+        enable: (model: any) => Array.isArray(model?.children) && model.children.length > 0,
+        refreshLayout: true,
+        onChange: (item: any, collapsed: boolean, graph: any) => {
+          try { const model = item?.getModel?.() ?? {}; const nextStyle = { ...(model.style ?? {}), collapsed }; graph.updateItem(item, { style: nextStyle }); } catch {}
+          setTimeout(() => { try { graph.layout(); graph.fitView?.({ padding: 24 }); } catch {} }, 0);
+          return true;
+        },
+      } as any,
+    ],
+    onReady: (graph: any) => { (graphRef as any).current = graph; },
+  }), [baseData, expandedDisplayIds]);
 
-      // Düğüm başında ikon (buton) ile aç/kapa
-      behaviors: [
-        'drag-canvas',
-        'zoom-canvas'
-      ],
-
-      containerStyle: { width: '100%', height: 740 },
-      autoFit: { type: 'view' },
-      fitCenter: true,
-      transforms: [
-        'translate-react-node-origin',
-        {
-          type: 'collapse-expand-react-node',
-          trigger: 'icon',
-          direction: 'out',
-          iconType: 'plus-minus',
-          iconPlacement: 'bottom',
-          iconOffsetX: 8,
-          iconOffsetY: 0,
-          enable: (model: any) => Array.isArray(model?.children) && model.children.length > 0,
-          refreshLayout: true,
-          onChange: (item: any, collapsed: boolean, graph: any) => {
-            try {
-              const model = item?.getModel?.() ?? {};
-              const nextStyle = { ...(model.style ?? {}), collapsed };
-              graph.updateItem(item, { style: nextStyle });
-            } catch { }
-            setTimeout(() => {
-              try {
-                graph.layout();
-                graph.fitView?.({ padding: 24 });
-              } catch { }
-            }, 0);
-            return true;
-          },
-        } as any,
-      ],
-      onReady: (graph: any) => {
-        graphRef.current = graph;
-      },
-    }),
-    [baseData, expandedDisplayIds, applyPathExpansion, centerOnItem],
-  );
+  
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
-      <div className="border-b border-slate-200 px-6 py-1 flex items-center justify-between">
+      <div className="border-b border-slate-200 px-6 py-2 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Organizasyon Semasi</h2>
-          <p className="text-sm text-slate-500">Program, proje, gorev ve ekip agacinin tamami</p>
+          <h2 className="text-lg font-semibold text-slate-900">Organizasyon Şeması</h2>
+          <p className="text-sm text-slate-500">Program, proje, görev ve ekip ağacının tamamı</p>
         </div>
       </div>
       <div className="px-4 py-4">
