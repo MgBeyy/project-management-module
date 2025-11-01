@@ -18,7 +18,7 @@ namespace PMM.Core.Mappers
             return new ClientDto
             {
                 Id = client.Id,
-                Name = client.Name,
+                Name = client.Name
             };
         }
         public static List<ClientDto> Map(List<Client> clients)

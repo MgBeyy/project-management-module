@@ -44,6 +44,7 @@ namespace PMM.Core.Mappers
                     .ToList(),
                 ClientId = project.ClientId,
                 Labels = project.ProjectLabels?
+                    .Where(pl => pl.Label != null)
                     .Select(pl => LabelMapper.Map(pl.Label))
                     .ToList(),
                 CreatedAt = project.CreatedAt,
@@ -75,6 +76,7 @@ namespace PMM.Core.Mappers
                 Priority = project.Priority,
                 ClientId = project.ClientId,
                 Labels = project.ProjectLabels?
+                    .Where(pl => pl.Label != null)
                     .Select(pl => LabelMapper.Map(pl.Label))
                     .ToList(),
                 CreatedAt = project.CreatedAt,
@@ -94,6 +96,7 @@ namespace PMM.Core.Mappers
             project.EndAt = form.EndAt;
             project.Status = (EProjectStatus)form.Status;
             project.Priority = form.Priority;
+            project.ClientId = form.ClientId;
             return project;
         }
 
@@ -114,6 +117,7 @@ namespace PMM.Core.Mappers
                 Priority = project.Priority,
                 ClientId = project.ClientId,
                 Labels = project.ProjectLabels?
+                    .Where(pl => pl.Label != null)
                     .Select(pl => LabelMapper.Map(pl.Label))
                     .ToList(),
                 CreatedAt = project.CreatedAt,
