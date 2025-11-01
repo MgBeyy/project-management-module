@@ -132,3 +132,29 @@ export interface DetailedProjectDto {
   updatedByUser: IdNameDto | null;
 }
 
+export type ProjectHierarchyDto = {
+  id: number;
+  code: string | null;
+  title: string | null;
+  plannedStartDate: Nullable<number>;
+  plannedDeadline: Nullable<number>;
+  plannedHours: Nullable<number>;
+  actualHours: Nullable<number>;
+  startedAt: Nullable<number>;
+  endAt: Nullable<number>;
+  status: ProjectStatus;
+  priority: ProjectPriority;
+  parentProjects: Nullable<ProjectDto[]>;
+  childProjects: Nullable<ProjectHierarchyDto[]>;
+  clientId: Nullable<number>;
+  client: ClientDto | null;
+  labels: Nullable<LabelDto[]>;
+  assignedUsers: Nullable<ProjectAssignmentWithUserDto[]>;
+  tasks: Nullable<TaskDto[]>;
+  createdAt: number;
+  createdById: Nullable<number>;
+  createdByUser: IdNameDto | null;
+  updatedAt: Nullable<number>;
+  updatedById: Nullable<number>;
+  updatedByUser: IdNameDto | null;
+};

@@ -158,8 +158,8 @@ export default function CustomTable() {
         key: "code",
         width: 130,
         ellipsis: { showTitle: false },
-        render: (text: string) => (
-          <Link to={`/pm-module/projects/${encodeURIComponent(text)}`} title={text}>
+        render: (text: string, record: any) => (
+          <Link to={`/pm-module/projects/${record.id}`} title={text}>
             {text}
           </Link>
         ),
