@@ -774,9 +774,14 @@ export default function CreateTaskModal({
             label="Açıklama"
             required
             name="description"
-            style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? "none" : "auto" }}
+            style={formItemNoMarginStyle}
+            className="col-span-full"
           >
-            <TextArea rows={4} />
+            <TextArea 
+              rows={isViewMode ? 8 : 4}
+              readOnly={isViewMode}
+              style={{ resize: "vertical" }}
+            />
           </Form.Item>
 
           <Form.Item label="Görev Ekibi" style={formItemNoMarginStyle}>
