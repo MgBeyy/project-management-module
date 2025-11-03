@@ -103,7 +103,7 @@ export default function TaskSelect({
             <Spin size="small" />
           </div>
         ) : (
-          "örev bulunamadı"
+          "Görev bulunamadı"
         )
       }
       options={tasks}
