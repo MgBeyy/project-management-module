@@ -1,4 +1,4 @@
-import { Modal, Form, Input, DatePicker, Button, Space } from "antd";
+import { Modal, Form, Input, DatePicker, Button, Space, Checkbox, Tooltip } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { useNotification } from "@/hooks/useNotification";
 import { createActivity } from "@/services/activities/create-activity";
@@ -9,7 +9,7 @@ import UserSelect from "../user-select";
 import TaskSelect from "../task-select";
 import DeleteActivityModal from "./delete-activity-modal";
 import type { ActivityDto } from "@/types";
-
+import { InfoCircleOutlined } from "@ant-design/icons";
 const { TextArea } = Input;
 
 type ActivityModalMode = "create" | "edit" | "view";
@@ -65,6 +65,7 @@ export default function ActivityModal({
         description: activity.description,
         startTime: activity.startTime ? dayjs(activity.startTime) : null,
         endTime: activity.endTime ? dayjs(activity.endTime) : null,
+        isLast: activity.isLast || false,
       });
     } else if (isCreateMode) {
       // Set initial values for create mode
@@ -72,6 +73,7 @@ export default function ActivityModal({
         startTime: initialDate || dayjs(),
         endTime: initialEndDate || (initialDate ? initialDate.add(1, "hour") : dayjs().add(1, "hour")),
         userId: selectedUserId || undefined,
+        isLast: false,
       });
     }
   }, [visible, activity, isViewMode, isEditMode, isCreateMode, initialDate, initialEndDate, selectedUserId, form]);
@@ -90,7 +92,8 @@ export default function ActivityModal({
       return;
     }
 
-    if (previousSelectedUserRef.current !== normalizedSelected) {
+    // Only reset task if userId actually changed (not just form re-render)
+    if (previousSelectedUserRef.current !== normalizedSelected && selectedUser !== undefined) {
       form.setFieldsValue({ taskId: undefined });
       previousSelectedUserRef.current = normalizedSelected;
     }
@@ -105,6 +108,7 @@ export default function ActivityModal({
         description: values.description,
         startTime: values.startTime.valueOf(),
         endTime: values.endTime.valueOf(),
+        isLast: values.isLast || false,
       };
 
       if (isCreateMode) {
@@ -180,16 +184,16 @@ export default function ActivityModal({
 
   return (
     <>
-    <Modal
-      title={getTitle()}
-      open={visible}
-      onCancel={handleClose}
-      footer={getFooter()}
-      width={600}
-      maskClosable={false}
-      className={isViewMode ? "activity-modal-view-mode" : ""}
-    >
-      <style>{`
+      <Modal
+        title={getTitle()}
+        open={visible}
+        onCancel={handleClose}
+        footer={getFooter()}
+        width={600}
+        maskClosable={false}
+        className={isViewMode ? "activity-modal-view-mode" : ""}
+      >
+        <style>{`
         .activity-modal-view-mode .ant-select-disabled.ant-select:not(.ant-select-customize-input) .ant-select-selector,
         .activity-modal-view-mode .ant-input-disabled,
         .activity-modal-view-mode .ant-picker-disabled {
@@ -205,87 +209,99 @@ export default function ActivityModal({
           display: none;
         }
       `}</style>
-      <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
 
 
-        <Form.Item
-          label="Kullanıcı"
-          name="userId"
-          rules={[{ required: true, message: "Kullanıcı seçimi gereklidir" }]}
-        >
-          <UserSelect
-            placeholder="Kullanıcı ara ve seç..."
-            style={{ width: "100%" }}
-            disabled={isViewMode}
-          />
-        </Form.Item>
-        <Form.Item
-          label="Görev"
-          name="taskId"
-          rules={[{ required: true, message: "Görev seçimi gereklidir" }]}
-        >
-          <TaskSelect
-            placeholder={selectedUser ? "Görev ara ve seç..." : "Önce kullanıcı seçin..."}
-            style={{ width: "100%" }}
-            disabled={isViewMode || !selectedUser}
-            assignedUserId={selectedUser}
-          />
-        </Form.Item>
-        <Form.Item
-          label="Açıklama"
-          name="description"
-          rules={[{ required: true, message: "Açıklama gereklidir" }]}
-        >
-          <TextArea
-            rows={4}
-            placeholder="Etkinlik açıklaması..."
-            readOnly={isViewMode}
-            style={{ cursor: isViewMode ? "default" : "text" }}
-          />
-        </Form.Item>
+          <Form.Item
+            label="Kullanıcı"
+            name="userId"
+            rules={[{ required: true, message: "Kullanıcı seçimi gereklidir" }]}
+          >
+            <UserSelect
+              placeholder="Kullanıcı ara ve seç..."
+              style={{ width: "100%" }}
+              disabled={isViewMode}
+            />
+          </Form.Item>
+          <Form.Item
+            label="Görev"
+            name="taskId"
+            rules={[{ required: true, message: "Görev seçimi gereklidir" }]}
+          >
+            <TaskSelect
+              placeholder={selectedUser ? "Görev ara ve seç..." : "Önce kullanıcı seçin..."}
+              style={{ width: "100%" }}
+              disabled={isViewMode || !selectedUser}
+              assignedUserId={selectedUser}
+            />
+          </Form.Item>
+          <Form.Item
+            label="Açıklama"
+            name="description"
+            rules={[{ required: true, message: "Açıklama gereklidir" }]}
+          >
+            <TextArea
+              rows={4}
+              placeholder="Etkinlik açıklaması..."
+              readOnly={isViewMode}
+              style={{ cursor: isViewMode ? "default" : "text" }}
+            />
+          </Form.Item>
 
-        <Form.Item
-          label="Başlangıç Zamanı"
-          name="startTime"
-          rules={[{ required: true, message: "Başlangıç zamanı gereklidir" }]}
-        >
-          <DatePicker
-            showTime
-            format="DD-MM-YYYY HH:mm"
-            style={{ width: "100%" }}
-            placeholder="Başlangıç tarihi seçin"
-            disabled={isViewMode}
-            inputReadOnly={isViewMode}
-          />
-        </Form.Item>
+          <Form.Item
+            label="Başlangıç Zamanı"
+            name="startTime"
+            rules={[{ required: true, message: "Başlangıç zamanı gereklidir" }]}
+          >
+            <DatePicker
+              showTime
+              format="DD-MM-YYYY HH:mm"
+              style={{ width: "100%" }}
+              placeholder="Başlangıç tarihi seçin"
+              disabled={isViewMode}
+              inputReadOnly={isViewMode}
+            />
+          </Form.Item>
 
-        <Form.Item
-          label="Bitiş Zamanı"
-          name="endTime"
-          rules={[{ required: true, message: "Bitiş zamanı gereklidir" }]}
-        >
-          <DatePicker
-            showTime
-            format="DD-MM-YYYY HH:mm"
-            style={{ width: "100%" }}
-            placeholder="Bitiş zamanı seçin"
-            disabled={isViewMode}
-            inputReadOnly={isViewMode}
-          />
-        </Form.Item>
-      </Form>
-    </Modal>
-    
-    {activity && (
-      <DeleteActivityModal
-        visible={isDeleteModalVisible}
-        onClose={() => {
-          setIsDeleteModalVisible(false);
-          handleClose();
-        }}
-        activity={activity}
-      />
-    )}
-  </>
+          <Form.Item
+            label="Bitiş Zamanı"
+            name="endTime"
+            rules={[{ required: true, message: "Bitiş zamanı gereklidir" }]}
+          >
+            <DatePicker
+              showTime
+              format="DD-MM-YYYY HH:mm"
+              style={{ width: "100%" }}
+              placeholder="Bitiş zamanı seçin"
+              disabled={isViewMode}
+              inputReadOnly={isViewMode}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="isLast"
+            valuePropName="checked"
+          >
+            <Checkbox disabled={isViewMode}>
+              Bu etkinlik ilgili görev için son etkinliktir.
+            </Checkbox>
+            <Tooltip title="Bir etkinlik son etkinlik olduğu zaman ilgili görevin statüsünü onay bekliyor olarak günceller.">
+              <InfoCircleOutlined style={{ cursor: "help", color: "#1890ff" }} />
+            </Tooltip>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {activity && (
+        <DeleteActivityModal
+          visible={isDeleteModalVisible}
+          onClose={() => {
+            setIsDeleteModalVisible(false);
+            handleClose();
+          }}
+          activity={activity}
+        />
+      )}
+    </>
   );
 }

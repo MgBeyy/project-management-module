@@ -25,6 +25,7 @@ export interface CreateActivityData {
   description: string;
   startTime: number; // milliseconds
   endTime: number; // milliseconds
+  isLast?: boolean;
 }
 
 
