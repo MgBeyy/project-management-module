@@ -9,9 +9,7 @@ dayjs.locale("tr");
 import { useEffect, useState, useRef, useCallback } from "react";
 import { GetActivities } from "../../services/activities/get-activities";
 import { useActivitiesStore } from "@/store/zustand/activities-store";
-import CreateActivityModal from "./modals/create-activity-modal";
-import UpdateActivityModal from "./modals/update-activity-modal";
-import DeleteActivityModal from "./modals/delete-activity-modal";
+import ActivityModal from "./modals/activity-modal";
 import UserSelect from "./user-select";
 import Spinner from "../common/spinner";
 import { ActivityDto } from "@/types";
@@ -56,9 +54,8 @@ export default function ActivitiesCalendar() {
 
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
-  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
-  const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
-  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [isActivityModalVisible, setIsActivityModalVisible] = useState(false);
+  const [activityModalMode, setActivityModalMode] = useState<"create" | "edit" | "view">("create");
 
   const [selectedActivity, setSelectedActivity] = useState<ActivityDto | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
@@ -343,7 +340,8 @@ export default function ActivitiesCalendar() {
         hour: finalEnd.hour(),
         minute: finalEnd.minute(),
       });
-      setIsCreateModalVisible(true);
+      setActivityModalMode("create");
+      setIsActivityModalVisible(true);
       setSelectionRange(null);
       setDragStart(null);
       setHoveredSlot(null);
@@ -440,7 +438,8 @@ export default function ActivitiesCalendar() {
                 hour: now.add(1, "hour").hour(),
                 minute: 0,
               });
-              setIsCreateModalVisible(true);
+              setActivityModalMode("create");
+              setIsActivityModalVisible(true);
             }}
           >
             + Yeni Etkinlik
@@ -704,7 +703,8 @@ export default function ActivitiesCalendar() {
                                   if (isDragging) return;
                                   e.stopPropagation();
                                   setSelectedActivity(activity);
-                                  setIsUpdateModalVisible(true);
+                                  setActivityModalMode("view");
+                                  setIsActivityModalVisible(true);
                                 }}
                                 title={`${activity.description}\n${dayjs(
                                   activity.startTime
@@ -777,13 +777,16 @@ export default function ActivitiesCalendar() {
         </div>
       </div>
 
-      <CreateActivityModal
-        visible={isCreateModalVisible}
+      <ActivityModal
+        visible={isActivityModalVisible}
+        mode={activityModalMode}
         onClose={() => {
-          setIsCreateModalVisible(false);
+          setIsActivityModalVisible(false);
+          setSelectedActivity(null);
           setSelectedSlot(null);
           setSelectedEndSlot(null);
         }}
+        activity={selectedActivity}
         initialDate={
           selectedSlot
             ? selectedSlot.date
@@ -800,27 +803,6 @@ export default function ActivitiesCalendar() {
         }
         selectedUserId={selectedUserId}
       />
-
-      {selectedActivity && (
-        <>
-          <UpdateActivityModal
-            visible={isUpdateModalVisible}
-            onClose={() => {
-              setIsUpdateModalVisible(false);
-              setSelectedActivity(null);
-            }}
-            activity={selectedActivity}
-          />
-          <DeleteActivityModal
-            visible={isDeleteModalVisible}
-            onClose={() => {
-              setIsDeleteModalVisible(false);
-              setSelectedActivity(null);
-            }}
-            activity={selectedActivity}
-          />
-        </>
-      )}
     </div>
   );
 }

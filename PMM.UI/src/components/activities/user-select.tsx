@@ -8,6 +8,7 @@ interface UserSelectProps {
   onChange?: (value: number) => void;
   placeholder?: string;
   style?: React.CSSProperties;
+  disabled?: boolean;
 }
 
 export default function UserSelect({
@@ -15,6 +16,7 @@ export default function UserSelect({
   onChange,
   placeholder = "Kullanıcı seçin...",
   style,
+  disabled = false,
 }: UserSelectProps) {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -58,6 +60,7 @@ export default function UserSelect({
       onChange={onChange}
       placeholder={placeholder}
       style={style}
+      disabled={disabled}
       filterOption={false}
       onSearch={handleSearch}
       notFoundContent={
