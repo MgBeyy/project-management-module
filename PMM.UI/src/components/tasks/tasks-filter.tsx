@@ -5,6 +5,7 @@ import getMultiSelectSearch from "@/services/projects/get-multi-select-search";
 import type { SelectProps } from "antd";
 import { TaskStatus } from "@/types/tasks/ui";
 import { ProjectDto } from "@/types";
+import MultiSelectSearch from "../common/multi-select-search";
 
 const MIN_SEARCH_LENGTH = 2;
 
@@ -144,6 +145,9 @@ export default function TasksFilter() {
       createdAtMax: values.createdAtMax
         ? values.createdAtMax.valueOf()
         : undefined,
+      labelIds: values.labelIds && values.labelIds.length > 0
+        ? values.labelIds.map((id: string) => parseInt(id, 10))
+        : undefined,
       page: 1,
       pageSize: 50,
     };
@@ -188,6 +192,14 @@ export default function TasksFilter() {
         </Form.Item>
         <Form.Item label="Başlık" name="title" className="mb-3">
           <Input placeholder="Başlık" size="middle" />
+        </Form.Item>
+
+        <Form.Item label="Etiketler" name="labelIds" className="mb-3">
+          <MultiSelectSearch
+            placeholder="Etiket ara ve seç..."
+            apiUrl="/Label"
+            size="middle"
+          />
         </Form.Item>
 
         <Form.Item label="Açıklama" name="description" className="mb-3">

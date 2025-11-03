@@ -5,9 +5,17 @@ import apiClient from "../api-client";
 
 
 export async function GetTasks({ query }: { query: TaskQuery }) : Promise<TaskListDto> {
+  
   try {
+    const queryParams = new URLSearchParams();
+
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        queryParams.append(key, value.toString());
+      }
+    });
     const response = await apiClient.get("/Task", {
-      params: query,
+      params: queryParams,
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
