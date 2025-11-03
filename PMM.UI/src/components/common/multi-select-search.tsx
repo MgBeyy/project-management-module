@@ -165,17 +165,18 @@ const MultiSelectSearch: React.FC<MultiSelectSearchProps> = ({
         };
       });
 
-      setOptions(prev => {
-        const merged = mergeOptionArrays(prev, formattedOptions);
-        if (onOptionsChange) {
-          onOptionsChange(merged);
-        }
-        
-        return merged;
-      });
+      const selectedOptions = value && value.length > 0
+        ? options.filter(opt => value.includes(String(opt.value)))
+        : [];
+      
+      const finalOptions = mergeOptionArrays(selectedOptions, formattedOptions);
+      
+      setOptions(finalOptions);
+      
+      if (onOptionsChange) {
+        onOptionsChange(finalOptions);
+      }
     } catch (error: any) {
-      console.error("❌ Üst proje arama hatası:", error);
-
       if (error.code === "ERR_NETWORK") {
         console.error("🔥 Network hatası: Backend çalışmıyor olabilir!");
         console.error("🔧 Çözüm: Backend'i başlatın veya URL'yi kontrol edin");
