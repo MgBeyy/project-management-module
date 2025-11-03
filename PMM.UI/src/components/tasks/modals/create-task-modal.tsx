@@ -342,11 +342,11 @@ export default function CreateTaskModal({
 
     if ((isEditMode || isViewMode) && currentTaskData) {
       const { ids: resolvedLabelIds, options: resolvedLabelOptions } = resolveTaskLabelData(currentTaskData);
-      const currentStatus = (currentTaskData as any)?.Status;
+      const currentStatus = currentTaskData.status;
       let statusValue = TaskStatus.TODO;
       if (currentStatus === "InProgress") statusValue = TaskStatus.IN_PROGRESS;
       else if (currentStatus === "Done") statusValue = TaskStatus.DONE;
-      else if (currentStatus === "InActive") statusValue = TaskStatus.INACTIVE;
+      else if (currentStatus === "Inactive") statusValue = TaskStatus.INACTIVE;
 
       const resolvedProjectId = currentTaskData?.projectId;
       const resolvedParentTaskId = currentTaskData?.parentTaskId;
