@@ -17,13 +17,13 @@ export default function DeleteActivityModal({
 
   const handleDelete = async () => {
     try {
-      await deleteActivity(activity.Id);
+      await deleteActivity(activity.id);
       notification.success("Etkinlik Silindi", "Etkinlik başarıyla silindi!");
       triggerRefresh();
       onClose();
     } catch (error: any) {
       console.error("Etkinlik silme hatası:", error);
-
+      notification.error("Hata", "Etkinlik silinirken bir hata oluştu!");
     }
   };
 
@@ -40,9 +40,11 @@ export default function DeleteActivityModal({
       <p>
         Bu etkinliği silmek istediğinizden emin misiniz?
       </p>
-      <p style={{ marginTop: "8px", color: "#666" }}>
-        <strong>Açıklama:</strong> {activity?.Description}
-      </p>
+      {activity?.description && (
+        <p style={{ marginTop: "8px", color: "#666" }}>
+          <strong>Açıklama:</strong> {activity.description}
+        </p>
+      )}
     </Modal>
   );
 }
