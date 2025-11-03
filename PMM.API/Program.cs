@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using PMM.API.Converters;
 using PMM.API.Extensions;
@@ -41,11 +42,21 @@ builder.Services.AddControllers()
 
 // Custom application setup using chained extension methods
 builder
-    .ConfigureLogging()          // Serilog configuration
-    .AddEssentialServices()      // Core framework services (HttpClient, CORS, HttpContextAccessor)
-    .ConfigureAutofacAndData();  // Autofac setup and DbContext registration
+    .ConfigureLogging()         // Serilog configuration
+    .AddEssentialServices()     // Core framework services (HttpClient, CORS, HttpContextAccessor)
+    .ConfigureAutofacAndData(); // Autofac setup and DbContext registration
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
