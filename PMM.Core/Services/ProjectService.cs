@@ -244,6 +244,9 @@ namespace PMM.Core.Services
                 var childProjects = await _projectRelationRepository.GetByParentProjectIdAsync(projectId);
                 var childProjectIds = childProjects.Select(c => c.ChildProjectId).ToHashSet();
 
+                var currentParentRelations = await _projectRelationRepository.GetByChildProjectIdAsync(projectId);
+                var currentParentIds = currentParentRelations.Select(pr => pr.ParentProjectId).ToHashSet();
+
                 foreach (var parentId in form.ParentProjectIds)
                 {
                     if (parentId == projectId)
@@ -252,9 +255,12 @@ namespace PMM.Core.Services
                     if (childProjectIds.Contains(parentId))
                         throw new BusinessException("Bir proje, kendi alt projelerinden birine üst proje olarak atanamaz.");
 
-                    var hasCircularDependency = await _projectRelationRepository.HasCircularDependencyAsync(projectId, parentId);
-                    if (hasCircularDependency)
-                        throw new BusinessException($"Proje {parentId} ile döngüsel bağımlılık oluşturulamaz!");
+                    if (!currentParentIds.Contains(parentId))
+                    {
+                        var hasCircularDependency = await _projectRelationRepository.HasCircularDependencyAsync(projectId, parentId);
+                        if (hasCircularDependency)
+                            throw new BusinessException($"Proje {parentId} ile döngüsel bağımlılık oluşturulamaz!");
+                    }
                 }
             }
 
@@ -319,23 +325,30 @@ namespace PMM.Core.Services
                 await _taskRepository.SaveChangesAsync();
             }
 
-            var existingRelations = await _projectRelationRepository.GetByChildProjectIdAsync(projectId);
-            foreach (var relation in existingRelations)
-            {
-                _projectRelationRepository.Delete(relation);
-            }
-            await _projectRelationRepository.SaveChangesAsync();
-
             if (form.ParentProjectIds != null && form.ParentProjectIds.Any())
             {
                 foreach (var parentId in form.ParentProjectIds)
                 {
-                    var relation = new ProjectRelation
+                    var existingRelation = await _projectRelationRepository.GetRelationAsync(parentId, project.Id);
+                    if (existingRelation == null)
                     {
-                        ParentProjectId = parentId,
-                        ChildProjectId = project.Id
-                    };
-                    _projectRelationRepository.Create(relation);
+                        var relation = new ProjectRelation
+                        {
+                            ParentProjectId = parentId,
+                            ChildProjectId = project.Id
+                        };
+                        _projectRelationRepository.Create(relation);
+                    }
+                }
+                await _projectRelationRepository.SaveChangesAsync();
+            }
+            else
+            {
+                // If no parent project IDs are provided, remove all existing parent relations
+                var existingRelations = await _projectRelationRepository.GetByChildProjectIdAsync(projectId);
+                foreach (var relation in existingRelations)
+                {
+                    _projectRelationRepository.Delete(relation);
                 }
                 await _projectRelationRepository.SaveChangesAsync();
             }
