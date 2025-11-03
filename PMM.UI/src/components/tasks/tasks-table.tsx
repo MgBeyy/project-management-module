@@ -330,17 +330,17 @@ export default function TasksCustomTable() {
         const isSelected = selectedTask?.id === record.id;
         return {
           onClick: () => onRowClick(record),
-          style: {
-            backgroundColor: isSelected ? "#E6F4FF" : "transparent",
-            cursor: "pointer",
-            transition: "background-color 0.2s ease",
-          },
-          onMouseEnter: (e) => {
-            e.currentTarget.style.backgroundColor = isSelected ? "#D6E4FF" : "#F1F5FF";
-          },
-          onMouseLeave: (e) => {
-            e.currentTarget.style.backgroundColor = isSelected ? "#E6F4FF" : "transparent";
-          },
+          className: isSelected ? "selected-table-row" : "table-row-hover",
+          style: isSelected
+            ? {
+                backgroundColor: "#E6F4FF",
+                cursor: "pointer",
+                transition: "background-color 0.2s ease",
+              }
+            : {
+                cursor: "pointer",
+                transition: "background-color 0.2s ease",
+              },
         };
       }}
     />
