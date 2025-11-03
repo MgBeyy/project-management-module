@@ -1,5 +1,5 @@
 // src/components/projects/files/ProjectFiles.tsx
-import { useCallback, useEffect, useState, KeyboardEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button, Image, Spin } from "antd";
 import {
   AiOutlineCloudUpload,
@@ -9,6 +9,7 @@ import {
   AiOutlineFileText,
   AiOutlineFileWord,
   AiOutlineFileZip,
+  AiOutlineDelete,
 } from "react-icons/ai";
 import { showNotification } from "@/utils/notification";
 import { getProjectFiles } from "@/services/files/get-project-files";
@@ -16,6 +17,7 @@ import { uploadProjectFile } from "@/services/files/upload-project-file";
 import { downloadProjectFile } from "@/services/files/download-project-file";
 import type { ProjectFileDto } from "@/types";
 import { saveAs } from "file-saver";
+import DeleteProjectFileModal from "./delete-project-file-modal";
 
 /** Helpers (bileşene özel kalsın ki parent sadeleşsin) */
 const IMAGE_EXTENSIONS = new Set([
@@ -93,6 +95,8 @@ export default function ProjectFiles({
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragOver, setDragOver] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<ProjectFileDto | null>(null);
 
   const canOperate = Boolean(projectId);
 
@@ -256,23 +260,43 @@ export default function ProjectFiles({
                 const extension = resolveFileExtension(file);
                 const displayName = file.title || `Dosya #${file.id}`;
                 const imagePreview = isImageFile(file);
-                const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    handleFileDownload(file);
-                  }
-                };
                 return (
                   <div
                     key={file.id}
-                    role="button"
-                    tabIndex={0}
-                    className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition hover:border-blue-500 hover:shadow-md focus:border-blue-500 focus:shadow-md focus:outline-none flex-shrink-0 w-32"
-                    onClick={() => handleFileDownload(file)}
-                    onKeyDown={handleKeyDown}
-                    title="İndirmek için tıklayın"
+                    className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition hover:shadow-md flex-shrink-0 w-32 relative group"
                   >
-                    <div className="flex items-center justify-center">
+                    {editable && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setFileToDelete(file);
+                          setDeleteModalVisible(true);
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 hover:bg-red-600 text-white rounded-md p-1 flex items-center justify-center w-6 h-6 cursor-pointer"
+                        title="Dosyayı sil"
+                      >
+                        <AiOutlineDelete size={14} />
+                      </button>
+                    )}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      className="flex items-center justify-center cursor-pointer hover:border-blue-500"
+                      onClick={() => handleFileDownload(file)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          handleFileDownload(file);
+                        }
+                      }}
+                      title="İndirmek için tıklayın"
+                    >
                       {imagePreview ? (
                         <Image
                           src={`${import.meta.env.VITE_APP_API_URL}${file.file}`}
@@ -306,6 +330,16 @@ export default function ProjectFiles({
           )}
         </div>
       )}
+      
+      <DeleteProjectFileModal
+        visible={deleteModalVisible}
+        file={fileToDelete}
+        onClose={() => {
+          setDeleteModalVisible(false);
+          setFileToDelete(null);
+        }}
+        onSuccess={loadFiles}
+      />
     </div>
   );
 }

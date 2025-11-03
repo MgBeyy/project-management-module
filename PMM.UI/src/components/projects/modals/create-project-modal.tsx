@@ -855,11 +855,16 @@ export default function CreateProjectModal({
             </Form.Item>
 
             {(isEditMode || isViewMode) && (
-              <Form.Item label="Proje Dosyaları" style={formItemNoMarginStyle}>
-                <ProjectFiles
-                  projectId={resolvedProjectId ?? null}
-                  editable={isEditMode}
-                />
+              <Form.Item 
+                label="Proje Dosyaları" 
+                style={formItemNoMarginStyle}
+              >
+                <div onClick={(e) => e.stopPropagation()}>
+                  <ProjectFiles
+                    projectId={resolvedProjectId ?? null}
+                    editable={isEditMode}
+                  />
+                </div>
               </Form.Item>
             )}
             <Form.Item style={formItemNoMarginStyle}>
