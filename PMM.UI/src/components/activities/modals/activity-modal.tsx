@@ -253,7 +253,7 @@ export default function ActivityModal({
             showTime
             format="DD-MM-YYYY HH:mm"
             style={{ width: "100%" }}
-            placeholder="Başlangıç zamanı seçin"
+            placeholder="Başlangıç tarihi seçin"
             disabled={isViewMode}
             inputReadOnly={isViewMode}
           />

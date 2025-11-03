@@ -664,9 +664,9 @@ export default function CreateProjectModal({
                 />
               </Form.Item>
 
-              <Form.Item label="Başlangıç Zamanı" name="startedAt" style={formItemNoMarginStyle}>
+              <Form.Item label="Başlangıç tarihi" name="startedAt" style={formItemNoMarginStyle}>
                 <DatePicker
-                  placeholder="Başlangıç zamanı"
+                  placeholder="Başlangıç tarihi"
                   size="middle"
                   style={{ width: "100%", ...(viewModeFieldStyle || {}) }}
                   format="DD-MM-YYYY"
@@ -674,9 +674,9 @@ export default function CreateProjectModal({
                 />
               </Form.Item>
 
-              <Form.Item label="Bitiş Zamanı" name="endAt" style={formItemNoMarginStyle}>
+              <Form.Item label="Bitiş Tarihi" name="endAt" style={formItemNoMarginStyle}>
                 <DatePicker
-                  placeholder="Bitiş zamanı"
+                  placeholder="Bitiş tarihi"
                   size="middle"
                   style={{ width: "100%", ...(viewModeFieldStyle || {}) }}
                   format="DD-MM-YYYY"

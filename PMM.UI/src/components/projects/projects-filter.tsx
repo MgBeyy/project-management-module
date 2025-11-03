@@ -127,7 +127,7 @@ export default function ProjectsFilter() {
         <Form.Item label="Gerçekleşen Başlangıç Tarihi" name="startedAt" className="mb-3">
           <DatePicker
             showTime
-            placeholder="Başlangıç zamanı"
+            placeholder="Başlangıç tarihi"
             size="middle"
             style={{ width: "100%" }}
             format="DD-MM-YYYY HH:mm:ss"
@@ -137,7 +137,7 @@ export default function ProjectsFilter() {
         <Form.Item label="Gerçekleşen Bitiş Tarihi" name="endAt" className="mb-3">
           <DatePicker
             showTime
-            placeholder="Bitiş zamanı"
+            placeholder="Bitiş tarihi"
             size="middle"
             style={{ width: "100%" }}
             format="DD-MM-YYYY HH:mm:ss"
