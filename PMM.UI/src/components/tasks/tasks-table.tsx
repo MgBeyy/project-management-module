@@ -206,7 +206,7 @@ export default function TasksCustomTable() {
         width: 120,
         ellipsis: { showTitle: false },
         render: (t: string) => {
-          const label = t === "Done" ? "Tamamlandı" : t === "InProgress" ? "Devam Ediyor" : t === "Todo" ? "Yapılacak" : t === "Inactive" ? "Pasif" : t;
+          const label = t === "Done" ? "Tamamlandı" : t === "InProgress" ? "Devam Ediyor" : t === "Todo" ? "Yapılacak" : t === "Inactive" ? "Pasif" : t === "WaitingForApproval" ? "Onay Bekliyor" : t;
           return <span title={label} style={{ fontWeight: "bold" }}>{label}</span>;
         },
       },

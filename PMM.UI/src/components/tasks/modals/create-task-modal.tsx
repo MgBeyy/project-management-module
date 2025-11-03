@@ -347,6 +347,7 @@ export default function CreateTaskModal({
       if (currentStatus === "InProgress") statusValue = TaskStatus.IN_PROGRESS;
       else if (currentStatus === "Done") statusValue = TaskStatus.DONE;
       else if (currentStatus === "Inactive") statusValue = TaskStatus.INACTIVE;
+      else if (currentStatus === "WaitingForApproval") statusValue = TaskStatus.WAITING_FOR_APPROVAL;
 
       const resolvedProjectId = currentTaskData?.projectId;
       const resolvedParentTaskId = currentTaskData?.parentTaskId;
@@ -717,8 +718,9 @@ export default function CreateTaskModal({
                 options={[
                   { value: TaskStatus.TODO, label: "Yapılacak" },
                   { value: TaskStatus.IN_PROGRESS, label: "Devam Ediyor" },
-                  { value: TaskStatus.INACTIVE, label: "Pasif" },
+                  { value: TaskStatus.WAITING_FOR_APPROVAL, label: "Onay Bekliyor" },
                   { value: TaskStatus.DONE, label: "Tamamlandı" },
+                  { value: TaskStatus.INACTIVE, label: "Pasif" },
                 ]}
               />
             </Form.Item>
