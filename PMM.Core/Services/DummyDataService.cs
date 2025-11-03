@@ -452,30 +452,5 @@ namespace PMM.Core.Services
             await _taskLabelRepository.SaveChangesAsync();
             return taskLabels;
         }
-
-        // ...existing private methods remain the same but are now obsolete...
-        private async Task SeedClientsAsync()
-        {
-            // This method is kept for backward compatibility but should not be used
-            await SeedClientsAsync(10);
-        }
-
-        private async Task SeedUsersAsync()
-        {
-            // This method is kept for backward compatibility but should not be used
-            await SeedUsersAsync(10);
-        }
-
-        private async Task SeedProjectsAsync()
-        {
-            // This method is kept for backward compatibility but should not be used
-            await SeedProjectsAsync(15);
-        }
-
-        private async Task SeedProjectAssignmentsAsync()
-        {
-            // This method is kept for backward compatibility but should not be used
-            await SeedProjectAssignmentsAsync(30);
-        }
     }
 }
