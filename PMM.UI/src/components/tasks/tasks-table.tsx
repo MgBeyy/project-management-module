@@ -46,11 +46,9 @@ export default function TasksCustomTable() {
 
   const SortableHeader = ({
     title,
-    maxWidth,
     dataIndex,
   }: {
     title: string;
-    maxWidth: number;
     dataIndex: TaskSortKey;
   }) => {
     const isActive = sortBy === dataIndex;
@@ -65,18 +63,22 @@ export default function TasksCustomTable() {
           alignItems: "center",
           gap: 6,
           width: "100%",
+          height: "100%",
           background: "transparent",
           border: "none",
           padding: 0,
           margin: 0,
           cursor: "pointer",
           textAlign: "left",
+          minWidth: 0,
+          overflow: "hidden",
         }}
         title={title}
       >
         <span
           style={{
-            maxWidth: maxWidth - 26,
+            flex: 1,
+            minWidth: 0,
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
@@ -89,6 +91,7 @@ export default function TasksCustomTable() {
             display: "flex",
             flexDirection: "column",
             lineHeight: 1,
+            flexShrink: 0,
           }}
         >
           <CaretUpOutlined
@@ -140,7 +143,7 @@ export default function TasksCustomTable() {
   const baseColumns = useMemo<ColumnsType<any>>(
     () => [
       { 
-        title: <SortableHeader title="Görev Kodu" maxWidth={120} dataIndex="code" />, 
+        title: <SortableHeader title="Görev Kodu" dataIndex="code" />, 
         dataIndex: "code", 
         key: "code", 
         width: 120, 
@@ -148,7 +151,7 @@ export default function TasksCustomTable() {
         render: (t: string) => <span title={t}>{t || "-"}</span> 
       },
       { 
-        title: <SortableHeader title="Başlık" maxWidth={250} dataIndex="title" />, 
+        title: <SortableHeader title="Başlık" dataIndex="title" />, 
         dataIndex: "title", 
         key: "title", 
         width: 250, 
@@ -156,7 +159,7 @@ export default function TasksCustomTable() {
         render: (t: string) => <span title={t}>{t}</span> 
       },
       { 
-        title: <SortableHeader title="Açıklama" maxWidth={200} dataIndex="description" />, 
+        title: <SortableHeader title="Açıklama" dataIndex="description" />, 
         dataIndex: "description", 
         key: "description", 
         width: 200, 
@@ -164,7 +167,7 @@ export default function TasksCustomTable() {
         render: (t: string) => <span title={t}>{t}</span> 
       },
       {
-        title: <SortableHeader title="Etiketler" maxWidth={200} dataIndex="labels" />,
+        title: <SortableHeader title="Etiketler" dataIndex="labels" />,
         dataIndex: "labels",
         key: "labels",
         width: 130,
@@ -185,7 +188,7 @@ export default function TasksCustomTable() {
         ),
       },
       {
-        title: <SortableHeader title="Proje Kodu" maxWidth={100} dataIndex="projectCode" />,
+        title: <SortableHeader title="Proje Kodu" dataIndex="projectCode" />,
         dataIndex: "projectCode",
         key: "projectCode",
         width: 100,
@@ -197,7 +200,7 @@ export default function TasksCustomTable() {
         ),
       },
       {
-        title: <SortableHeader title="Durum" maxWidth={120} dataIndex="status" />,
+        title: <SortableHeader title="Durum" dataIndex="status" />,
         dataIndex: "status",
         key: "status",
         width: 120,
@@ -208,7 +211,7 @@ export default function TasksCustomTable() {
         },
       },
       { 
-        title: <SortableHeader title="Planlanan Çalışma Saati" maxWidth={130} dataIndex="plannedHours" />, 
+        title: <SortableHeader title="Planlanan Çalışma Saati" dataIndex="plannedHours" />, 
         dataIndex: "plannedHours", 
         key: "plannedHours", 
         width: 130, 
@@ -216,7 +219,7 @@ export default function TasksCustomTable() {
         render: (n: number) => <span title={n?.toString()}>{n || "-"}</span> 
       },
       { 
-        title: <SortableHeader title="Gerçek Çalışma Saati" maxWidth={120} dataIndex="actualHours" />, 
+        title: <SortableHeader title="Gerçek Çalışma Saati" dataIndex="actualHours" />, 
         dataIndex: "actualHours", 
         key: "actualHours", 
         width: 120, 
@@ -224,7 +227,7 @@ export default function TasksCustomTable() {
         render: (n: number) => <span title={n?.toString()}>{n || "-"}</span> 
       },
       { 
-        title: <SortableHeader title="Oluşturulma" maxWidth={150} dataIndex="createdAt" />, 
+        title: <SortableHeader title="Oluşturulma" dataIndex="createdAt" />, 
         dataIndex: "createdAt", 
         key: "createdAt", 
         width: 150, 

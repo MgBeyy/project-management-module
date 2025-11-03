@@ -53,11 +53,9 @@ export default function CustomTable() {
 
   const SortableHeader = ({
     title,
-    maxWidth,
     dataIndex,
   }: {
     title: string;
-    maxWidth: number;
     dataIndex: SortableColumnKey;
   }) => {
     const isActive = sortBy === dataIndex;
@@ -72,18 +70,22 @@ export default function CustomTable() {
           alignItems: "center",
           gap: 6,
           width: "100%",
+          height: "100%",
           background: "transparent",
           border: "none",
           padding: 0,
           margin: 0,
           cursor: "pointer",
           textAlign: "left",
+          minWidth: 0,
+          overflow: "hidden",
         }}
         title={title}
       >
         <span
           style={{
-            maxWidth: maxWidth - 26,
+            flex: 1,
+            minWidth: 0,
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
@@ -96,6 +98,7 @@ export default function CustomTable() {
             display: "flex",
             flexDirection: "column",
             lineHeight: 1,
+            flexShrink: 0,
           }}
         >
           <CaretUpOutlined
@@ -153,7 +156,7 @@ export default function CustomTable() {
   const baseColumns = useMemo<ColumnsType<any>>(
     () => [
       {
-        title: <SortableHeader title="Kod" maxWidth={130} dataIndex="code" />,
+        title: <SortableHeader title="Kod" dataIndex="code" />,
         dataIndex: "code",
         key: "code",
         width: 130,
@@ -165,7 +168,7 @@ export default function CustomTable() {
         ),
       },
       {
-        title: <SortableHeader title="Etiketler" maxWidth={200} dataIndex="labels" />,
+        title: <SortableHeader title="Etiketler" dataIndex="labels" />,
         dataIndex: "labels",
         key: "labels",
         width: 120,
@@ -186,7 +189,7 @@ export default function CustomTable() {
         ),
       },
       {
-        title: <SortableHeader title="Başlık" maxWidth={250} dataIndex="title" />,
+        title: <SortableHeader title="Başlık" dataIndex="title" />,
         dataIndex: "title",
         key: "title",
         width: 250,
@@ -195,7 +198,7 @@ export default function CustomTable() {
       },
       {
         title: (
-          <SortableHeader title="Planlanan Başlangıç Tarihi" maxWidth={170} dataIndex="plannedStartDate" />
+          <SortableHeader title="Planlanan Başlangıç Tarihi" dataIndex="plannedStartDate" />
         ),
         dataIndex: "plannedStartDate",
         key: "plannedStartDate",
@@ -205,7 +208,7 @@ export default function CustomTable() {
       },
       {
         title: (
-          <SortableHeader title="Planlanan Bitiş Tarihi" maxWidth={170} dataIndex="plannedDeadline" />
+          <SortableHeader title="Planlanan Bitiş Tarihi" dataIndex="plannedDeadline" />
         ),
         dataIndex: "plannedDeadline",
         key: "plannedDeadline",
@@ -214,7 +217,7 @@ export default function CustomTable() {
         render: (text: string) => <span title={text}>{fromMillis(text)?.format("DD.MM.YYYY")}</span>,
       },
       {
-        title: <SortableHeader title="Planlanan Çalışma Saati" maxWidth={120} dataIndex="plannedHours" />,
+        title: <SortableHeader title="Planlanan Çalışma Saati" dataIndex="plannedHours" />,
         dataIndex: "plannedHours",
         key: "plannedHours",
         width: 120,
@@ -224,7 +227,7 @@ export default function CustomTable() {
         ),
       },
       {
-        title: <SortableHeader title="Başlangıç Zamanı" maxWidth={150} dataIndex="startedAt" />,
+        title: <SortableHeader title="Başlangıç Zamanı" dataIndex="startedAt" />,
         dataIndex: "startedAt",
         key: "startedAt",
         width: 150,
@@ -234,7 +237,7 @@ export default function CustomTable() {
         ),
       },
       {
-        title: <SortableHeader title="Bitiş Zamanı" maxWidth={150} dataIndex="endAt" />,
+        title: <SortableHeader title="Bitiş Zamanı" dataIndex="endAt" />,
         dataIndex: "endAt",
         key: "endAt",
         width: 150,
@@ -244,7 +247,7 @@ export default function CustomTable() {
         ),
       },
       {
-        title: <SortableHeader title="Durum" maxWidth={120} dataIndex="status" />,
+        title: <SortableHeader title="Durum" dataIndex="status" />,
         dataIndex: "status",
         key: "status",
         width: 120,
@@ -266,7 +269,7 @@ export default function CustomTable() {
         },
       },
       {
-        title: <SortableHeader title="Öncelik" maxWidth={100} dataIndex="priority" />,
+        title: <SortableHeader title="Öncelik" dataIndex="priority" />,
         dataIndex: "priority",
         key: "priority",
         width: 100,
