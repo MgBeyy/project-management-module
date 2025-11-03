@@ -1,6 +1,21 @@
 import { TaskDto } from '@/types';
 import { create } from 'zustand';
 
+export type TaskSortKey =
+  | "code"
+  | "title"
+  | "description"
+  | "labels"
+  | "projectCode"
+  | "status"
+  | "priority"
+  | "assignees"
+  | "plannedHours"
+  | "actualHours"
+  | "createdAt";
+
+export type TaskSortOrder = "ascend" | "descend" | null;
+
 interface TasksState {
   tasks: TaskDto[];
   selectedTask: TaskDto | null;
@@ -10,6 +25,8 @@ interface TasksState {
   isLoading: boolean;
   filters: Record<string, any>;
   refreshTrigger: number | null;
+  sortBy: TaskSortKey | null;
+  sortOrder: TaskSortOrder;
   
   // Actions
   setTasks: (tasks: TaskDto[]) => void;
@@ -22,6 +39,8 @@ interface TasksState {
   resetFilters: () => void;
   clearSelectedTask: () => void;
   triggerRefresh: () => void;
+  setSortOptions: (sortBy: TaskSortKey | null, sortOrder: TaskSortOrder) => void;
+  resetSorting: () => void;
 }
 
 export const useTasksStore = create<TasksState>((set) => ({
@@ -33,6 +52,8 @@ export const useTasksStore = create<TasksState>((set) => ({
   isLoading: true,
   filters: {},
   refreshTrigger: null,
+  sortBy: null,
+  sortOrder: null,
   
   setTasks: (tasks) => set({ tasks }),
   
@@ -48,9 +69,13 @@ export const useTasksStore = create<TasksState>((set) => ({
   
   setFilters: (filters) => set({ filters }),
   
-  resetFilters: () => set({ filters: {}, currentPage: 1 }),
+  resetFilters: () => set({ filters: {}, currentPage: 1, sortBy: null, sortOrder: null }),
   
   clearSelectedTask: () => set({ selectedTask: null }),
   
   triggerRefresh: () => set((state) => ({ refreshTrigger: state.refreshTrigger ? state.refreshTrigger + 1 : 1})),
+
+  setSortOptions: (sortBy, sortOrder) => set({ sortBy, sortOrder }),
+
+  resetSorting: () => set({ sortBy: null, sortOrder: null }),
 }));

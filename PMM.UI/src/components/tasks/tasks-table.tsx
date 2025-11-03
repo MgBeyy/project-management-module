@@ -1,7 +1,8 @@
 import { Table, Tag, Tooltip } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import type { ColumnsType } from "antd/es/table";
-import { useTasksStore } from "@/store/zustand/tasks-store";
+import { CaretDownOutlined, CaretUpOutlined } from "@ant-design/icons";
+import { useTasksStore, type TaskSortKey, type TaskSortOrder } from "@/store/zustand/tasks-store";
 import { GetTasks } from "@/services/tasks/get-tasks";
 import Spinner from "../common/spinner";
 import { formatDateTime } from "@/utils/retype";
@@ -19,19 +20,107 @@ export default function TasksCustomTable() {
     isLoading,
     filters,
     refreshTrigger,
+    sortBy,
+    sortOrder,
     setTasks,
     setSelectedTask,
     setCurrentPage,
     setPageSize,
     setTotalItems,
     setIsLoading,
+    setSortOptions,
   } = useTasksStore();
+
+  const handleSort = (dataIndex: TaskSortKey) => {
+    const nextOrder: TaskSortOrder =
+      sortBy !== dataIndex
+        ? "ascend"
+        : sortOrder === "ascend"
+        ? "descend"
+        : sortOrder === "descend"
+        ? null
+        : "ascend";
+
+    setSortOptions(nextOrder ? dataIndex : null, nextOrder);
+  };
+
+  const SortableHeader = ({
+    title,
+    maxWidth,
+    dataIndex,
+  }: {
+    title: string;
+    maxWidth: number;
+    dataIndex: TaskSortKey;
+  }) => {
+    const isActive = sortBy === dataIndex;
+    const currentOrder = isActive ? sortOrder : null;
+
+    return (
+      <button
+        type="button"
+        onClick={() => handleSort(dataIndex)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          width: "100%",
+          background: "transparent",
+          border: "none",
+          padding: 0,
+          margin: 0,
+          cursor: "pointer",
+          textAlign: "left",
+        }}
+        title={title}
+      >
+        <span
+          style={{
+            maxWidth: maxWidth - 26,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {title}
+        </span>
+        <span
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            lineHeight: 1,
+          }}
+        >
+          <CaretUpOutlined
+            style={{
+              fontSize: 10,
+              color: currentOrder === "ascend" ? "#1677ff" : "#bfbfbf",
+            }}
+          />
+          <CaretDownOutlined
+            style={{
+              fontSize: 10,
+              color: currentOrder === "descend" ? "#1677ff" : "#bfbfbf",
+            }}
+          />
+        </span>
+      </button>
+    );
+  };
 
   async function getTaskData() {
     try {
       setIsLoading(true);
+      
+      const sortParams =
+        sortBy && sortOrder
+          ? { SortBy: sortBy, SortDesc: sortOrder === "descend" }
+          : sortBy
+          ? { SortBy: sortBy, SortDesc: false }
+          : {};
+
       const response = await GetTasks({
-        query: { ...filters, page: currentPage, pageSize },
+        query: { ...filters, page: currentPage, pageSize, ...sortParams },
       });
       setTasks(response.data || []);
       setTotalItems(response.totalRecords || 0);
@@ -46,21 +135,36 @@ export default function TasksCustomTable() {
   useEffect(() => {
     getTaskData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, pageSize, currentPage, refreshTrigger]);
-
-  const HeaderWithTooltip = ({ title, maxWidth }: { title: string; maxWidth: number }) => (
-    <div style={{ maxWidth: maxWidth - 20, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={title}>
-      {title}
-    </div>
-  );
+  }, [filters, pageSize, currentPage, refreshTrigger, sortBy, sortOrder]);
 
   const baseColumns = useMemo<ColumnsType<any>>(
     () => [
-      { title: <HeaderWithTooltip title="Görev Kodu" maxWidth={120} />, dataIndex: "code", key: "code", width: 120, ellipsis: { showTitle: false }, render: (t: string) => <span title={t}>{t || "-"}</span> },
-      { title: <HeaderWithTooltip title="Başlık" maxWidth={250} />, dataIndex: "title", key: "title", width: 250, ellipsis: { showTitle: false }, render: (t: string) => <span title={t}>{t}</span> },
-      { title: <HeaderWithTooltip title="Açıklama" maxWidth={200} />, dataIndex: "description", key: "description", width: 200, ellipsis: { showTitle: false }, render: (t: string) => <span title={t}>{t}</span> },
+      { 
+        title: <SortableHeader title="Görev Kodu" maxWidth={120} dataIndex="code" />, 
+        dataIndex: "code", 
+        key: "code", 
+        width: 120, 
+        ellipsis: { showTitle: false }, 
+        render: (t: string) => <span title={t}>{t || "-"}</span> 
+      },
+      { 
+        title: <SortableHeader title="Başlık" maxWidth={250} dataIndex="title" />, 
+        dataIndex: "title", 
+        key: "title", 
+        width: 250, 
+        ellipsis: { showTitle: false }, 
+        render: (t: string) => <span title={t}>{t}</span> 
+      },
+      { 
+        title: <SortableHeader title="Açıklama" maxWidth={200} dataIndex="description" />, 
+        dataIndex: "description", 
+        key: "description", 
+        width: 200, 
+        ellipsis: { showTitle: false }, 
+        render: (t: string) => <span title={t}>{t}</span> 
+      },
       {
-        title: <HeaderWithTooltip title="Etiketler" maxWidth={200} />,
+        title: <SortableHeader title="Etiketler" maxWidth={200} dataIndex="labels" />,
         dataIndex: "labels",
         key: "labels",
         width: 130,
@@ -81,7 +185,7 @@ export default function TasksCustomTable() {
         ),
       },
       {
-        title: <HeaderWithTooltip title="Proje Kodu" maxWidth={100} />,
+        title: <SortableHeader title="Proje Kodu" maxWidth={100} dataIndex="projectCode" />,
         dataIndex: "projectCode",
         key: "projectCode",
         width: 100,
@@ -93,7 +197,7 @@ export default function TasksCustomTable() {
         ),
       },
       {
-        title: <HeaderWithTooltip title="Durum" maxWidth={120} />,
+        title: <SortableHeader title="Durum" maxWidth={120} dataIndex="status" />,
         dataIndex: "status",
         key: "status",
         width: 120,
@@ -103,11 +207,32 @@ export default function TasksCustomTable() {
           return <span title={label} style={{ fontWeight: "bold" }}>{label}</span>;
         },
       },
-      { title: <HeaderWithTooltip title="Planlanan Çalışma Saati" maxWidth={130} />, dataIndex: "plannedHours", key: "plannedHours", width: 130, ellipsis: { showTitle: false }, render: (n: number) => <span title={n?.toString()}>{n || "-"}</span> },
-      { title: <HeaderWithTooltip title="Gerçek Çalışma Saati" maxWidth={120} />, dataIndex: "actualHours", key: "actualHours", width: 120, ellipsis: { showTitle: false }, render: (n: number) => <span title={n?.toString()}>{n || "-"}</span> },
-      { title: <HeaderWithTooltip title="Oluşturulma" maxWidth={150} />, dataIndex: "createdAt", key: "createdAt", width: 150, ellipsis: { showTitle: false }, render: (s: string) => <span title={s}>{formatDateTime(s)}</span> },
+      { 
+        title: <SortableHeader title="Planlanan Çalışma Saati" maxWidth={130} dataIndex="plannedHours" />, 
+        dataIndex: "plannedHours", 
+        key: "plannedHours", 
+        width: 130, 
+        ellipsis: { showTitle: false }, 
+        render: (n: number) => <span title={n?.toString()}>{n || "-"}</span> 
+      },
+      { 
+        title: <SortableHeader title="Gerçek Çalışma Saati" maxWidth={120} dataIndex="actualHours" />, 
+        dataIndex: "actualHours", 
+        key: "actualHours", 
+        width: 120, 
+        ellipsis: { showTitle: false }, 
+        render: (n: number) => <span title={n?.toString()}>{n || "-"}</span> 
+      },
+      { 
+        title: <SortableHeader title="Oluşturulma" maxWidth={150} dataIndex="createdAt" />, 
+        dataIndex: "createdAt", 
+        key: "createdAt", 
+        width: 150, 
+        ellipsis: { showTitle: false }, 
+        render: (s: string) => <span title={s}>{formatDateTime(s)}</span> 
+      },
     ],
-    []
+    [sortBy, sortOrder]
   );
 
   // genişlik state’i
