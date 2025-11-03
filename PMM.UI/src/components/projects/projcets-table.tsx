@@ -227,7 +227,7 @@ export default function CustomTable() {
         ),
       },
       {
-        title: <SortableHeader title="Başlangıç Zamanı" dataIndex="startedAt" />,
+        title: <SortableHeader title="Başlangıç Tarihi" dataIndex="startedAt" />,
         dataIndex: "startedAt",
         key: "startedAt",
         width: 150,
@@ -237,7 +237,7 @@ export default function CustomTable() {
         ),
       },
       {
-        title: <SortableHeader title="Bitiş Zamanı" dataIndex="endAt" />,
+        title: <SortableHeader title="Bitiş Tarihi" dataIndex="endAt" />,
         dataIndex: "endAt",
         key: "endAt",
         width: 150,
