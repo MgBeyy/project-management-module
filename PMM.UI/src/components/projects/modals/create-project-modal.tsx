@@ -113,21 +113,17 @@ export default function CreateProjectModal({
   const formItemNoMarginStyle: CSSProperties = { marginBottom: 0 };
 
   const handleLabelOptionsSync = useCallback((options: MultiSelectOption[]) => {
-    if (options.length === 0) {
-      setLabelSelectOptions((prev) => (prev.length === 0 ? prev : []));
-      return;
-    }
     setLabelSelectOptions((prev) => {
-      const merged = mergeOptions(prev, options);
-      return areOptionsEqual(prev, merged) ? prev : merged;
+      if (areOptionsEqual(prev, options)) return prev;
+      console.log("📦 Label options updated. Old length:", prev.length, "New length:", options.length);
+      return options;
     });
   }, []);
 
   const handleParentOptionsSync = useCallback((options: MultiSelectOption[]) => {
-    if (options.length === 0) return;
     setParentProjectOptions((prev) => {
-      const merged = mergeOptions(prev, options);
-      return areOptionsEqual(prev, merged) ? prev : merged;
+      if (areOptionsEqual(prev, options)) return prev;
+      return options;
     });
   }, []);
 
@@ -195,8 +191,8 @@ export default function CreateProjectModal({
     setDefaultCustomerOptions([]);
     setSelectedParentProjects([]);
     setSelectedLabels([]);
-    setParentProjectOptions([]);
-    setLabelSelectOptions((prev) => (prev.length === 0 ? prev : []));
+    // DO NOT reset parentProjectOptions and labelSelectOptions here - those are the available options
+    // They should only be reset when modal closes or data is freshly loaded
     setSelectedUsers([]);
     setUserOptions([]);
     setUserSearchValue("");
@@ -502,12 +498,14 @@ export default function CreateProjectModal({
 
   const handleParentProjectsChange = (values: string[]) => {
     if (isViewMode) return;
+    console.log("🔧 handleParentProjectsChange called with:", values);
     setSelectedParentProjects(values);
     form.setFieldValue("parentProjects", values);
   };
 
   const handleLabelsChange = (values: string[]) => {
     if (isViewMode) return;
+    console.log("🔧 handleLabelsChange called with:", values);
     setSelectedLabels(values);
     form.setFieldValue("labels", values);
   };
