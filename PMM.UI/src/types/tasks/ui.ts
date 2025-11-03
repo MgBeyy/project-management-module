@@ -37,5 +37,6 @@ export enum TaskStatus {
   TODO = "Todo",
   IN_PROGRESS = "InProgress",
   DONE = "Done",
-  INACTIVE = "InActive",
+  INACTIVE = "Inactive",
+  WAITING_FOR_APPROVAL = "WaitingForApproval",
 }
