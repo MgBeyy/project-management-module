@@ -71,8 +71,20 @@ export default function CreateLabelModal({
       }
 
       // Extract label entity from response
+      const labelData = response.result || response;
 
-      onSuccess?.(response);
+      // Normalize to MultiSelectOption format
+      const normalizedLabel = {
+        value: labelData.id?.toString(),
+        label: labelData.name,
+        key: labelData.id?.toString(),
+        name: labelData.name,
+        description: labelData.description,
+        color: labelData.color,
+        ...labelData,
+      };
+
+      onSuccess?.(normalizedLabel);
       handleCancel();
     } catch (error: any) {
       console.error("Label kaydetme hatası:", error);
