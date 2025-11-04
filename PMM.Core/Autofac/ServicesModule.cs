@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using PMM.Core.Helpers;
 
 namespace PMM.Core.Autofac
 {
@@ -10,6 +11,8 @@ namespace PMM.Core.Autofac
             .Where(t => t.Name.EndsWith("Service"))
             .AsImplementedInterfaces()
             .PropertiesAutowired();
+
+            builder.RegisterType<NpoiExcelHelper>().AsSelf().InstancePerDependency();
         }
     }
 }
