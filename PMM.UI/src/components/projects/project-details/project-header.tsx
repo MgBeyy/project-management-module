@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 export const ProjectHeader = ({projectData}: {projectData: DetailedProjectDto}) => {
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-300 p-6 mb-6">
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">

@@ -49,7 +49,7 @@ export const ProjectTeamCard = ({ assignedUsers, isLoading = false }: ProjectTea
           {assignedUsers!.map((assignment) => (
             <div
               key={assignment.id}
-              className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-between p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <Avatar

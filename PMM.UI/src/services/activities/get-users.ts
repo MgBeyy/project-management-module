@@ -1,14 +1,18 @@
 import { UserPagedResult } from "@/types";
 import apiClient from "../api-client";
 
-export async function GetUsers(search?: string) : Promise<UserPagedResult> {
+interface UserQuery {
+  search: string;
+  AssignedProjectIds?: number;
+  AssignedTaskIds?: number;
+  page?: number;
+  pageSize?: number;
+}
+
+export async function GetUsers({query}: {query: UserQuery}) : Promise<UserPagedResult> {
   try {
     const response = await apiClient.get("/User", {
-      params: {
-        Search: search,
-        page: 1,
-        pageSize: 100,
-      },
+      params: {...query, pageSize: query.pageSize || 100},
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",

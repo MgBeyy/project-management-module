@@ -84,7 +84,7 @@ const TaskRow: React.FC<{
   const hasChildren = (task.subTasks?.length ?? 0) > 0;
 
   return (
-    <div className="bg-white border rounded-lg p-3 mb-2">
+    <div className="bg-white border border-gray-300 rounded-lg p-3 mb-2">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
           <div className="flex items-center gap-2">
@@ -203,7 +203,7 @@ export const TasksStatusCard: React.FC<TasksStatusCardProps> = ({
   }, [filtered]);
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border ${className}`}>
+    <div className={`bg-white rounded-lg shadow-sm border border-gray-300 ${className}`}>
       <div className="p-6 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
           <ProjectOutlined className="text-purple-600" />
