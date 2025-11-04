@@ -110,6 +110,7 @@ export default function ActivityModal({
         endTime: values.endTime.valueOf(),
         isLast: values.isLast || false,
       };
+      console.log(values.isLast);
 
       if (isCreateMode) {
         await createActivity(activityData);
@@ -284,10 +285,10 @@ export default function ActivityModal({
           >
             <Checkbox disabled={isViewMode}>
               Bu etkinlik ilgili görev için son etkinliktir.
+              <Tooltip title="Bir etkinlik son etkinlik olduğunda ilgili görevin statüsü 'onay bekliyor' olarak güncellenir.">
+                <InfoCircleOutlined style={{ cursor: "help", marginLeft: "4px" }} />
+              </Tooltip>
             </Checkbox>
-            <Tooltip title="Bir etkinlik son etkinlik olduğu zaman ilgili görevin statüsünü onay bekliyor olarak günceller.">
-              <InfoCircleOutlined style={{ cursor: "help", color: "#1890ff" }} />
-            </Tooltip>
           </Form.Item>
         </Form>
       </Modal>
