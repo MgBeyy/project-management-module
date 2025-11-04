@@ -14,7 +14,7 @@ export enum ProjectPriority {
   YUKSEK = "High",
 }
 
-type ProjectQuery = {
+export type ProjectQuery = {
   page?: number;
   pageSize?: number;
   Code?: string;
