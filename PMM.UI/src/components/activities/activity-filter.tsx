@@ -1,7 +1,5 @@
 import { useTasksStore } from "@/store/zustand/tasks-store";
-import { use, useEffect, useState } from "react";
-import UserSelect from "./user-select";
-import TaskSelect from "./task-select";
+import { useEffect, useState } from "react";
 import { Button, Select, Spin } from "antd";
 import { GetProjects } from "@/services/projects/get-projects";
 import { ProjectDto, TaskDto, UserDto } from "@/types";
