@@ -10,9 +10,9 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { GetActivities } from "../../services/activities/get-activities";
 import { useActivitiesStore } from "@/store/zustand/activities-store";
 import ActivityModal from "./modals/activity-modal";
-import UserSelect from "./user-select";
 import Spinner from "../common/spinner";
 import { ActivityDto } from "@/types";
+import { useTasksStore } from "@/store/zustand/tasks-store";
 
 interface TimeSlot {
   date: Dayjs;
@@ -52,7 +52,6 @@ export default function ActivitiesCalendar() {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const currentTimeIndicatorRef = useRef<HTMLDivElement | null>(null);
 
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   const [isActivityModalVisible, setIsActivityModalVisible] = useState(false);
   const [activityModalMode, setActivityModalMode] = useState<"create" | "edit" | "view">("create");
@@ -60,6 +59,8 @@ export default function ActivitiesCalendar() {
   const [selectedActivity, setSelectedActivity] = useState<ActivityDto | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [selectedEndSlot, setSelectedEndSlot] = useState<TimeSlot | null>(null);
+
+  const {filters} = useTasksStore();
 
   // Drag selection state
   const [isDragging, setIsDragging] = useState(false);
@@ -74,17 +75,13 @@ export default function ActivitiesCalendar() {
 
   useEffect(() => {
     fetchActivities();
-  }, [refreshTrigger, selectedUserId]);
+  }, [refreshTrigger, filters]);
 
   const fetchActivities = async () => {
     try {
       setIsLoading(true);
       const response = await GetActivities({
-        query: {
-          page: 1,
-          pageSize: 1000,
-          userId: selectedUserId || undefined,
-        },
+        query: filters,
       });
 
       const activityData = response.data;
@@ -418,12 +415,6 @@ export default function ActivitiesCalendar() {
           </h2>
         </div>
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-          <UserSelect
-            value={selectedUserId ?? undefined}
-            onChange={setSelectedUserId}
-            placeholder="Kullanıcı Seç"
-            style={{ width: 250 }}
-          />
           <Button
             type="primary"
             onClick={() => {
@@ -801,7 +792,7 @@ export default function ActivitiesCalendar() {
                 .minute(selectedEndSlot.minute)
             : undefined
         }
-        selectedUserId={selectedUserId}
+        selectedUserId={filters.userId}
       />
     </div>
   );

@@ -2,13 +2,10 @@ import { ActivityDto } from "@/types";
 import { create } from "zustand";
 
 interface ActivityFilters {
-  Search?: string;
-  TaskId?: number;
-  UserId?: number;
-  StartTimeMin?: number;
-  StartTimeMax?: number;
-  EndTimeMin?: number;
-  EndTimeMax?: number;
+  search?: string;
+  projectId?: number;
+  taskId?: number;
+  userId?: number;
   page?: number;
   pageSize?: number;
 }

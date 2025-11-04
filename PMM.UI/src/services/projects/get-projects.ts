@@ -18,6 +18,7 @@ type ProjectQuery = {
   page?: number;
   pageSize?: number;
   Code?: string;
+  search?: string;
   Title?: string;
   PlannedStartDate?: string | Date | null;
   PlannedDeadLine?: string | Date | null;
