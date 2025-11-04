@@ -16,6 +16,11 @@ namespace PMM.Domain.Entities
         public string? Description { get; set; }
         public ETaskStatus Status { get; set; }
 
+        public DateOnly? PlannedStartDate { get; set; }
+        public DateOnly? PlannedEndDate { get; set; }
+        public DateOnly? ActualStartDate { get; set; }
+        public DateOnly? ActualEndDate { get; set; }
+
         public decimal? PlannedHours { get; set; }
         public decimal? ActualHours { get; set; }
 

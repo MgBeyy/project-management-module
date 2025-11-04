@@ -28,6 +28,11 @@ namespace PMM.Data.Contexts.ClassMaps
 
             builder.Property(t => t.Status).IsRequired().HasConversion<string>();
 
+            builder.Property(t => t.PlannedStartDate).IsRequired(false);
+            builder.Property(t => t.PlannedEndDate).IsRequired(false);
+            builder.Property(t => t.ActualStartDate).IsRequired(false);
+            builder.Property(t => t.ActualEndDate).IsRequired(false);
+
             builder.Property(t => t.PlannedHours).IsRequired(false).HasPrecision(18, 2);
             builder.Property(t => t.ActualHours).IsRequired(false).HasPrecision(18, 2);
             builder.Property(t => t.IsLast).IsRequired();

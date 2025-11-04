@@ -11,6 +11,12 @@ namespace PMM.Domain.Forms
         public string Description { get; set; }
         [ValidEnum(ErrorMessage = "Geçerli bir görev durumu seçiniz.")]
         public ETaskStatus Status { get; set; }
+
+        public DateOnly? PlannedStartDate { get; set; }
+        public DateOnly? PlannedEndDate { get; set; }
+        public DateOnly? ActualStartDate { get; set; }
+        public DateOnly? ActualEndDate { get; set; }
+
         [Range(0, double.MaxValue, ErrorMessage = "Planlanan toplam saat negatif bir değer alamaz!")]
         public decimal? PlannedHours { get; set; }
         [Range(0, double.MaxValue, ErrorMessage = "Gerçekleşen toplam saat negatif bir değer alamaz!")]

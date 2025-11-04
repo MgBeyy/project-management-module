@@ -16,6 +16,12 @@ namespace PMM.Domain.DTOs
         public int CreatedById { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public int? UpdatedById { get; set; }
+
+        public DateOnly? PlannedStartDate { get; set; }
+        public DateOnly? PlannedEndDate { get; set; }
+        public DateOnly? ActualStartDate { get; set; }
+        public DateOnly? ActualEndDate { get; set; }
+
         public decimal? PlannedHours { get; set; }
         public decimal? ActualHours { get; set; }
         public bool IsLast { get; set; }

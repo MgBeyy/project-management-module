@@ -25,6 +25,20 @@ namespace PMM.Domain.Forms
         public decimal? ActualHours { get; set; }
         public decimal? ActualHoursMin { get; set; }
         public decimal? ActualHoursMax { get; set; }
+
+        public DateOnly? PlannedStartDate { get; set; }
+        public DateOnly? PlannedStartDateMin { get; set; }
+        public DateOnly? PlannedStartDateMax { get; set; }
+        public DateOnly? PlannedEndDate { get; set; }
+        public DateOnly? PlannedEndDateMin { get; set; }
+        public DateOnly? PlannedEndDateMax { get; set; }
+        public DateOnly? ActualStartDate { get; set; }
+        public DateOnly? ActualStartDateMin { get; set; }
+        public DateOnly? ActualStartDateMax { get; set; }
+        public DateOnly? ActualEndDate { get; set; }
+        public DateOnly? ActualEndDateMin { get; set; }
+        public DateOnly? ActualEndDateMax { get; set; }
+
         public DateTime? CreatedAt { get; set; }
         public DateTime? CreatedAtMin { get; set; }
         public DateTime? CreatedAtMax { get; set; }

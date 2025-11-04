@@ -179,6 +179,17 @@ namespace PMM.Core.Services
                 }
             }
 
+            if (form.PlannedEndDate is not null && form.PlannedStartDate is not null)
+            {
+                if (form.PlannedEndDate < form.PlannedStartDate)
+                    throw new BusinessException("Planlanan bitirme tarihi başlama tarihinden önce olamaz.");
+            }
+            if (form.ActualEndDate is not null && form.ActualStartDate is not null)
+            {
+                if (form.ActualEndDate < form.ActualStartDate)
+                    throw new BusinessException("Gerçekleşen bitirme tarihi başlama tarihinden önce olamaz.");
+            }
+
             task = TaskMapper.Map(form, task);
             _taskRepository.Update(task);
             await _taskRepository.SaveChangesAsync();
@@ -290,6 +301,32 @@ namespace PMM.Core.Services
                 query = query.Where(t => t.ActualHours >= form.ActualHoursMin);
             if (form.ActualHoursMax.HasValue)
                 query = query.Where(t => t.ActualHours <= form.ActualHoursMax);
+
+            if (form.PlannedStartDate.HasValue)
+                query = query.Where(t => t.PlannedStartDate == form.PlannedStartDate);
+            if (form.PlannedStartDateMin.HasValue)
+                query = query.Where(t => t.PlannedStartDate >= form.PlannedStartDateMin);
+            if (form.PlannedStartDateMax.HasValue)
+                query = query.Where(t => t.PlannedStartDate <= form.PlannedStartDateMax);
+            if (form.PlannedEndDate.HasValue)
+                query = query.Where(t => t.PlannedEndDate == form.PlannedEndDate);
+            if (form.PlannedEndDateMin.HasValue)
+                query = query.Where(t => t.PlannedEndDate >= form.PlannedEndDateMin);
+            if (form.PlannedEndDateMax.HasValue)
+                query = query.Where(t => t.PlannedEndDate <= form.PlannedEndDateMax);
+            if (form.ActualStartDate.HasValue)
+                query = query.Where(t => t.ActualStartDate == form.ActualStartDate);
+            if (form.ActualStartDateMin.HasValue)
+                query = query.Where(t => t.ActualStartDate >= form.ActualStartDateMin);
+            if (form.ActualStartDateMax.HasValue)
+                query = query.Where(t => t.ActualStartDate <= form.ActualStartDateMax);
+            if (form.ActualEndDate.HasValue)
+                query = query.Where(t => t.ActualEndDate == form.ActualEndDate);
+            if (form.ActualEndDateMin.HasValue)
+                query = query.Where(t => t.ActualEndDate >= form.ActualEndDateMin);
+            if (form.ActualEndDateMax.HasValue)
+                query = query.Where(t => t.ActualEndDate <= form.ActualEndDateMax);
+
             if (form.CreatedAt.HasValue)
                 query = query.Where(t => t.CreatedAt == form.CreatedAt);
             if (form.CreatedAtMin.HasValue)

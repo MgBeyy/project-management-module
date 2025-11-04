@@ -16,6 +16,10 @@ namespace PMM.Core.Mappers
                 Description = form.Description,
                 Title = form.Title,
                 Status = form.Status,
+                PlannedStartDate = form.PlannedStartDate,
+                PlannedEndDate = form.PlannedEndDate,
+                ActualStartDate = form.ActualStartDate,
+                ActualEndDate = form.ActualEndDate,
                 PlannedHours = form.PlannedHours,
                 ActualHours = form.ActualHours,
                 IsLast = form.IsLast
@@ -34,6 +38,10 @@ namespace PMM.Core.Mappers
                 Title = task.Title,
                 Description = task.Description,
                 Status = task.Status,
+                PlannedStartDate = task.PlannedStartDate,
+                PlannedEndDate = task.PlannedEndDate,
+                ActualStartDate = task.ActualStartDate,
+                ActualEndDate = task.ActualEndDate,
                 PlannedHours = task.PlannedHours,
                 ActualHours = task.ActualHours,
                 IsLast = task.IsLast,
@@ -61,8 +69,13 @@ namespace PMM.Core.Mappers
             task.Title = form.Title;
             task.Description = form.Description;
             task.Status = form.Status;
+            task.PlannedStartDate = form.PlannedStartDate;
+            task.PlannedEndDate = form.PlannedEndDate;
+            task.ActualStartDate = form.ActualStartDate;
+            task.ActualEndDate = form.ActualEndDate;
             task.PlannedHours = form.PlannedHours;
             task.ActualHours = form.ActualHours;
+            task.IsLast = form.IsLast;
             return task;
         }
     }
