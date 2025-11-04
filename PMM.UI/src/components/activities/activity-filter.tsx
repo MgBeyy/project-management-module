@@ -1,11 +1,12 @@
 import { useTasksStore } from "@/store/zustand/tasks-store";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import UserSelect from "./user-select";
 import TaskSelect from "./task-select";
 import { Button, Select, Spin } from "antd";
 import { GetProjects } from "@/services/projects/get-projects";
-import { ProjectDto, TaskDto } from "@/types";
+import { ProjectDto, TaskDto, UserDto } from "@/types";
 import { GetTasks } from "@/services/tasks/get-tasks";
+import { GetUsers } from "@/services/activities/get-users";
 
 
 
@@ -19,6 +20,10 @@ export const ActivityFilter: React.FC = () => {
   // Task Select State
   const [taskOptions, setTaskOptions] = useState<Array<{ label: string; value: number }>>([]);
   const [taskLoading, setTaskLoading] = useState(false);
+
+  // User Select State
+  const [userOptions, setUserOptions] = useState<Array<{ label: string; value: number }>>([]);
+  const [userLoading, setUserLoading] = useState(false);
 
   const handleProjectSearch = (value: string) => {
     setProjectLoading(true);
@@ -52,8 +57,23 @@ export const ActivityFilter: React.FC = () => {
     });
   };
 
+  const handleUserSearch = (value: string) => {
+    setUserLoading(true);
+    GetUsers({ query: { search: value, AssignedProjectIds: (filters.taskId ? null : filters.projectId), AssignedTaskIds: filters.taskId || null } }).then((response) => {
+      const options = response.data.map((user: UserDto) => ({
+        label: `${user.name} (${user.email})`,
+        value: user.id,
+      }));
+      setUserOptions(options);
+      setUserLoading(false);
+    }).catch(() => {
+      setUserLoading(false);
+    });
+  };
+
   useEffect(() => {
     handleProjectSearch("");
+    handleUserSearch("");
     handleTaskSearch("");
   }, []);
 
@@ -61,6 +81,11 @@ export const ActivityFilter: React.FC = () => {
     setFilters({ ...filters, taskId: null });
     handleTaskSearch("");
   }, [filters.projectId]);
+  
+  useEffect(() => {
+    setFilters({ ...filters, userId: null });
+    handleUserSearch("");
+  }, [filters.projectId, filters.taskId]);
 
   return (
     <div style={{ marginBottom: '16px' }}>
@@ -107,18 +132,36 @@ export const ActivityFilter: React.FC = () => {
             projectLoading ? (
               <div className="flex justify-center items-center py-2">
                 <Spin size="small" />
-                <span className="ml-2">Projeler aranıyor...</span>
+                <span className="ml-2">Görevler aranıyor...</span>
               </div>
             ) : (
-              "Proje bulunamadı"
+              "Görev bulunamadı"
             )
           }
         />
-        <UserSelect
+        <Select
+          showSearch
+          placeholder="Kullanıcı seçin veya arayın..."
+          options={userOptions}
+          loading={userLoading}
+          filterOption={false}
+          onSearch={handleUserSearch}
+          allowClear 
           value={filters.userId ?? undefined}
           onChange={(userId) => setFilters({ ...filters, userId: userId || null })}
-          placeholder="Kullanıcı Seç"
-          style={{ width: "100%"}}
+          size="middle"
+          style={{ width: "100%" }}
+          optionFilterProp="label"
+          notFoundContent={
+            projectLoading ? (
+              <div className="flex justify-center items-center py-2">
+                <Spin size="small" />
+                <span className="ml-2">Projeler aranıyor...</span>
+              </div>
+            ) : (
+              "Kullanıcı bulunamadı"
+            )
+          }
         />
       <div>
         <Button onClick={() => setFilters({ projectId: null, taskId: null, userId: null })}>

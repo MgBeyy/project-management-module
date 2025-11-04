@@ -120,7 +120,7 @@ export default function ProjectDetailsPage() {
 
               {/* Sağ kolon: Proje Detayları */}
               <div className="space-y-4">
-                <div className="bg-white rounded-lg shadow-sm border p-6">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-300 p-6">
                   <h3 className="text-sm font-semibold text-gray-700 mb-4">Proje Bilgileri</h3>
                   <div className="space-y-3 text-sm">
                     <div>

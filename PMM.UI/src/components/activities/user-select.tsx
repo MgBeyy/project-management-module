@@ -28,7 +28,7 @@ export default function UserSelect({
   const fetchUsers = async (search?: string) => {
     try {
       setLoading(true);
-      const response = await GetUsers(search);
+      const response = await GetUsers({query: {search: search || ""}});
       const userData = response.data || [];
 
       const formattedUsers = userData.map((user: UserDto) => ({
