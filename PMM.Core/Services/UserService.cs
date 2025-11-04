@@ -95,6 +95,32 @@ namespace PMM.Core.Services
                     e.Email.ToLower().Contains(form.Search.Trim().ToLower()));
             }
 
+            if (!string.IsNullOrWhiteSpace(form.AssignedProjectIds))
+            {
+                var projectIds = form.AssignedProjectIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                          .Where(x => int.TryParse(x.Trim(), out _))
+                                          .Select(x => int.Parse(x.Trim()))
+                                          .ToList();
+
+                if (projectIds.Any())
+                {
+                    query = query.Where(u => u.ProjectAssignments.Any(pa => projectIds.Contains(pa.ProjectId)));
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(form.AssignedTaskIds))
+            {
+                var taskIds = form.AssignedTaskIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                          .Where(x => int.TryParse(x.Trim(), out _))
+                                          .Select(x => int.Parse(x.Trim()))
+                                          .ToList();
+
+                if (taskIds.Any())
+                {
+                    query = query.Where(u => u.TaskAssignments.Any(ta => taskIds.Contains(ta.TaskId)));
+                }
+            }
+
             query = OrderByHelper.OrderByDynamic(query, form.SortBy, form.SortDesc);
 
             int page = form.Page ?? 1;
