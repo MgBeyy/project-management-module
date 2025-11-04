@@ -1,5 +1,6 @@
 import { ActivityListDto } from "@/types";
 import apiClient from "../api-client";
+import { sortBy } from "lodash";
 
 type ActivityQuery = {
   page?: number;
@@ -28,7 +29,7 @@ type ActivityQuery = {
 export async function GetActivities({ query }: { query: ActivityQuery }): Promise<ActivityListDto> {
   try {
     const response = await apiClient.get("/Activity", {
-      params: query,
+      params: { ...query, pageSize: query.pageSize ?? 10000, sortBy: query.sortBy ?? "startTime", sortDesc: query.sortDesc ?? true },
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",

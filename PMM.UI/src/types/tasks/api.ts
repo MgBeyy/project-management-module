@@ -67,7 +67,7 @@ export type TaskQuery = {
   page?: number;
   pageSize?: number;
   id?: number;
-  projectId?: number;
+  projectId?: number | null;
   projectCode?: string;
   parentTaskId?: number;
   title?: string;
