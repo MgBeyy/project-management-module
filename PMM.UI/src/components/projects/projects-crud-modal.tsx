@@ -95,7 +95,7 @@ export default function CrudModal() {
       key: '1',
       label: 'Excel 1',
       onClick: () => {
-        getReport({ query: filters }).then(({ blob, fileName }) => { saveAs(blob, fileName); });
+        getReport({ query: { ...filters, pageSize: null, page: null } }).then(({ blob, fileName }) => { saveAs(blob, fileName); });
       }
     },
     {

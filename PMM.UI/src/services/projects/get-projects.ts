@@ -15,8 +15,8 @@ export enum ProjectPriority {
 }
 
 export type ProjectQuery = {
-  page?: number;
-  pageSize?: number;
+  page?: number | null;
+  pageSize?: number | null;
   Code?: string;
   search?: string;
   Title?: string;
