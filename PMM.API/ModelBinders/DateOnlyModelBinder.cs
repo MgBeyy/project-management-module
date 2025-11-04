@@ -24,7 +24,6 @@ namespace PMM.API.ModelBinders
 
             if (string.IsNullOrEmpty(value))
             {
-                // Nullable DateOnly? i�in null d�nebiliriz
                 if (Nullable.GetUnderlyingType(bindingContext.ModelType) != null)
                 {
                     bindingContext.Result = ModelBindingResult.Success(null);
@@ -32,7 +31,6 @@ namespace PMM.API.ModelBinders
                 return Task.CompletedTask;
             }
 
-            // Sadece Unix timestamp (milliseconds) format�n� kabul et
             if (long.TryParse(value, out var timestamp))
             {
                 try

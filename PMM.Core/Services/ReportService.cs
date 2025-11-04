@@ -37,19 +37,19 @@ public class ReportService : IReportService
         var headers = new List<string>
         {
             "Proje Kodu",
-            "Proje Adý",
-            "Planlanan Baþlagýç Tarihi",
-            "Gerçekleþen Baþlagýç Tarihi",
-            "Planlanan Bitiþ Tarihi",
-            "Gerçekleþen Bitiþ Tarihi",
-            "Planlanan Çalýþma Saati",
-            "Gerçekleþen Çalýþma Saati",
-            "Baþlangýç Sapmasý",
-            "Bitiþ Sapma",
-            "Saat Sapmasý",
-            "Sapma Yüzdesi",
+            "Proje AdÄ±",
+            "Planlanan BaÅŸlagÄ±Ã§ Tarihi",
+            "GerÃ§ekleÅŸen BaÅŸlagÄ±Ã§ Tarihi",
+            "Planlanan BitiÅŸ Tarihi",
+            "GerÃ§ekleÅŸen BitiÅŸ Tarihi",
+            "Planlanan Ã§alÄ±ÅŸma Saati",
+            "GerÃ§ekleÅŸen Ã§alÄ±ÅŸma Saati",
+            "BaÅŸlangÄ±Ã§ SapmasÄ±",
+            "BitiÅŸ SapmasÄ±",
+            "Saat SapmasÄ±",
+            "Sapma YÃ¼zdesi",
             "Durum",
-            "Proje Sorumlularý",
+            "Proje SorumlularÄ±",
             "Etiketler"
         };
 
@@ -90,10 +90,10 @@ public class ReportService : IReportService
             var statusText = project.Status switch
             {
                 EProjectStatus.Active => "Aktif",
-                EProjectStatus.Planned => "Planlandý",
+                EProjectStatus.Planned => "PlanlandÄ±",
                 EProjectStatus.Inactive => "Pasif",
                 EProjectStatus.WaitingForApproval => "Onay Bekliyor",
-                EProjectStatus.Completed => "Tamamlandý",
+                EProjectStatus.Completed => "TamamlandÄ±",
                 _ => project.Status.ToString()
             };
 
