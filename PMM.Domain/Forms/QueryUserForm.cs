@@ -7,5 +7,7 @@ namespace PMM.Domain.Forms
         public string? Search { get; set; }
         public string? SortBy { get; set; }
         public bool SortDesc { get; set; } = false;
+        public string? AssignedProjectIds { get; set; }
+        public string? AssignedTaskIds { get; set; }
     }
 }
