@@ -3,6 +3,7 @@ import type { InputNumberProps } from "antd";
 import { useProjectsStore } from "@/store/zustand/projects-store";
 import MultiSelectSearch from "../common/multi-select-search";
 import { ProjectPriority, ProjectStatus } from "@/services/projects/get-projects";
+import { toMillis } from "@/utils/retype";
 
 export default function ProjectsFilter() {
   const [form] = Form.useForm();
@@ -16,14 +17,10 @@ export default function ProjectsFilter() {
     const serializedPayload = {
       Code: values.code || undefined,
       Title: values.title || undefined,
-      PlannedStartDate: values.plannedStartDate
-        ? values.plannedStartDate.valueOf()
-        : undefined,
-      PlannedDeadLine: values.plannedEndDate
-        ? values.plannedEndDate.valueOf()
-        : undefined,
-      StartedAt: values.startedAt ? values.startedAt.valueOf() : undefined,
-      EndAt: values.endAt ? values.endAt.valueOf() : undefined,
+      PlannedStartDate: toMillis(values.plannedStartDate) ?? undefined,
+      PlannedDeadLine: toMillis(values.plannedDeadline) ?? undefined,
+      StartedAt: values.startedAt ? toMillis(values.startedAt) : undefined,
+      EndAt: values.endAt ? toMillis(values.endAt) : undefined,
 
       PlannedHours: values.plannedHours || undefined,
       Status: (values.status as ProjectStatus) || undefined,
@@ -126,21 +123,19 @@ export default function ProjectsFilter() {
 
         <Form.Item label="Gerçekleşen Başlangıç Tarihi" name="startedAt" className="mb-3">
           <DatePicker
-            showTime
             placeholder="Başlangıç tarihi"
             size="middle"
             style={{ width: "100%" }}
-            format="DD-MM-YYYY HH:mm:ss"
+            format="DD-MM-YYYY"
           />
         </Form.Item>
 
         <Form.Item label="Gerçekleşen Bitiş Tarihi" name="endAt" className="mb-3">
           <DatePicker
-            showTime
             placeholder="Bitiş tarihi"
             size="middle"
             style={{ width: "100%" }}
-            format="DD-MM-YYYY HH:mm:ss"
+            format="DD-MM-YYYY"
           />
         </Form.Item>
 

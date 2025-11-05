@@ -158,3 +158,30 @@ export type ProjectHierarchyDto = {
   updatedById: Nullable<number>;
   updatedByUser: IdNameDto | null;
 };
+
+export type FullProjectHierarchyDto = {
+  id: number;
+  code: string | null;
+  title: string | null;
+  plannedStartDate: Nullable<number>;
+  plannedDeadline: Nullable<number>;
+  plannedHours: Nullable<number>;
+  actualHours: Nullable<number>;
+  startedAt: Nullable<number>;
+  endAt: Nullable<number>;
+  status: ProjectStatus;
+  priority: ProjectPriority;
+  parentProjects: Nullable<any[]>;
+  childProjects: Nullable<any[]>;
+  clientId: Nullable<number>;
+  client: ClientDto | null;
+  labels: Nullable<LabelDto[]>;
+  assignedUsers: Nullable<ProjectAssignmentWithUserDto[]>;
+  tasks: Nullable<TaskDto[]>;
+  createdAt: number;
+  createdById: Nullable<number>;
+  createdByUser: IdNameDto | null;
+  updatedAt: Nullable<number>;
+  updatedById: Nullable<number>;
+  updatedByUser: IdNameDto | null;
+};

@@ -28,6 +28,10 @@ export interface TaskDto {
   createdById: number;
   updatedAt: Nullable<DateTimeString>;
   updatedById: Nullable<number>;
+  plannedStartDate: Nullable<number>;
+  plannedEndDate: Nullable<number>;
+  actualStartDate: Nullable<number>;
+  actualEndDate: Nullable<number>;
   plannedHours: Nullable<number>;
   actualHours: Nullable<number>;
   isLast: boolean;
@@ -45,6 +49,10 @@ export interface CreateTaskPayload {
   title: string;
   description?: Nullable<string>;
   status?: TaskStatus;
+  plannedStartDate?: Nullable<number>;
+  plannedEndDate?: Nullable<number>;
+  actualStartDate?: Nullable<number>;
+  actualEndDate?: Nullable<number>;
   plannedHours?: Nullable<number>;
   actualHours?: Nullable<number>;
   labelIds?: Nullable<number[]>;
@@ -56,6 +64,10 @@ export interface UpdateTaskPayload {
   title?: string;
   description?: Nullable<string>;
   status?: TaskStatus;
+  plannedStartDate?: Nullable<number>;
+  plannedEndDate?: Nullable<number>;
+  actualStartDate?: Nullable<number>;
+  actualEndDate?: Nullable<number>;
   plannedHours?: Nullable<number>;
   actualHours?: Nullable<number>;
   labelIds?: Nullable<number[]>;

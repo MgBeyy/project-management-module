@@ -5,7 +5,7 @@ import { CaretDownOutlined, CaretUpOutlined } from "@ant-design/icons";
 import { useTasksStore, type TaskSortKey, type TaskSortOrder } from "@/store/zustand/tasks-store";
 import { GetTasks } from "@/services/tasks/get-tasks";
 import Spinner from "../common/spinner";
-import { formatDateTime } from "@/utils/retype";
+import { formatDateTime, fromMillis } from "@/utils/retype";
 import { TaskDto } from "@/types";
 import { ResizableTitle } from "../common/resizable";
 
@@ -36,10 +36,10 @@ export default function TasksCustomTable() {
       sortBy !== dataIndex
         ? "ascend"
         : sortOrder === "ascend"
-        ? "descend"
-        : sortOrder === "descend"
-        ? null
-        : "ascend";
+          ? "descend"
+          : sortOrder === "descend"
+            ? null
+            : "ascend";
 
     setSortOptions(nextOrder ? dataIndex : null, nextOrder);
   };
@@ -114,13 +114,13 @@ export default function TasksCustomTable() {
   async function getTaskData() {
     try {
       setIsLoading(true);
-      
+
       const sortParams =
         sortBy && sortOrder
           ? { SortBy: sortBy, SortDesc: sortOrder === "descend" }
           : sortBy
-          ? { SortBy: sortBy, SortDesc: false }
-          : {};
+            ? { SortBy: sortBy, SortDesc: false }
+            : {};
 
       const response = await GetTasks({
         query: { ...filters, page: currentPage, pageSize, ...sortParams },
@@ -142,29 +142,29 @@ export default function TasksCustomTable() {
 
   const baseColumns = useMemo<ColumnsType<any>>(
     () => [
-      { 
-        title: <SortableHeader title="Görev Kodu" dataIndex="code" />, 
-        dataIndex: "code", 
-        key: "code", 
-        width: 120, 
-        ellipsis: { showTitle: false }, 
-        render: (t: string) => <span title={t}>{t || "-"}</span> 
+      {
+        title: <SortableHeader title="Görev Kodu" dataIndex="code" />,
+        dataIndex: "code",
+        key: "code",
+        width: 120,
+        ellipsis: { showTitle: false },
+        render: (t: string) => <span title={t}>{t || "-"}</span>
       },
-      { 
-        title: <SortableHeader title="Başlık" dataIndex="title" />, 
-        dataIndex: "title", 
-        key: "title", 
-        width: 250, 
-        ellipsis: { showTitle: false }, 
-        render: (t: string) => <span title={t}>{t}</span> 
+      {
+        title: <SortableHeader title="Başlık" dataIndex="title" />,
+        dataIndex: "title",
+        key: "title",
+        width: 250,
+        ellipsis: { showTitle: false },
+        render: (t: string) => <span title={t}>{t}</span>
       },
-      { 
-        title: <SortableHeader title="Açıklama" dataIndex="description" />, 
-        dataIndex: "description", 
-        key: "description", 
-        width: 200, 
-        ellipsis: { showTitle: false }, 
-        render: (t: string) => <span title={t}>{t}</span> 
+      {
+        title: <SortableHeader title="Açıklama" dataIndex="description" />,
+        dataIndex: "description",
+        key: "description",
+        width: 200,
+        ellipsis: { showTitle: false },
+        render: (t: string) => <span title={t}>{t}</span>
       },
       {
         title: <SortableHeader title="Etiketler" dataIndex="labels" />,
@@ -210,29 +210,46 @@ export default function TasksCustomTable() {
           return <span title={label} style={{ fontWeight: "bold" }}>{label}</span>;
         },
       },
-      { 
-        title: <SortableHeader title="Planlanan Çalışma Saati" dataIndex="plannedHours" />, 
-        dataIndex: "plannedHours", 
-        key: "plannedHours", 
-        width: 130, 
-        ellipsis: { showTitle: false }, 
-        render: (n: number) => <span title={n?.toString()}>{n || "-"}</span> 
+
+      {
+        title: "Planlanan Başlangıç Tarihi",
+        dataIndex: "plannedStartDate",
+        key: "plannedStartDate",
+        width: 130,
+        ellipsis: { showTitle: false },
+        render: (d: any) => <span title={fromMillis(d)?.format("DD.MM.YYYY")}>{fromMillis(d)?.format("DD.MM.YYYY") || "-"}</span>
       },
-      { 
-        title: <SortableHeader title="Gerçek Çalışma Saati" dataIndex="actualHours" />, 
-        dataIndex: "actualHours", 
-        key: "actualHours", 
-        width: 120, 
-        ellipsis: { showTitle: false }, 
-        render: (n: number) => <span title={n?.toString()}>{n || "-"}</span> 
+      {
+        title: "Planlanan Bitiş Tarihi",
+        dataIndex: "plannedEndDate",
+        key: "plannedEndDate",
+        width: 130,
+        ellipsis: { showTitle: false },
+        render: (d: any) => <span title={fromMillis(d)?.format("DD.MM.YYYY")}>{fromMillis(d)?.format("DD.MM.YYYY") || "-"}</span>
       },
-      { 
-        title: <SortableHeader title="Oluşturulma" dataIndex="createdAt" />, 
-        dataIndex: "createdAt", 
-        key: "createdAt", 
-        width: 150, 
-        ellipsis: { showTitle: false }, 
-        render: (s: string) => <span title={s}>{formatDateTime(s)}</span> 
+      {
+        title: <SortableHeader title="Planlanan Çalışma Saati" dataIndex="plannedHours" />,
+        dataIndex: "plannedHours",
+        key: "plannedHours",
+        width: 130,
+        ellipsis: { showTitle: false },
+        render: (n: number) => <span title={n?.toString()}>{n || "-"}</span>
+      },
+      {
+        title: <SortableHeader title="Gerçek Çalışma Saati" dataIndex="actualHours" />,
+        dataIndex: "actualHours",
+        key: "actualHours",
+        width: 120,
+        ellipsis: { showTitle: false },
+        render: (n: number) => <span title={n?.toString()}>{n || "-"}</span>
+      },
+      {
+        title: <SortableHeader title="Oluşturulma" dataIndex="createdAt" />,
+        dataIndex: "createdAt",
+        key: "createdAt",
+        width: 150,
+        ellipsis: { showTitle: false },
+        render: (s: string) => <span title={s}>{formatDateTime(s)}</span>
       },
     ],
     [sortBy, sortOrder]
@@ -308,7 +325,7 @@ export default function TasksCustomTable() {
           cell: ResizableTitle,
         },
       }}
-      tableLayout="fixed"    
+      tableLayout="fixed"
       scroll={{ x: totalWidth, y: "35vh" }}
       pagination={{
         current: currentPage,
@@ -333,14 +350,14 @@ export default function TasksCustomTable() {
           className: isSelected ? "selected-table-row" : "table-row-hover",
           style: isSelected
             ? {
-                backgroundColor: "#E6F4FF",
-                cursor: "pointer",
-                transition: "background-color 0.2s ease",
-              }
+              backgroundColor: "#E6F4FF",
+              cursor: "pointer",
+              transition: "background-color 0.2s ease",
+            }
             : {
-                cursor: "pointer",
-                transition: "background-color 0.2s ease",
-              },
+              cursor: "pointer",
+              transition: "background-color 0.2s ease",
+            },
         };
       }}
     />

@@ -9,7 +9,7 @@ import {
   ProjectSortOrder,
   useProjectsStore,
 } from "@/store/zustand/projects-store";
-import { GetProjects } from "@/services/projects/get-projects";
+import { GetProjectsHierarchy } from "@/services/projects/get-projects-hierarchy-query";
 import Spinner from "../common/spinner";
 import { fromMillis } from "@/utils/retype";
 import { ResizableTitle } from "../common/resizable";
@@ -118,18 +118,35 @@ export default function CustomTable() {
     );
   };
 
+  // Hiyerarşik yapıyı tablo için dönüştür (childProjects -> children)
+  const transformForTable = (projects: any[]): any[] => {
+    if (!projects || projects.length === 0) return [];
+
+    return projects.map((project) => {
+      const transformed = { ...project };
+      
+      // childProjects varsa children'a dönüştür
+      if (project.childProjects && Array.isArray(project.childProjects)) {
+        transformed.children = transformForTable(project.childProjects);
+        delete transformed.childProjects;
+      }
+      
+      return transformed;
+    });
+  };
+
   async function getProjectData() {
     try {
       setIsLoading(true);
 
       const sortParams =
         sortBy && sortOrder
-          ? { SortBy: sortBy, SortDesc: sortOrder === "descend" }
+          ? { sortBy: sortBy, sortDesc: sortOrder === "descend" }
           : sortBy
-          ? { SortBy: sortBy, SortDesc: false }
+          ? { sortBy: sortBy, sortDesc: false }
           : {};
 
-      const result = await GetProjects({
+      const result = await GetProjectsHierarchy({
         query: {
           ...filters,
           page: currentPage,
@@ -137,11 +154,15 @@ export default function CustomTable() {
           ...sortParams,
         },
       });
-      setProjects(result.data || []);
+      
+      // Hiyerarşik yapıyı tablo formatına dönüştür
+      const tableData = transformForTable(result.data || []);
+      setProjects(tableData);
       setTotalItems(result.totalRecords || 0);
     } catch (error) {
       console.error("Error fetching project data:", error);
       setProjects([]);
+      setTotalItems(0);
     } finally {
       setIsLoading(false);
     }
@@ -162,8 +183,8 @@ export default function CustomTable() {
         width: 130,
         ellipsis: { showTitle: false },
         render: (text: string, record: any) => (
-          <Link to={`/pm-module/projects/${record.id}`} title={text}>
-            {text}
+          <Link to={`/pm-module/projects/${record.id}`} title={text} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span>{text}</span>
           </Link>
         ),
       },
@@ -373,6 +394,11 @@ export default function CustomTable() {
           tableLayout="fixed"
           components={{
             header: { cell: ResizableTitle },
+          }}
+          expandable={{
+            defaultExpandAllRows: false,
+            indentSize: 20,
+            expandRowByClick: false,
           }}
           scroll={{ x: totalWidth, y: "35vh" }}
           pagination={{

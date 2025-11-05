@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { CSSProperties, MouseEvent } from "react";
-import { Modal, Form, Input, InputNumber, Select, AutoComplete, Button, Spin, Tag } from "antd";
+import { Modal, Form, Input, InputNumber, Select, AutoComplete, Button, Spin, Tag, DatePicker } from "antd";
 import type { SelectProps } from "antd";
 import { AiOutlinePlus, AiOutlineEdit } from "react-icons/ai";
 
@@ -19,6 +19,7 @@ import MultiSelectSearch, {
 import CreateLabelModal from "@/components/label/create-label-modal";
 import { TaskStatus } from "@/types/tasks/ui";
 import { normalizeProjectOption } from "../tasks-filter";
+import { fromMillis, toMillis } from "@/utils/retype";
 
 const { TextArea } = Input;
 const MIN_SEARCH_LENGTH = 2;
@@ -172,6 +173,10 @@ export default function CreateTaskModal({
       assignedUserIds: selectedUsers.map(u => u.id),
       labelIds: selectedLabels,
       parentTaskId: values.parentTaskId ?? null,
+      plannedStartDate: toMillis(values.plannedStartDate) ?? null,
+      plannedEndDate: toMillis(values.plannedEndDate) ?? null,
+      actualStartDate: toMillis(values.actualStartDate) ?? null,
+      actualEndDate: toMillis(values.actualEndDate) ?? null,
       plannedHours: values.plannedHours ?? null,
       actualHours: values.actualHours ?? null,
     };
@@ -196,7 +201,6 @@ export default function CreateTaskModal({
 
   const handleCancel = () => closeModal();
 
-  // --- Project search ---
   const handleProjectSearch = useCallback(
     async (searchText: string) => {
       if (isViewMode) return;
@@ -336,7 +340,6 @@ export default function CreateTaskModal({
     [fetchParentTasks, form, parentTaskCache, parentTaskOptions.length]
   );
 
-  // --- Populate form in edit/view ---
   useEffect(() => {
     if (!visible) return;
 
@@ -359,6 +362,10 @@ export default function CreateTaskModal({
         title: currentTaskData?.title ?? "",
         description: currentTaskData?.description ?? "",
         status: statusValue,
+        plannedStartDate: fromMillis(currentTaskData?.plannedStartDate) ?? undefined,
+        plannedEndDate: fromMillis(currentTaskData?.plannedEndDate) ?? undefined,
+        actualStartDate: fromMillis(currentTaskData?.actualStartDate) ?? undefined,
+        actualEndDate: fromMillis(currentTaskData?.actualEndDate) ?? undefined,
         plannedHours: currentTaskData?.plannedHours ?? undefined,
         actualHours: currentTaskData?.actualHours ?? undefined,
       });
@@ -556,7 +563,6 @@ export default function CreateTaskModal({
 
   const handleLabelsChange = (values: string[]) => {
     if (isViewMode) return;
-    console.log("handleLabelsChange called with:", values);
     setSelectedLabels(values);
     form.setFieldValue("labels", values);
   };
@@ -725,6 +731,50 @@ export default function CreateTaskModal({
               />
             </Form.Item>
 
+            {/* Planlanan Başlangıç ve Bitiş Tarihleri */}
+            <Form.Item
+              label="Planlanan Başlangıç"
+              name="plannedStartDate"
+              style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? "none" : "auto" }}
+              rules={[
+                { required: false },
+              ]}
+            >
+              <DatePicker
+                format="DD-MM-YYYY"
+                style={{ width: "100%" }}
+                disabled={isViewMode}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="Planlanan Bitiş"
+              name="plannedEndDate"
+              dependencies={["plannedStartDate"]}
+              style={{ ...formItemNoMarginStyle, pointerEvents: isViewMode ? "none" : "auto" }}
+              rules={[
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    const start = getFieldValue("plannedStartDate");
+                    if (!value || !start || value.isSame(start, "day") || value.isAfter(start, "day")) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error("Bitiş tarihi başlangıç tarihinden önce olamaz"));
+                  },
+                }),
+              ]}
+            >
+              <DatePicker
+                style={{ width: "100%" }}
+                format="DD-MM-YYYY"
+                disabled={isViewMode}
+                disabledDate={(current) => {
+                  const start = form.getFieldValue("plannedStartDate");
+                  return !!start && current && current.isBefore(start, "day");
+                }}
+              />
+            </Form.Item>
+
             <Form.Item
               label="Planlanan Çalışma Saati"
               name="plannedHours"
@@ -777,7 +827,7 @@ export default function CreateTaskModal({
             style={formItemNoMarginStyle}
             className="col-span-full"
           >
-            <TextArea 
+            <TextArea
               rows={isViewMode ? 8 : 4}
               readOnly={isViewMode}
               style={{ resize: "vertical" }}
