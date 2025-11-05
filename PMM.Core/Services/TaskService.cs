@@ -477,6 +477,145 @@ namespace PMM.Core.Services
             return updatedTasks;
         }
 
+        public async Task<List<TaskDto>> QueryWithHierarchy(QueryTaskForm form)
+        {
+            IQueryable<TaskEntity> query = _taskRepository.Query(x => true);
+
+            if (!string.IsNullOrEmpty(form.Search))
+            {
+                query = query.Where(t =>
+                    t.Title.ToLower().Contains(form.Search.Trim().ToLower()) ||
+                    t.Code.ToLower().Contains(form.Search.Trim().ToLower()) ||
+                    (t.Description != null && t.Description.ToLower().Contains(form.Search.Trim().ToLower()))
+                );
+            }
+            if (form.Id.HasValue)
+                query = query.Where(t => t.Id == form.Id.Value);
+            if (!string.IsNullOrWhiteSpace(form.Code))
+                query = query.Where(t => t.Code.ToLower().Contains(form.Code.Trim().ToLower()));
+            if (form.ProjectId.HasValue)
+                query = query.Where(t => t.ProjectId == form.ProjectId.Value);
+            if (form.ParentTaskId.HasValue)
+                query = query.Where(t => t.ParentTaskId == form.ParentTaskId.Value);
+            if (!string.IsNullOrWhiteSpace(form.Title))
+                query = query.Where(t => t.Title.ToLower().Contains(form.Title.Trim().ToLower()));
+            if (!string.IsNullOrWhiteSpace(form.Description))
+                query = query.Where(t => t.Description != null && t.Description.ToLower().Contains(form.Description.Trim().ToLower()));
+            if (form.Status.HasValue)
+                query = query.Where(t => t.Status == form.Status);
+            if (form.PlannedHours.HasValue)
+                query = query.Where(t => t.PlannedHours == form.PlannedHours);
+            if (form.PlannedHoursMin.HasValue)
+                query = query.Where(t => t.PlannedHours >= form.PlannedHoursMin);
+            if (form.PlannedHoursMax.HasValue)
+                query = query.Where(t => t.PlannedHours <= form.PlannedHoursMax);
+            if (form.ActualHours.HasValue)
+                query = query.Where(t => t.ActualHours == form.ActualHours);
+            if (form.ActualHoursMin.HasValue)
+                query = query.Where(t => t.ActualHours >= form.ActualHoursMin);
+            if (form.ActualHoursMax.HasValue)
+                query = query.Where(t => t.ActualHours <= form.ActualHoursMax);
+
+            if (form.PlannedStartDate.HasValue)
+                query = query.Where(t => t.PlannedStartDate == form.PlannedStartDate);
+            if (form.PlannedStartDateMin.HasValue)
+                query = query.Where(t => t.PlannedStartDate >= form.PlannedStartDateMin);
+            if (form.PlannedStartDateMax.HasValue)
+                query = query.Where(t => t.PlannedStartDate <= form.PlannedStartDateMax);
+            if (form.PlannedEndDate.HasValue)
+                query = query.Where(t => t.PlannedEndDate == form.PlannedEndDate);
+            if (form.PlannedEndDateMin.HasValue)
+                query = query.Where(t => t.PlannedEndDate >= form.PlannedEndDateMin);
+            if (form.PlannedEndDateMax.HasValue)
+                query = query.Where(t => t.PlannedEndDate <= form.PlannedEndDateMax);
+            if (form.ActualStartDate.HasValue)
+                query = query.Where(t => t.ActualStartDate == form.ActualStartDate);
+            if (form.ActualStartDateMin.HasValue)
+                query = query.Where(t => t.ActualStartDate >= form.ActualStartDateMin);
+            if (form.ActualStartDateMax.HasValue)
+                query = query.Where(t => t.ActualStartDate <= form.ActualStartDateMax);
+            if (form.ActualEndDate.HasValue)
+                query = query.Where(t => t.ActualEndDate == form.ActualEndDate);
+            if (form.ActualEndDateMin.HasValue)
+                query = query.Where(t => t.ActualEndDate >= form.ActualEndDateMin);
+            if (form.ActualEndDateMax.HasValue)
+                query = query.Where(t => t.ActualEndDate <= form.ActualEndDateMax);
+
+            if (form.CreatedAt.HasValue)
+                query = query.Where(t => t.CreatedAt == form.CreatedAt);
+            if (form.CreatedAtMin.HasValue)
+                query = query.Where(t => t.CreatedAt >= form.CreatedAtMin);
+            if (form.CreatedAtMax.HasValue)
+                query = query.Where(t => t.CreatedAt <= form.CreatedAtMax);
+            if (form.CreatedById.HasValue)
+                query = query.Where(t => t.CreatedById == form.CreatedById);
+            if (form.UpdatedAt.HasValue)
+                query = query.Where(t => t.UpdatedAt == form.UpdatedAt);
+            if (form.UpdatedAtMin.HasValue)
+                query = query.Where(t => t.UpdatedAt >= form.UpdatedAtMin);
+            if (form.UpdatedAtMax.HasValue)
+                query = query.Where(t => t.UpdatedAt <= form.UpdatedAtMax);
+            if (form.UpdatedById.HasValue)
+                query = query.Where(t => t.UpdatedById == form.UpdatedById);
+
+            if (!string.IsNullOrWhiteSpace(form.LabelIds))
+            {
+                var labelIds = form.LabelIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                          .Where(x => int.TryParse(x.Trim(), out _))
+                                          .Select(x => int.Parse(x.Trim()))
+                                          .ToList();
+
+                if (labelIds.Any())
+                {
+                    query = query.Where(t => t.TaskLabels.Any(tl => labelIds.Contains(tl.LabelId)));
+                }
+            }
+
+            if (form.AssignedUserId.HasValue)
+            {
+                query = query.Where(t => t.TaskAssignments.Any(ta => ta.UserId == form.AssignedUserId.Value));
+            }
+
+            query = OrderByHelper.OrderByDynamic(query, form.SortBy, form.SortDesc);
+
+            var allTasks = await query
+                .Include(t => t.Project)
+                .Include(t => t.TaskLabels)
+                    .ThenInclude(tl => tl.Label)
+                .Include(t => t.TaskAssignments)
+                    .ThenInclude(ta => ta.User)
+                .ToListAsync();
+
+            // Filter to top-level tasks (those with no parent)
+            var topLevelTasks = allTasks.Where(t => t.ParentTaskId == null).ToList();
+
+            // Build hierarchy for each top-level task
+            var result = new List<TaskDto>();
+            foreach (var task in topLevelTasks)
+            {
+                var dto = TaskMapper.Map(task);
+                SetSubTasks(dto, allTasks);
+                result.Add(dto);
+            }
+
+            return result;
+        }
+
+        private void SetSubTasks(TaskDto dto, List<TaskEntity> allTasks)
+        {
+            var subTasksEntities = allTasks.Where(t => t.ParentTaskId == dto.Id).ToList();
+            if (subTasksEntities.Any())
+            {
+                dto.SubTasks = new List<TaskDto>();
+                foreach (var sub in subTasksEntities)
+                {
+                    var subDto = TaskMapper.Map(sub);
+                    SetSubTasks(subDto, allTasks);
+                    dto.SubTasks.Add(subDto);
+                }
+            }
+        }
+
         #region Helper Methods
 
         private async Task ValidateAssignedUsersAsync(List<int>? assignedUserIds)

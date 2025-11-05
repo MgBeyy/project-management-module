@@ -11,6 +11,7 @@ namespace PMM.Domain.Interfaces.Services
         Task<TaskDto> EditTaskAsync(int taskId, UpdateTaskForm form);
         Task<PagedResult<TaskDto>> Query(QueryTaskForm form);
         Task<List<TaskDto>> GetSubTasksByTaskId(int taskId);
+        Task<List<TaskDto>> QueryWithHierarchy(QueryTaskForm form);
         Task DeleteTaskAsync(int taskId);
         Task<List<TaskDto>> BulkUpdateTaskStatusAsync(BulkUpdateTaskStatusForm form);
     }

@@ -12,6 +12,7 @@ namespace PMM.Domain.Interfaces.Services
         Task<PagedResult<ProjectDto>> Query(QueryProjectForm form);
         Task<DetailedProjectDto> GetDetailedProjectAsync(int projectId);
         Task<FullProjectHierarchyDto> GetFullProjectHierarchyAsync(int projectId);
+        Task<List<FullProjectHierarchyDto>> QueryWithHierarchy(QueryProjectForm form);
         Task DeleteProjectAsync(int projectId);
     }
 }

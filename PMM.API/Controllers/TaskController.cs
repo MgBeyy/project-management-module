@@ -145,5 +145,14 @@ namespace PMM.API.Controllers
             var tasks = await _taskService.BulkUpdateTaskStatusAsync(form);
             return new ApiResponse(tasks, StatusCodes.Status200OK);
         }
+
+        [ProducesResponseType(typeof(List<TaskDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [HttpGet("query-hierarchy")]
+        public async Task<ApiResponse> QueryTasksWithHierarchy([FromQuery] QueryTaskForm form)
+        {
+            var tasks = await _taskService.QueryWithHierarchy(form);
+            return new ApiResponse(tasks, StatusCodes.Status200OK);
+        }
     }
 }
