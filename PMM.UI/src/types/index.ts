@@ -29,7 +29,9 @@ export type {
 export type {
   CreateProjectPayload,
   DetailedProjectDto,
+  FullProjectHierarchyDto,
   ProjectDto,
+  ProjectHierarchyDto,
   ProjectAssignmentItemPayload,
   ProjectAssignmentRole,
   ProjectAssignmentWithUserDto,
