@@ -20,6 +20,10 @@ export interface TaskModalTask {
   createdById?: number | null;
   updatedAt?: number | null;
   updatedById?: number | null;
+  plannedStartDate?: number | null;
+  plannedEndDate?: number | null;
+  actualStartDate?: number | null;
+  actualEndDate?: number | null;
   plannedHours?: number | null;
   actualHours?: number | null;
   assignedUsers?: IdNameDto[];

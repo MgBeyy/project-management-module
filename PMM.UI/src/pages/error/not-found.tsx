@@ -1,4 +1,3 @@
-import React from "react";
 import { ConfigProvider, Button, theme } from "antd";
 import { HomeOutlined } from "@ant-design/icons";
 
