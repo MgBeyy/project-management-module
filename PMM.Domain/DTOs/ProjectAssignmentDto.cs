@@ -10,8 +10,8 @@ namespace PMM.Domain.DTOs
         public EProjectAssignmentRole Role { get; set; }
         public DateOnly? StartedAt { get; set; }
         public DateOnly? EndAt { get; set; }
-        public int? ExpectedHours { get; set; }
-        public int? SpentHours { get; set; }
+        public decimal? ExpectedHours { get; set; }
+        public decimal? SpentHours { get; set; }
         public DateTime CreatedAt { get; set; }
         public int? CreatedById { get; set; }
         public DateTime? UpdatedAt { get; set; }

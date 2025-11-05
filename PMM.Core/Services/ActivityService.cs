@@ -22,6 +22,7 @@ namespace PMM.Core.Services
         private readonly IProjectRepository _projectRepository;
         private readonly IProjectRelationRepository _projectRelationRepository;
         private readonly ITaskAssignmentRepository _taskAssignmentRepository;
+        private readonly IProjectAssignmentRepository _projectAssignmentRepository;
 
         public ActivityService(IPrincipal principal, ILogger<ActivityService> logger,
             IActivityRepository activityRepository,
@@ -29,7 +30,8 @@ namespace PMM.Core.Services
             IUserRepository userRepository,
             IProjectRepository projectRepository,
             IProjectRelationRepository projectRelationRepository,
-            ITaskAssignmentRepository taskAssignmentRepository
+            ITaskAssignmentRepository taskAssignmentRepository,
+            IProjectAssignmentRepository projectAssignmentRepository
             ) : base(principal, logger, userRepository)
         {
             _logger = logger;
@@ -39,6 +41,7 @@ namespace PMM.Core.Services
             _projectRepository = projectRepository;
             _projectRelationRepository = projectRelationRepository;
             _taskAssignmentRepository = taskAssignmentRepository;
+            _projectAssignmentRepository = projectAssignmentRepository;
         }
 
         public async Task<ActivityDto> AddActivityAsync(CreateActivityForm form)
@@ -62,7 +65,7 @@ namespace PMM.Core.Services
 
             var project = await _projectRepository.GetByIdAsync(task.ProjectId) ?? throw new NotFoundException("Proje Bulunamadı!");
             if (project.Status == EProjectStatus.Inactive)
-                throw new BusinessException("Proje pasif durumda olduğu için aktivite eklenemez.");
+                throw new BusinessException("Proje pasif olduğu için aktivite eklenemez.");
 
             _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("Kullanıcı Bulunamadı!");
 
@@ -85,6 +88,9 @@ namespace PMM.Core.Services
             var activity = ActivityMapper.Map(form);
 
             await UpdateTaskAndParentHours(task.Id, activity.TotalHours);
+
+            await UpdateProjectAssignmentsHours(task.ProjectId, form.UserId, activity.TotalHours);
+            await _projectAssignmentRepository.SaveChangesAsync();
 
             _activityRepository.Create(activity);
             await _activityRepository.SaveChangesAsync();
@@ -237,6 +243,9 @@ namespace PMM.Core.Services
 
             await UpdateTaskAndParentHours(activity.TaskId, hoursDifference);
 
+            await UpdateProjectAssignmentsHours(task.ProjectId, activity.UserId, hoursDifference);
+            await _projectAssignmentRepository.SaveChangesAsync();
+
             _activityRepository.Update(activity);
             await _activityRepository.SaveChangesAsync();
 
@@ -258,7 +267,12 @@ namespace PMM.Core.Services
 
             var activityHours = activity.TotalHours;
 
+            var task = await _taskRepository.GetByIdAsync(activity.TaskId);
+
             await UpdateTaskAndParentHours(activity.TaskId, -activityHours);
+
+            await UpdateProjectAssignmentsHours(task.ProjectId, activity.UserId, -activityHours);
+            await _projectAssignmentRepository.SaveChangesAsync();
 
             _activityRepository.Delete(activity);
             await _activityRepository.SaveChangesAsync();
@@ -343,6 +357,22 @@ namespace PMM.Core.Services
             foreach (var relation in parentRelations)
             {
                 await ActivateProjectHierarchy(relation.ParentProjectId);
+            }
+        }
+
+        private async Task UpdateProjectAssignmentsHours(int projectId, int userId, decimal hoursChange)
+        {
+            var assignment = await _projectAssignmentRepository.Query(a => a.ProjectId == projectId && a.UserId == userId).FirstOrDefaultAsync();
+            if (assignment != null)
+            {
+                assignment.SpentHours = Math.Max(0, (assignment.SpentHours ?? 0) + hoursChange);
+                _projectAssignmentRepository.Update(assignment);
+            }
+
+            var parentRelations = await _projectRelationRepository.GetByChildProjectIdAsync(projectId);
+            foreach (var relation in parentRelations)
+            {
+                await UpdateProjectAssignmentsHours(relation.ParentProjectId, userId, hoursChange);
             }
         }
     }
