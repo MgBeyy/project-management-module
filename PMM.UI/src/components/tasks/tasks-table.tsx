@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ColumnsType } from "antd/es/table";
 import { CaretDownOutlined, CaretUpOutlined } from "@ant-design/icons";
 import { useTasksStore, type TaskSortKey, type TaskSortOrder } from "@/store/zustand/tasks-store";
-import { GetTasks } from "@/services/tasks/get-tasks";
+import { GetTasksHierarchy } from "@/services/tasks/get-tasks-hierarchy-query";
 import Spinner from "../common/spinner";
 import { formatDateTime, fromMillis } from "@/utils/retype";
 import { TaskDto } from "@/types";
@@ -111,25 +111,51 @@ export default function TasksCustomTable() {
     );
   };
 
+  // Hiyerarşik yapıyı tablo için dönüştür (subTasks -> children)
+  const transformForTable = (tasks: any[]): any[] => {
+    if (!tasks || tasks.length === 0) return [];
+
+    return tasks.map((task) => {
+      const transformed = { ...task };
+      
+      // subTasks varsa children'a dönüştür
+      if (task.subTasks && Array.isArray(task.subTasks)) {
+        transformed.children = transformForTable(task.subTasks);
+        delete transformed.subTasks;
+      }
+      
+      return transformed;
+    });
+  };
+
   async function getTaskData() {
     try {
       setIsLoading(true);
 
       const sortParams =
         sortBy && sortOrder
-          ? { SortBy: sortBy, SortDesc: sortOrder === "descend" }
+          ? { sortBy: sortBy, sortDesc: sortOrder === "descend" }
           : sortBy
-            ? { SortBy: sortBy, SortDesc: false }
+            ? { sortBy: sortBy, sortDesc: false }
             : {};
 
-      const response = await GetTasks({
-        query: { ...filters, page: currentPage, pageSize, ...sortParams },
+      const result = await GetTasksHierarchy({
+        query: {
+          ...filters,
+          page: currentPage,
+          pageSize,
+          ...sortParams,
+        },
       });
-      setTasks(response.data || []);
-      setTotalItems(response.totalRecords || 0);
+      
+      // Hiyerarşik yapıyı tablo formatına dönüştür
+      const tableData = transformForTable(result.data || []);
+      setTasks(tableData);
+      setTotalItems(result.totalRecords || 0);
     } catch (e) {
       console.error(e);
       setTasks([]);
+      setTotalItems(0);
     } finally {
       setIsLoading(false);
     }
@@ -326,6 +352,11 @@ export default function TasksCustomTable() {
         },
       }}
       tableLayout="fixed"
+      expandable={{
+        defaultExpandAllRows: false,
+        indentSize: 20,
+        expandRowByClick: false,
+      }}
       scroll={{ x: totalWidth, y: "35vh" }}
       pagination={{
         current: currentPage,

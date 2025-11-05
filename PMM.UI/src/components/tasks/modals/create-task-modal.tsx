@@ -241,6 +241,7 @@ export default function CreateTaskModal({
       try {
         const tasksRaw = await GetTasks({
           query: {
+            search: shouldSearch ? trimmed : undefined,
             projectId: resolvedProjectId,
             pageSize: 20,
           },
