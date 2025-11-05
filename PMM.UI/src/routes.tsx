@@ -4,6 +4,8 @@ import Tasks from "./pages/tasks/tasks";
 import Activities from "./pages/activities/activities";
 import AppLayout from "./components/layouts/app-layout";
 import ProjectDetails from "./pages/projects/project-details";
+import SupportPage from "./pages/support/support-page";
+import NotFoundPage from "./pages/error/not-found";
 
 
 export default function AppRoutes() {
@@ -14,6 +16,10 @@ export default function AppRoutes() {
         <Route path="/pm-module/projects/:id" element={<ProjectDetails />} />
         <Route path="/pm-module/tasks" element={<Tasks />} />
         <Route path="/pm-module/activities" element={<Activities />} />
+        <Route path="/pm-module/support" element={<SupportPage />} />
+      </Route>
+      <Route path="/">
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );
