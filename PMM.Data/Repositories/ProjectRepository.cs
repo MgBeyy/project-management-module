@@ -14,7 +14,7 @@ namespace PMM.Data.Repositories
 
         public async Task<Project?> GetByCodeAsync(string code)
         {
-            return await _dbSet.FirstOrDefaultAsync(p => p.Code == code);
+            return await _dbSet.FirstOrDefaultAsync(p => p.Code.ToLower() == code.ToLower());
         }
     }
 }

@@ -630,6 +630,15 @@ namespace PMM.Core.Services
             return detailedProjectDto;
         }
 
+        public async Task<DetailedProjectDto> GetDetailedProjectByCodeAsync(string code)
+        {
+            var project = await _projectRepository.GetByCodeAsync(code.ToLower());
+            if (project == null)
+                throw new NotFoundException("Proje Bulunamadı!");
+
+            return await GetDetailedProjectAsync(project.Id);
+        }
+
         public async Task<FullProjectHierarchyDto> GetFullProjectHierarchyAsync(int projectId)
         {
             // Get all related project IDs
