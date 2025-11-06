@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.HttpOverrides;
+﻿using Hangfire;
+using Hangfire.PostgreSql;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using PMM.API.Converters;
@@ -54,6 +56,15 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(o =>
+        o.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))));
+
+builder.Services.AddHangfireServer();
+
 var app = builder.Build();
 
 app.UseForwardedHeaders();
@@ -100,6 +111,8 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.UseStaticFiles();
+
+app.UseHangfireDashboard();
 
 app.MapControllers();
 
