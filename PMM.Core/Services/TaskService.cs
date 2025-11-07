@@ -78,14 +78,9 @@ namespace PMM.Core.Services
 
             if (form.LabelIds != null && form.LabelIds.Count != 0)
             {
-                var distinctLabelIds = form.LabelIds.Distinct().ToList();
-                var foundLabels = await _labelRepository.GetByIdsAsync(distinctLabelIds);
-
-                if (foundLabels.Count != distinctLabelIds.Count)
+                foreach (var labelId in form.LabelIds.Distinct())
                 {
-                    var foundLabelIds = foundLabels.Select(l => l.Id).ToHashSet();
-                    var missingId = distinctLabelIds.First(id => !foundLabelIds.Contains(id));
-                    throw new NotFoundException($"ID {missingId} ile etiket bulunamadı!");
+                    _ = await _labelRepository.GetByIdAsync(labelId) ?? throw new NotFoundException($"ID {labelId} ile etiket bulunamadı!");
                 }
             }
 
@@ -131,7 +126,6 @@ namespace PMM.Core.Services
             var createdTask = await _taskRepository.GetWithLabelsAsync(task.Id);
             return TaskMapper.Map(createdTask);
         }
-
         public async Task<TaskDto> GetTaskAsync(int taskId)
         {
             var task = await _taskRepository.GetWithLabelsAsync(taskId);
@@ -155,8 +149,9 @@ namespace PMM.Core.Services
                 throw new NotFoundException("Görev Bulunamadı!");
 
             var project = await _projectRepository.GetByIdAsync(task.ProjectId);
+            if (project == null)
+                throw new NotFoundException("Görevin bağlı olduğu proje bulunamadı!");
 
-            // Status değişikliği validasyonu
             if (task.Status != form.Status)
             {
                 await ValidateTaskStatusChangeAsync(taskId, form.Status);
@@ -170,19 +165,24 @@ namespace PMM.Core.Services
 
             if (form.LabelIds != null && form.LabelIds.Count != 0)
             {
-                foreach (var labelId in form.LabelIds)
+                foreach (var labelId in form.LabelIds.Distinct())
+                {
                     _ = await _labelRepository.GetByIdAsync(labelId) ?? throw new NotFoundException($"ID {labelId} ile etiket bulunamadı!");
+                }
             }
 
-            if (form.AssignedUserIds != null && form.AssignedUserIds.Count != 0)
+            if (form.AssignedUserIds != null)
             {
                 var duplicateUserIds = form.AssignedUserIds.GroupBy(x => x).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
                 if (duplicateUserIds.Any())
                     throw new BusinessException($"Aynı kullanıcı birden fazla kez atanamaz. Tekrarlanan kullanıcı ID'leri: {string.Join(", ", duplicateUserIds)}");
 
-                foreach (var userId in form.AssignedUserIds)
+                if (form.AssignedUserIds.Count > 0)
                 {
-                    _ = await _userRepository.GetByIdAsync(userId) ?? throw new NotFoundException($"ID {userId} ile kullanıcı bulunamadı!");
+                    foreach (var userId in form.AssignedUserIds.Distinct())
+                    {
+                        _ = await _userRepository.GetByIdAsync(userId) ?? throw new NotFoundException($"ID {userId} ile kullanıcı bulunamadı!");
+                    }
                 }
             }
 
@@ -199,25 +199,27 @@ namespace PMM.Core.Services
 
             task = TaskMapper.Map(form, task);
             _taskRepository.Update(task);
-            await _taskRepository.SaveChangesAsync();
 
             if (task.IsLast)
             {
                 project.Status = EProjectStatus.WaitingForApproval;
                 _projectRepository.Update(project);
-                await _projectRepository.SaveChangesAsync();
             }
 
-            var existingLabels = await _taskLabelRepository.GetByTaskIdAsync(taskId);
-            foreach (var taskLabel in existingLabels)
+            if (form.LabelIds != null)
             {
-                _taskLabelRepository.Delete(taskLabel);
-            }
-            await _taskLabelRepository.SaveChangesAsync();
+                var existingLabels = await _taskLabelRepository.GetByTaskIdAsync(taskId);
+                var currentLabelIds = existingLabels.Select(l => l.LabelId).ToHashSet();
+                var newLabelIds = form.LabelIds.ToHashSet();
 
-            if (form.LabelIds != null && form.LabelIds.Any())
-            {
-                foreach (var labelId in form.LabelIds)
+                var labelsToDelete = existingLabels.Where(l => !newLabelIds.Contains(l.LabelId)).ToList();
+                foreach (var label in labelsToDelete)
+                {
+                    _taskLabelRepository.Delete(label);
+                }
+
+                var labelIdsToAdd = newLabelIds.Where(id => !currentLabelIds.Contains(id)).ToList();
+                foreach (var labelId in labelIdsToAdd)
                 {
                     var taskLabel = new TaskLabel
                     {
@@ -226,13 +228,11 @@ namespace PMM.Core.Services
                     };
                     _taskLabelRepository.Create(taskLabel);
                 }
-                await _taskLabelRepository.SaveChangesAsync();
             }
-
-            var existingAssignments = await _taskAssignmentRepository.GetByTaskIdAsync(taskId);
 
             if (form.AssignedUserIds != null)
             {
+                var existingAssignments = await _taskAssignmentRepository.GetByTaskIdAsync(taskId);
                 var currentUserIds = existingAssignments.Select(a => a.UserId).ToHashSet();
                 var newUserIds = form.AssignedUserIds.ToHashSet();
 
@@ -242,7 +242,7 @@ namespace PMM.Core.Services
                     _taskAssignmentRepository.Delete(assignment);
                 }
 
-                foreach (var userId in form.AssignedUserIds)
+                foreach (var userId in newUserIds)
                 {
                     if (!currentUserIds.Contains(userId))
                     {
@@ -254,22 +254,13 @@ namespace PMM.Core.Services
                         _taskAssignmentRepository.Create(newAssignment);
                     }
                 }
+            }
 
-                await _taskAssignmentRepository.SaveChangesAsync();
-            }
-            else
-            {
-                foreach (var assignment in existingAssignments)
-                {
-                    _taskAssignmentRepository.Delete(assignment);
-                }
-                await _taskAssignmentRepository.SaveChangesAsync();
-            }
+            await _taskRepository.SaveChangesAsync();
 
             var updatedTask = await _taskRepository.GetWithLabelsAsync(task.Id);
             return TaskMapper.Map(updatedTask);
         }
-
         public async Task<PagedResult<TaskDto>> Query(QueryTaskForm form)
         {
             IQueryable<TaskEntity> query = _taskRepository.Query(x => true);
