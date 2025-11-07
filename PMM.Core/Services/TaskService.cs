@@ -56,10 +56,12 @@ namespace PMM.Core.Services
             if (!validation.IsValid)
                 throw new BusinessException(validation.ErrorMessage);
 
-            // Code benzersizlik kontrolü
             var existingTask = await _taskRepository.GetByCodeAsync(form.Code);
             if (existingTask is not null)
                 throw new BusinessException("Bu kod ile kayıtlı bir görev bulunmaktadır.");
+
+            if (!form.ProjectId.HasValue)
+                throw new BusinessException("Proje ID'si zorunludur.");
 
             var project = await _projectRepository.GetByIdAsync(form.ProjectId.Value) ?? throw new NotFoundException("İlgili Proje Bulunamadı! Önce bir proje oluşturun");
             if (project.Status == EProjectStatus.Inactive || project.Status == EProjectStatus.Completed || project.Status == EProjectStatus.WaitingForApproval)
@@ -72,19 +74,25 @@ namespace PMM.Core.Services
             }
 
             if (form.ParentTaskId.HasValue)
-                _ = await _taskRepository.GetByIdAsync(form.ParentTaskId) ?? throw new NotFoundException("İlgili üst görev Bulunamadı!");
+                _ = await _taskRepository.GetByIdAsync(form.ParentTaskId.Value) ?? throw new NotFoundException("İlgili üst görev Bulunamadı!");
 
             if (form.LabelIds != null && form.LabelIds.Count != 0)
             {
-                foreach (var labelId in form.LabelIds)
-                    _ = await _labelRepository.GetByIdAsync(labelId) ?? throw new NotFoundException($"ID {labelId} ile etiket bulunamadı!");
+                var distinctLabelIds = form.LabelIds.Distinct().ToList();
+                var foundLabels = await _labelRepository.GetByIdsAsync(distinctLabelIds);
+
+                if (foundLabels.Count != distinctLabelIds.Count)
+                {
+                    var foundLabelIds = foundLabels.Select(l => l.Id).ToHashSet();
+                    var missingId = distinctLabelIds.First(id => !foundLabelIds.Contains(id));
+                    throw new NotFoundException($"ID {missingId} ile etiket bulunamadı!");
+                }
             }
 
             await ValidateAssignedUsersAsync(form.AssignedUserIds);
 
             var task = TaskMapper.Map(form);
             _taskRepository.Create(task);
-            await _taskRepository.SaveChangesAsync();
 
             if (form.LabelIds != null && form.LabelIds.Count != 0)
             {
@@ -92,12 +100,11 @@ namespace PMM.Core.Services
                 {
                     var taskLabel = new TaskLabel
                     {
-                        TaskId = task.Id,
+                        Task = task,
                         LabelId = labelId
                     };
                     _taskLabelRepository.Create(taskLabel);
                 }
-                await _taskLabelRepository.SaveChangesAsync();
             }
 
             if (form.AssignedUserIds != null && form.AssignedUserIds.Count != 0)
@@ -106,20 +113,20 @@ namespace PMM.Core.Services
                 {
                     var taskAssignment = new TaskAssignment
                     {
-                        TaskId = task.Id,
+                        Task = task,
                         UserId = userId
                     };
                     _taskAssignmentRepository.Create(taskAssignment);
                 }
-                await _taskAssignmentRepository.SaveChangesAsync();
             }
 
             if (task.IsLast)
             {
                 project.Status = EProjectStatus.WaitingForApproval;
                 _projectRepository.Update(project);
-                await _projectRepository.SaveChangesAsync();
             }
+
+            await _taskRepository.SaveChangesAsync();
 
             var createdTask = await _taskRepository.GetWithLabelsAsync(task.Id);
             return TaskMapper.Map(createdTask);
