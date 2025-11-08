@@ -182,8 +182,8 @@ export default function CustomTable() {
         key: "code",
         width: 130,
         ellipsis: { showTitle: false },
-        render: (text: string, record: any) => (
-          <Link to={`/pm-module/projects/${record.id}`} title={text} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        render: (text: string) => (
+          <Link to={`/pm-module/projects/${text}`} title={text} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <span>{text}</span>
           </Link>
         ),
