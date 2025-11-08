@@ -325,31 +325,27 @@ namespace PMM.Core.Services
                 await _taskRepository.SaveChangesAsync();
             }
 
-            if (form.ParentProjectIds != null && form.ParentProjectIds.Any())
+            // Handle parent relations sync
+            var existingParentRelations = await _projectRelationRepository.GetByChildProjectIdAsync(projectId);
+            var existingParentIds = existingParentRelations.Select(pr => pr.ParentProjectId).ToHashSet();
+            HashSet<int> desiredParentIds = form.ParentProjectIds?.ToHashSet() ?? new HashSet<int>();
+            var parentsToAdd = desiredParentIds.Except(existingParentIds);
+            var parentsToRemove = existingParentRelations.Where(pr => !desiredParentIds.Contains(pr.ParentProjectId));
+            foreach (var relation in parentsToRemove)
             {
-                foreach (var parentId in form.ParentProjectIds)
-                {
-                    var existingRelation = await _projectRelationRepository.GetRelationAsync(parentId, project.Id);
-                    if (existingRelation == null)
-                    {
-                        var relation = new ProjectRelation
-                        {
-                            ParentProjectId = parentId,
-                            ChildProjectId = project.Id
-                        };
-                        _projectRelationRepository.Create(relation);
-                    }
-                }
-                await _projectRelationRepository.SaveChangesAsync();
+                _projectRelationRepository.Delete(relation);
             }
-            else
+            foreach (var parentId in parentsToAdd)
             {
-                // If no parent project IDs are provided, remove all existing parent relations
-                var existingRelations = await _projectRelationRepository.GetByChildProjectIdAsync(projectId);
-                foreach (var relation in existingRelations)
+                var relation = new ProjectRelation
                 {
-                    _projectRelationRepository.Delete(relation);
-                }
+                    ParentProjectId = parentId,
+                    ChildProjectId = project.Id
+                };
+                _projectRelationRepository.Create(relation);
+            }
+            if (parentsToAdd.Any() || parentsToRemove.Any())
+            {
                 await _projectRelationRepository.SaveChangesAsync();
             }
 
@@ -359,8 +355,8 @@ namespace PMM.Core.Services
                 var currentLabelIds = currentLabels.Select(pl => pl.LabelId).ToHashSet();
                 var newLabelIds = form.LabelIds.ToHashSet();
 
-                var toAdd = newLabelIds.Except(currentLabelIds);
-                foreach (var labelId in toAdd)
+                var labelsToAdd = newLabelIds.Except(currentLabelIds);
+                foreach (var labelId in labelsToAdd)
                 {
                     var projectLabel = new ProjectLabel
                     {
@@ -370,13 +366,13 @@ namespace PMM.Core.Services
                     _projectLabelRepository.Create(projectLabel);
                 }
 
-                var toRemove = currentLabels.Where(pl => !newLabelIds.Contains(pl.LabelId));
-                foreach (var pl in toRemove)
+                var labelsToRemove = currentLabels.Where(pl => !newLabelIds.Contains(pl.LabelId));
+                foreach (var pl in labelsToRemove)
                 {
                     _projectLabelRepository.Delete(pl);
                 }
 
-                if (toAdd.Any() || toRemove.Any())
+                if (labelsToAdd.Any() || labelsToRemove.Any())
                 {
                     await _projectLabelRepository.SaveChangesAsync();
                 }
@@ -632,6 +628,15 @@ namespace PMM.Core.Services
             }
 
             return detailedProjectDto;
+        }
+
+        public async Task<DetailedProjectDto> GetDetailedProjectByCodeAsync(string code)
+        {
+            var project = await _projectRepository.GetByCodeAsync(code.ToLower());
+            if (project == null)
+                throw new NotFoundException("Proje Bulunamadı!");
+
+            return await GetDetailedProjectAsync(project.Id);
         }
 
         public async Task<FullProjectHierarchyDto> GetFullProjectHierarchyAsync(int projectId)

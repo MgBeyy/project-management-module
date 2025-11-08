@@ -56,6 +56,16 @@ namespace PMM.API.Controllers
             var project = await _projectService.GetDetailedProjectAsync(projectId);
             return new ApiResponse(project, StatusCodes.Status200OK);
         }
+        [ProducesResponseType(typeof(DetailedProjectDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [HttpGet("detailed/{code}")]
+        public async Task<ApiResponse> GetDetailedProjectByCode(string code)
+        {
+            var project = await _projectService.GetDetailedProjectByCodeAsync(code);
+            return new ApiResponse(project, StatusCodes.Status200OK);
+        }
         [ProducesResponseType(typeof(ProjectDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
