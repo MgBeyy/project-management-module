@@ -12,7 +12,7 @@ import type { ActivityDto } from "@/types";
 import { InfoCircleOutlined } from "@ant-design/icons";
 const { TextArea } = Input;
 
-type ActivityModalMode = "create" | "edit" | "view";
+type ActivityModalMode = "create" | "edit";
 
 interface ActivityModalProps {
   visible: boolean;
@@ -42,7 +42,6 @@ export default function ActivityModal({
   const selectedUser = Form.useWatch("userId", form);
   const previousSelectedUserRef = useRef<number | null | undefined>(undefined);
 
-  const isViewMode = currentMode === "view";
   const isEditMode = currentMode === "edit";
   const isCreateMode = currentMode === "create";
 
@@ -57,7 +56,7 @@ export default function ActivityModal({
   useEffect(() => {
     if (!visible) return;
 
-    if (activity && (isViewMode || isEditMode)) {
+    if (activity && isEditMode) {
       // Load existing activity data
       form.setFieldsValue({
         taskId: activity.taskId,
@@ -76,7 +75,7 @@ export default function ActivityModal({
         isLast: false,
       });
     }
-  }, [visible, activity, isViewMode, isEditMode, isCreateMode, initialDate, initialEndDate, selectedUserId, form]);
+  }, [visible, activity, isEditMode, isCreateMode, initialDate, initialEndDate, selectedUserId, form]);
 
   // Reset task when user changes
   useEffect(() => {
@@ -137,10 +136,6 @@ export default function ActivityModal({
     setIsDeleteModalVisible(true);
   };
 
-  const handleEdit = () => {
-    setCurrentMode("edit");
-  };
-
   const handleClose = () => {
     form.resetFields();
     previousSelectedUserRef.current = undefined;
@@ -150,31 +145,30 @@ export default function ActivityModal({
 
   const getTitle = () => {
     if (isCreateMode) return "Yeni Etkinlik Oluştur";
-    if (isEditMode) return `Etkinlik Düzenle (#${activity?.id ?? ""})`;
-    return `Etkinlik Detayı (#${activity?.id ?? ""})`;
+    return `Etkinlik Düzenle (#${activity?.id ?? ""})`;
   };
 
   const getFooter = () => {
-    if (isViewMode) {
+    if (isEditMode) {
       return (
         <Space>
           <Button onClick={handleClose}>İptal</Button>
           <Button danger onClick={handleDelete}>
             Sil
           </Button>
-          <Button type="primary" onClick={handleEdit}>
-            Düzenle
+          <Button type="primary" onClick={() => form.submit()} loading={isSubmitting}>
+            Güncelle
           </Button>
         </Space>
       );
     }
 
-    if (isEditMode || isCreateMode) {
+    if (isCreateMode) {
       return (
         <Space>
           <Button onClick={handleClose}>İptal</Button>
           <Button type="primary" onClick={() => form.submit()} loading={isSubmitting}>
-            {isCreateMode ? "Oluştur" : "Güncelle"}
+            Oluştur
           </Button>
         </Space>
       );
@@ -192,24 +186,7 @@ export default function ActivityModal({
         footer={getFooter()}
         width={600}
         maskClosable={false}
-        className={isViewMode ? "activity-modal-view-mode" : ""}
       >
-        <style>{`
-        .activity-modal-view-mode .ant-select-disabled.ant-select:not(.ant-select-customize-input) .ant-select-selector,
-        .activity-modal-view-mode .ant-input-disabled,
-        .activity-modal-view-mode .ant-picker-disabled {
-          color: rgba(0, 0, 0, 0.88) !important;
-          background-color: #ffffff !important;
-          cursor: default !important;
-          border-color: #d9d9d9 !important;
-        }
-        .activity-modal-view-mode .ant-select-disabled .ant-select-arrow {
-          display: none;
-        }
-        .activity-modal-view-mode .ant-picker-disabled .ant-picker-suffix {
-          display: none;
-        }
-      `}</style>
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
 
 
@@ -221,7 +198,6 @@ export default function ActivityModal({
             <UserSelect
               placeholder="Kullanıcı ara ve seç..."
               style={{ width: "100%" }}
-              disabled={isViewMode}
             />
           </Form.Item>
           <Form.Item
@@ -232,7 +208,7 @@ export default function ActivityModal({
             <TaskSelect
               placeholder={selectedUser ? "Görev ara ve seç..." : "Önce kullanıcı seçin..."}
               style={{ width: "100%" }}
-              disabled={isViewMode || !selectedUser}
+              disabled={!selectedUser}
               assignedUserId={selectedUser}
             />
           </Form.Item>
@@ -244,8 +220,6 @@ export default function ActivityModal({
             <TextArea
               rows={4}
               placeholder="Etkinlik açıklaması..."
-              readOnly={isViewMode}
-              style={{ cursor: isViewMode ? "default" : "text" }}
             />
           </Form.Item>
 
@@ -259,8 +233,6 @@ export default function ActivityModal({
               format="DD-MM-YYYY HH:mm"
               style={{ width: "100%" }}
               placeholder="Başlangıç tarihi seçin"
-              disabled={isViewMode}
-              inputReadOnly={isViewMode}
             />
           </Form.Item>
 
@@ -274,8 +246,6 @@ export default function ActivityModal({
               format="DD-MM-YYYY HH:mm"
               style={{ width: "100%" }}
               placeholder="Bitiş zamanı seçin"
-              disabled={isViewMode}
-              inputReadOnly={isViewMode}
             />
           </Form.Item>
 
@@ -283,7 +253,7 @@ export default function ActivityModal({
             name="isLast"
             valuePropName="checked"
           >
-            <Checkbox disabled={isViewMode}>
+            <Checkbox>
               Bu etkinlik ilgili görev için son etkinliktir.
               <Tooltip title="Bir etkinlik son etkinlik olduğunda ilgili görevin statüsü 'onay bekliyor' olarak güncellenir.">
                 <InfoCircleOutlined style={{ cursor: "help", marginLeft: "4px" }} />

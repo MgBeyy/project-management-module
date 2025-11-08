@@ -54,7 +54,7 @@ export default function ActivitiesCalendar() {
 
 
   const [isActivityModalVisible, setIsActivityModalVisible] = useState(false);
-  const [activityModalMode, setActivityModalMode] = useState<"create" | "edit" | "view">("create");
+  const [activityModalMode, setActivityModalMode] = useState<"create" | "edit">("create");
 
   const [selectedActivity, setSelectedActivity] = useState<ActivityDto | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
@@ -694,7 +694,7 @@ export default function ActivitiesCalendar() {
                                   if (isDragging) return;
                                   e.stopPropagation();
                                   setSelectedActivity(activity);
-                                  setActivityModalMode("view");
+                                  setActivityModalMode("edit");
                                   setIsActivityModalVisible(true);
                                 }}
                                 title={`${activity.description}\n${dayjs(
