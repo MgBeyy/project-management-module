@@ -1,3 +1,4 @@
+using AutoWrapper.Wrappers;
 using Microsoft.AspNetCore.Mvc;
 using PMM.Domain.Forms;
 using PMM.Domain.Interfaces.Services;
@@ -7,17 +8,18 @@ namespace PMM.API.Controllers;
 public class ReportsController : _BaseController
 {
     private readonly IReportService _reportService;
+    private readonly IWebHostEnvironment _env;
 
-    public ReportsController(ILogger<ReportsController> logger, IReportService reportService) : base(logger)
+    public ReportsController(ILogger<ReportsController> logger, IReportService reportService, IWebHostEnvironment env) : base(logger)
     {
         _reportService = reportService;
+        _env = env;
     }
 
-    [HttpGet("export/projects")]
-    public async Task<IActionResult> ExportProjects([FromQuery] QueryProjectForm filters)
+    [HttpPost("create/projects")]
+    public async Task<ApiResponse> CreateProjects([FromQuery] QueryProjectForm filters)
     {
-        var fileContents = await _reportService.ExportProjectsReport(filters);
-        var fileName = $"Projects_{DateTime.Now:yyyyMMdd}.xlsx";
-        return File(fileContents, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        var report = await _reportService.ExportProjectsReport(filters, _env.WebRootPath);
+        return new ApiResponse(report, StatusCodes.Status201Created);
     }
 }
