@@ -1,5 +1,6 @@
 using AutoWrapper.Wrappers;
 using Microsoft.AspNetCore.Mvc;
+using PMM.Core.Common;
 using PMM.Domain.Forms;
 using PMM.Domain.Interfaces.Services;
 
@@ -21,5 +22,13 @@ public class ReportsController : _BaseController
     {
         var report = await _reportService.ExportProjectsReport(filters, _env.WebRootPath);
         return new ApiResponse(report, StatusCodes.Status201Created);
+    }
+
+    [HttpGet]
+    public async Task<ApiResponse> Query([FromQuery] QueryReportForm? form)
+    {
+        form ??= new QueryReportForm();
+        var reports = await _reportService.Query(form);
+        return new ApiResponse(reports, StatusCodes.Status200OK);
     }
 }
