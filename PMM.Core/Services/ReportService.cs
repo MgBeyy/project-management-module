@@ -1,7 +1,10 @@
 using PMM.Core.Helpers;
+using PMM.Core.Mappers;
 using PMM.Domain.DTOs;
+using PMM.Domain.Entities;
 using PMM.Domain.Enums;
 using PMM.Domain.Forms;
+using PMM.Domain.Interfaces.Repositories;
 using PMM.Domain.Interfaces.Services;
 
 namespace PMM.Core.Services;
@@ -11,15 +14,17 @@ public class ReportService : IReportService
     private readonly IProjectService _projectService;
     private readonly ITaskService _taskService;
     private readonly NpoiExcelHelper _excelHelper;
+    private readonly IReportRepository _reportRepository;
 
-    public ReportService(IProjectService projectService, ITaskService taskService, NpoiExcelHelper excelHelper)
+    public ReportService(IProjectService projectService, ITaskService taskService, NpoiExcelHelper excelHelper, IReportRepository reportRepository)
     {
         _projectService = projectService;
         _taskService = taskService;
         _excelHelper = excelHelper;
+        _reportRepository = reportRepository;
     }
 
-    public async Task<byte[]> ExportProjectsReport(QueryProjectForm filters)
+    public async Task<ReportDto> ExportProjectsReport(QueryProjectForm filters, string webRootPath)
     {
         filters.PageSize = 10000;
         filters.Page = 1;
@@ -119,6 +124,28 @@ public class ReportService : IReportService
             dataRows.Add(row);
         }
 
-        return _excelHelper.GenerateExcel(headers, dataRows, "Projects Report");
+        var fileContents = _excelHelper.GenerateExcel(headers, dataRows, "Projects Report");
+
+        var reportsPath = Path.Combine(webRootPath, "reports");
+        if (!Directory.Exists(reportsPath))
+        {
+            Directory.CreateDirectory(reportsPath);
+        }
+
+        var fileName = $"Projects_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+        var filePath = Path.Combine(reportsPath, fileName);
+
+        await File.WriteAllBytesAsync(filePath, fileContents);
+
+        var report = new Report
+        {
+            Name = $"Projects Report - {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+            File = $"/reports/{fileName}"
+        };
+
+        _reportRepository.Create(report);
+        await _reportRepository.SaveChangesAsync();
+
+        return ReportMapper.Map(report);
     }
 }

@@ -1,8 +1,10 @@
+using PMM.Domain.DTOs;
+using PMM.Domain.Entities;
 using PMM.Domain.Forms;
 
 namespace PMM.Domain.Interfaces.Services;
 
 public interface IReportService
 {
-    Task<byte[]> ExportProjectsReport(QueryProjectForm filters);
+    Task<ReportDto> ExportProjectsReport(QueryProjectForm filters, string webRootPath);
 }
