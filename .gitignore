@@ -487,3 +487,4 @@ PMM.API/appsettings.Development.json
 
 # Uploaded Files
 PMM.API/wwwroot/files/*
+PMM.API/wwwroot/reports/*
