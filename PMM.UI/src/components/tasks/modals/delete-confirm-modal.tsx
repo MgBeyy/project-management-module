@@ -2,6 +2,7 @@ import { Modal } from "antd";
 import { useTasksStore } from "@/store/zustand/tasks-store";
 import { useNotification } from "@/hooks/useNotification";
 import { deleteTask } from "@/services/tasks/delete-task";
+import { TaskDto } from "@/types";
 
 export default function DeleteConfirmModal({
   visible,
@@ -10,14 +11,13 @@ export default function DeleteConfirmModal({
 }: {
   visible: boolean;
   onClose: () => void;
-  task: any;
+  task: TaskDto;
 }) {
   const notification = useNotification();
   const { triggerRefresh } = useTasksStore();
-
   const handleDelete = async () => {
     try {
-      await deleteTask(task.Id);
+      await deleteTask(task.id);
       notification.success("Görev Silindi", "Görev başarıyla silindi!");
       triggerRefresh();
       onClose();
@@ -37,7 +37,7 @@ export default function DeleteConfirmModal({
       okButtonProps={{ danger: true }}
     >
       <p>
-        <strong>{task?.Title}</strong> başlıklı görevi silmek istediğinizden
+        <strong>{task?.title}</strong> başlıklı görevi silmek istediğinizden
         emin misiniz?
       </p>
     </Modal>

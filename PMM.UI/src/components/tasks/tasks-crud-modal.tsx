@@ -5,6 +5,7 @@ import { useTasksStore } from "@/store/zustand/tasks-store";
 import { useNotification } from "@/hooks/useNotification";
 import CreateTaskModal from "./modals/create-task-modal";
 import DeleteConfirmModal from "./modals/delete-confirm-modal";
+import { TaskDto } from "@/types";
 
 export default function TasksCrudModal() {
   const notification = useNotification();
@@ -98,7 +99,7 @@ export default function TasksCrudModal() {
       <DeleteConfirmModal
         visible={isDeleteModalVisible && !!selectedTask}
         onClose={handleDeleteModalClose}
-        task={selectedTask}
+        task={selectedTask as TaskDto}
       />
     </>
   );
