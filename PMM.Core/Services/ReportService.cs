@@ -26,7 +26,7 @@ public class ReportService : IReportService
         _reportRepository = reportRepository;
     }
 
-    public async Task<ReportDto> ExportProjectsReport(QueryProjectForm filters, string webRootPath)
+    public async Task<ReportDto> ExportProjectTimeLatencyReport(QueryProjectForm filters, string webRootPath)
     {
         filters.PageSize = 10000;
         filters.Page = 1;
@@ -126,7 +126,7 @@ public class ReportService : IReportService
             dataRows.Add(row);
         }
 
-        var fileContents = _excelHelper.GenerateExcel(headers, dataRows, "Projects Report");
+        var fileContents = _excelHelper.GenerateExcel(headers, dataRows, "Proje Zaman Gecikme Raporu");
 
         var reportsPath = Path.Combine(webRootPath, "reports");
         if (!Directory.Exists(reportsPath))
