@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using PMM.Core.Common;
 using PMM.Core.Helpers;
 using PMM.Core.Mappers;
 using PMM.Domain.DTOs;
@@ -147,5 +149,62 @@ public class ReportService : IReportService
         await _reportRepository.SaveChangesAsync();
 
         return ReportMapper.Map(report);
+    }
+
+    public async Task<PagedResult<ReportDto>> Query(QueryReportForm form)
+    {
+        var query = _reportRepository.Query(x => true);
+
+        if (!string.IsNullOrEmpty(form.Search))
+        {
+            query = query.Where(r =>
+                r.Name.ToLower().Contains(form.Search.Trim().ToLower()));
+        }
+
+        if (form.Id.HasValue)
+            query = query.Where(e => e.Id == form.Id.Value);
+
+        if (!string.IsNullOrWhiteSpace(form.Name))
+            query = query.Where(e => e.Name.ToLower().Contains(form.Name.Trim().ToLower()));
+
+        if (form.CreatedById.HasValue)
+            query = query.Where(e => e.CreatedById == form.CreatedById.Value);
+
+        if (form.CreatedAt.HasValue)
+            query = query.Where(e => e.CreatedAt == form.CreatedAt);
+        if (form.CreatedAtMin.HasValue)
+            query = query.Where(e => e.CreatedAt >= form.CreatedAtMin);
+        if (form.CreatedAtMax.HasValue)
+            query = query.Where(e => e.CreatedAt <= form.CreatedAtMax);
+
+        if (form.UpdatedById.HasValue)
+            query = query.Where(e => e.UpdatedById == form.UpdatedById.Value);
+
+        if (form.UpdatedAt.HasValue)
+            query = query.Where(e => e.UpdatedAt == form.UpdatedAt);
+        if (form.UpdatedAtMin.HasValue)
+            query = query.Where(e => e.UpdatedAt >= form.UpdatedAtMin);
+        if (form.UpdatedAtMax.HasValue)
+            query = query.Where(e => e.UpdatedAt <= form.UpdatedAtMax);
+
+        query = OrderByHelper.OrderByDynamic(query, form.SortBy, form.SortDesc);
+
+        int page = form.Page ?? 1;
+        int pageSize = form.PageSize ?? 10;
+
+        int totalRecords = await query.CountAsync();
+
+        var reports = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return new PagedResult<ReportDto>
+        {
+            Data = ReportMapper.Map(reports),
+            TotalRecords = totalRecords,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 }
