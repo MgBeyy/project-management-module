@@ -4,6 +4,7 @@ import { OrganizationChart } from '@ant-design/graphs';
 import type { OrganizationChartOptions } from '@ant-design/graphs';
 import { Button } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
+import { DetailedProjectDto, ProjectHierarchyDto } from '@/types';
 
 // ---- Tipler ----
 type ChartNodeType = 'program' | 'project' | 'subproject' | 'task' | 'subtask' | 'activity';
@@ -47,9 +48,6 @@ interface DisplayGraphData {
   expandedDisplayIds: Set<string>;
 }
 
-interface ProjectOrganizationDiagramProps {
-  project: any; // ProjectHierarchyDto
-}
 
 // ---- Görsel ayarlar ----
 const NODE_TYPE_CONFIG: Record<ChartNodeType, { color: string; title: string }> = {
@@ -629,10 +627,9 @@ const buildDisplayGraphData = (graph: ChartGraphResult, expandedOriginIds: Set<s
 };
 
 // ---- Ana bileşen ----
-const ProjectOrganizationDiagram = ({ project }: ProjectOrganizationDiagramProps) => {
+const ProjectOrganizationDiagram = ( project : DetailedProjectDto) => {
   const chartGraph = useMemo(() => buildOrganizationChartGraph(project), [project]);
   const currentNodeId = chartGraph.currentNodeId;
-  const focusPathCandidates = project?.focusPathCandidates;
   const graphRef = useRef<any>(null);
 
   const ancestors = useMemo(() => collectAncestors(chartGraph, currentNodeId), [chartGraph, currentNodeId]);
@@ -643,15 +640,8 @@ const ProjectOrganizationDiagram = ({ project }: ProjectOrganizationDiagramProps
     ancestors.forEach((id) => expanded.add(id));
     if (currentNodeId) expanded.add(currentNodeId);
     descendants.forEach((id) => expanded.add(id));
-    if (Array.isArray(focusPathCandidates)) {
-      focusPathCandidates.forEach((path: any) => {
-        if (!Array.isArray(path)) return;
-        path.forEach((ref) => { const nodeId = makeProjectNodeId(ref); if (nodeId) expanded.add(nodeId); });
-      });
-    }
     return expanded;
-  }, [ancestors, descendants, currentNodeId, focusPathCandidates]);
-
+  }, [ancestors, descendants, currentNodeId]);
   const displayGraph = useMemo(() => buildDisplayGraphData(chartGraph, expandedOriginIds), [chartGraph, expandedOriginIds]);
   const baseData = displayGraph.graphData;
   const expandedDisplayIds = displayGraph.expandedDisplayIds;
