@@ -9,6 +9,7 @@ import { ProjectHierarchyTree } from '@/components/projects/project-details/proj
 import ProjectOrganizationDiagram from '@/components/projects/project-details/project-organization-diagram';
 import { getProjectHierarchy } from '@/services/projects/get-project-hierarchy';
 import ProjectTeamCard from '@/components/projects/project-details/project-team';
+import { ProjectTaskGantt } from '@/components/projects/project-details/gant-chart/gant-chart';
 
 export default function ProjectDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -159,7 +160,20 @@ export default function ProjectDetailsPage() {
       label: 'Organizasyon Şeması',
       children: (
         <div className="py-1">
-          <ProjectOrganizationDiagram project={projectData} />
+          <ProjectOrganizationDiagram {...projectData} />
+        </div>
+      ),
+    },
+    {
+      key: 'gant_chart',
+      label: 'Gantt Şeması',
+      children: (
+        <div className="py-1">
+          {projectHierarchy ? (
+            <ProjectTaskGantt project={projectHierarchy} />
+          ) : (
+            <div className="text-center text-gray-500">Proje hiyerarşi verisi yükleniyor...</div>
+          )}
         </div>
       ),
     },
