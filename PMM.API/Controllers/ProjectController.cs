@@ -105,5 +105,15 @@ namespace PMM.API.Controllers
             var projects = await _projectService.QueryWithHierarchy(form);
             return new ApiResponse(projects, StatusCodes.Status200OK);
         }
+        [ProducesResponseType(typeof(FullProjectHierarchyDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [HttpGet("hierarchy/code/{code}")]
+        public async Task<ApiResponse> GetFullProjectHierarchyByCode(string code)
+        {
+            var project = await _projectService.GetFullProjectHierarchyByCodeAsync(code);
+            return new ApiResponse(project, StatusCodes.Status200OK);
+        }
     }
 }
