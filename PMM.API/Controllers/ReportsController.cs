@@ -19,7 +19,7 @@ public class ReportsController : _BaseController
     [HttpGet("project-time-latency")]
     public async Task<ApiResponse> ExportProjectTimeLatency([FromQuery] QueryProjectForm filters)
     {
-        var report = await _reportService.ExportProjectTimeLatencyReport(filters, _env.WebRootPath);
+        var report = await _reportService.ExportSaveProjectTimeLatencyReport(filters, _env.WebRootPath);
         return new ApiResponse(report, StatusCodes.Status200OK);
     }
 
@@ -29,5 +29,12 @@ public class ReportsController : _BaseController
         form ??= new QueryReportForm();
         var reports = await _reportService.Query(form);
         return new ApiResponse(reports, StatusCodes.Status200OK);
+    }
+
+    [HttpGet("project-time-latency-direct")]
+    public async Task<IActionResult> ExportProjectTimeLatencyDirect([FromQuery] QueryProjectForm filters)
+    {
+        var fileContents = await _reportService.ExportProjectTimeLatencyReport(filters);
+        return File(fileContents, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "ProjeZamanGecikmeRaporu.xlsx");
     }
 }
