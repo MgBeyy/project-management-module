@@ -11,7 +11,7 @@ export const getReport = async ({ query }: { query: ProjectQuery }) => {
       }
     });
 
-    const url = `/reports/export/projects` + `?${queryParams.toString()}`;
+    const url = `/Reports/project-time-latency-direct` + `?${queryParams.toString()}`;
     console.log("🌐 API Request URL for Report:", url);
     const response = await apiClient.get(url, {
       responseType: "blob",
