@@ -52,6 +52,7 @@ namespace PMM.Core.Mappers
                 AssignedUsers = task.TaskAssignments?
                     .Select(ta => IdNameMapper.Map(ta.User.Id, ta.User.Name))
                     .ToList(),
+                Project = task.Project != null ? IdNameMapper.Map(task.Project.Id, task.Project.Title) : null,
                 CreatedAt = task.CreatedAt,
                 CreatedById = task.CreatedById,
                 UpdatedAt = task.UpdatedAt,

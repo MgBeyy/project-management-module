@@ -27,6 +27,7 @@ namespace PMM.Domain.DTOs
         public bool IsLast { get; set; }
         public List<LabelDto>? Labels { get; set; }
         public List<IdNameDto>? AssignedUsers { get; set; }
+        public IdNameDto? Project { get; set; }
         public List<TaskDto>? SubTasks { get; set; }
     }
 }

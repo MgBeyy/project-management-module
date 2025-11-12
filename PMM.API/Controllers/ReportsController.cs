@@ -37,4 +37,11 @@ public class ReportsController : _BaseController
         var fileContents = await _reportService.ExportProjectTimeLatencyReport(filters);
         return File(fileContents, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "ProjeZamanGecikmeRaporu.xlsx");
     }
+
+    [HttpGet("task-report")]
+    public async Task<ApiResponse> ExportTaskReport([FromQuery] QueryTaskForm filters)
+    {
+        var report = await _reportService.ExportSaveTaskReport(filters, _env.WebRootPath);
+        return new ApiResponse(report, StatusCodes.Status200OK);
+    }
 }

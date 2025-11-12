@@ -9,5 +9,6 @@ public interface IReportService
 {
     Task<ReportDto> ExportSaveProjectTimeLatencyReport(QueryProjectForm filters, string webRootPath);
     Task<byte[]> ExportProjectTimeLatencyReport(QueryProjectForm filters);
+    Task<ReportDto> ExportSaveTaskReport(QueryTaskForm filters, string webRootPath);
     Task<PagedResult<ReportDto>> Query(QueryReportForm form);
 }
