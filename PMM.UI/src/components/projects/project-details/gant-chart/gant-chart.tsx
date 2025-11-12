@@ -51,6 +51,13 @@ interface ProjectGroup {
   level: number;
 }
 
+interface AxisTick {
+  start: Dayjs;
+  end: Dayjs;
+  key: string;
+  label: string;
+}
+
 const STATUS_COLOR: Record<string, string> = {
   Active: "#1677ff",
   Planned: "#2f54eb",
@@ -188,16 +195,27 @@ function useMeasureWidth<T extends HTMLElement>(): [React.RefObject<T | null>, n
   return [ref, w];
 }
 
-function buildMonthTicks(startMs: number, endMs: number) {
-  const months: { d: Dayjs; key: string }[] = [];
-  const s = dayjs(startMs).startOf("month");
-  const e = dayjs(endMs).endOf("month");
-  let cur = s;
-  while (cur.isBefore(e, "month") || cur.isSame(e, "month")) {
-    months.push({ d: cur, key: cur.format("YYYY-MM") });
-    cur = cur.add(1, "month");
+function buildAxisTicks(startMs: number, endMs: number, mode: "day" | "month"): AxisTick[] {
+  const unit = mode === "day" ? "day" : "month";
+  const sameYear = dayjs(startMs).year() === dayjs(endMs).year();
+  const labelFormat = mode === "day"
+    ? (sameYear ? "DD MMM" : "DD MMM YYYY")
+    : "MMM YYYY";
+
+  const ticks: AxisTick[] = [];
+  let cur = dayjs(startMs).startOf(unit);
+  const end = dayjs(endMs).endOf(unit);
+  while (cur.isBefore(end, unit) || cur.isSame(end, unit)) {
+    const next = cur.add(1, unit);
+    ticks.push({
+      start: cur,
+      end: next,
+      key: cur.format(mode === "day" ? "YYYY-MM-DD" : "YYYY-MM"),
+      label: cur.format(labelFormat),
+    });
+    cur = next;
   }
-  return months;
+  return ticks;
 }
 function createScale(startMs: number, endMs: number, width: number) {
   const span = Math.max(1, endMs - startMs);
@@ -274,7 +292,15 @@ export const ProjectTaskGantt: React.FC<{ project: ProjectHierarchyDto }> = ({ p
   const chartWidth = Math.max(300, width - LEFT_COL_WIDTH - 16);
 
   const { x } = useMemo(() => createScale(viewStart, viewEnd, chartWidth), [viewStart, viewEnd, chartWidth]);
-  const ticks = useMemo(() => buildMonthTicks(viewStart, viewEnd), [viewStart, viewEnd]);
+  const viewSpanMonths = useMemo(
+    () => dayjs(viewEnd).diff(dayjs(viewStart), "month", true),
+    [viewStart, viewEnd]
+  );
+  const useDailyTicks = viewSpanMonths <= 2;
+  const ticks = useMemo(
+    () => buildAxisTicks(viewStart, viewEnd, useDailyTicks ? "day" : "month"),
+    [viewStart, viewEnd, useDailyTicks]
+  );
 
   const today = dayjs();
   const showToday = today.isBetween(dayjs(viewStart), dayjs(viewEnd), "millisecond", "[]");
@@ -402,16 +428,16 @@ export const ProjectTaskGantt: React.FC<{ project: ProjectHierarchyDto }> = ({ p
                   key={t.key}
                   style={{
                     position: "absolute",
-                    left: x(t.d.valueOf()),
+                    left: x(t.start.valueOf()),
                     top: 0,
-                    width: x(t.d.add(1, "month").valueOf()) - x(t.d.valueOf()),
+                    width: Math.max(0, x(t.end.valueOf()) - x(t.start.valueOf())),
                     height: "100%",
                     borderLeft: "1px solid #f0f0f0",
                     pointerEvents: "none",
                   }}
                 >
                   <div style={{ position: "absolute", top: 4, left: 4, fontSize: 12, color: "#8c8c8c" }}>
-                    {t.d.format("MMM YYYY")}
+                    {t.label}
                   </div>
                 </div>
               ))}
