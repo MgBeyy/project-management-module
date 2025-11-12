@@ -1,6 +1,5 @@
 using AutoWrapper.Wrappers;
 using Microsoft.AspNetCore.Mvc;
-using PMM.Core.Common;
 using PMM.Domain.Forms;
 using PMM.Domain.Interfaces.Services;
 
@@ -17,11 +16,11 @@ public class ReportsController : _BaseController
         _env = env;
     }
 
-    [HttpPost("create/projects")]
-    public async Task<ApiResponse> CreateProjects([FromQuery] QueryProjectForm filters)
+    [HttpGet("project-time-latency")]
+    public async Task<ApiResponse> ExportProjectTimeLatency([FromQuery] QueryProjectForm filters)
     {
-        var report = await _reportService.ExportProjectsReport(filters, _env.WebRootPath);
-        return new ApiResponse(report, StatusCodes.Status201Created);
+        var report = await _reportService.ExportProjectTimeLatencyReport(filters, _env.WebRootPath);
+        return new ApiResponse(report, StatusCodes.Status200OK);
     }
 
     [HttpGet]

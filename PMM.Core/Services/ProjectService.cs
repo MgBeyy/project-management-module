@@ -1090,5 +1090,13 @@ namespace PMM.Core.Services
         }
 
         #endregion
+
+        public async Task<FullProjectHierarchyDto> GetFullProjectHierarchyByCodeAsync(string code)
+        {
+            var project = await _projectRepository.GetByCodeAsync(code.ToLower());
+            if (project == null)
+                throw new NotFoundException("Proje Bulunamadı!");
+            return await GetFullProjectHierarchyAsync(project.Id);
+        }
     }
 }

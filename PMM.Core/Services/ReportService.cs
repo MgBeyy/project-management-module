@@ -26,7 +26,7 @@ public class ReportService : IReportService
         _reportRepository = reportRepository;
     }
 
-    public async Task<ReportDto> ExportProjectsReport(QueryProjectForm filters, string webRootPath)
+    public async Task<ReportDto> ExportProjectTimeLatencyReport(QueryProjectForm filters, string webRootPath)
     {
         filters.PageSize = 10000;
         filters.Page = 1;
@@ -46,7 +46,7 @@ public class ReportService : IReportService
             "Proje Kodu",
             "Proje Adı",
             "Planlanan Başlagıç Tarihi",
-            "Gerçekleşen Başlagıç Tarihi",
+            "Gerçekleşen Başlangıç Tarihi",
             "Planlanan Bitiş Tarihi",
             "Gerçekleşen Bitiş Tarihi",
             "Planlanan çalışma Saati",
@@ -82,7 +82,7 @@ public class ReportService : IReportService
 
             var responsible = string.Join(", ", project.AssignedUsers?
                 .Where(a => a.Role == EProjectAssignmentRole.Manager)
-                .Select(a => a.User.Name) ?? new List<string>());
+                .Select(a => a.User?.Name ?? "") ?? new List<string>());
 
             var rtc = new NpoiExcelHelper.RichTextCell();
             int currentIndex = 0;
@@ -126,7 +126,7 @@ public class ReportService : IReportService
             dataRows.Add(row);
         }
 
-        var fileContents = _excelHelper.GenerateExcel(headers, dataRows, "Projects Report");
+        var fileContents = _excelHelper.GenerateExcel(headers, dataRows, "Proje Zaman Gecikme Raporu");
 
         var reportsPath = Path.Combine(webRootPath, "reports");
         if (!Directory.Exists(reportsPath))

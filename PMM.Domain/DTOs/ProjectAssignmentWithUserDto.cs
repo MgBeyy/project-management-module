@@ -7,7 +7,7 @@ namespace PMM.Domain.DTOs
         public int Id { get; set; }
         public int ProjectId { get; set; }
         public int UserId { get; set; }
-        public IdNameDto User { get; set; }
+        public IdNameDto? User { get; set; }
         public EProjectAssignmentRole Role { get; set; }
         public DateOnly? StartedAt { get; set; }
         public DateOnly? EndAt { get; set; }

@@ -7,6 +7,6 @@ namespace PMM.Domain.Interfaces.Services;
 
 public interface IReportService
 {
-    Task<ReportDto> ExportProjectsReport(QueryProjectForm filters, string webRootPath);
+    Task<ReportDto> ExportProjectTimeLatencyReport(QueryProjectForm filters, string webRootPath);
     Task<PagedResult<ReportDto>> Query(QueryReportForm form);
 }
