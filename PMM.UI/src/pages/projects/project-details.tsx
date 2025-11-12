@@ -72,7 +72,7 @@ export default function ProjectDetailsPage() {
   if (error || !projectData) {
     return (
       <div className="min-h-screen bg-gray-50 px-4 py-8">
-        <div className="max-w-7xl mx-auto">
+        <div className="mx-auto">
           <div className="bg-white rounded-lg shadow-sm border p-6 text-center text-red-600">
             <h2 className="text-lg font-semibold">Hata</h2>
             <p>{error || 'Proje bulunamadı'}</p>
@@ -181,12 +181,12 @@ export default function ProjectDetailsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto">
         <Tabs
           defaultActiveKey="overview"
           tabBarGutter={16}
           items={tabItems}
-          className="project-details-tabs"
+          className='w-full'
         />
       </div>
     </div>

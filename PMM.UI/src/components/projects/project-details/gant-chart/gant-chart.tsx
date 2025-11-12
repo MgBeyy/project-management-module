@@ -157,9 +157,12 @@ function collectTasksHier(root: GanttProjectLike) {
 
     groups.push({ projectId, title: projectTitle, code: projectCode, level });
 
+    // ✅ GÖRÜNÜR DEĞİŞİKLİK: görev seviyesini proje seviyesine göre başlat
+    // Böylece alt projelerdeki görevler de sağa doğru girintilenir.
     for (const t of p.tasks ?? []) {
-      pushTask(t, projectId, projectTitle, projectCode, 0, null);
+      pushTask(t, projectId, projectTitle, projectCode, level + 1, null);
     }
+
     for (const c of p.childProjects ?? []) {
       pushFromProject(c, level + 1);
     }
