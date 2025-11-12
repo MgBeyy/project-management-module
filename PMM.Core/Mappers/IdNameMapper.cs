@@ -6,13 +6,13 @@ namespace PMM.Core.Mappers
     {
         public static IdNameDto? Map(int? id, string? name)
         {
-            if (id is null)
+            if (id is null || name is null)
                 return null;
             else
                 return new IdNameDto
                 {
                     Id = (int)id,
-                    Name = name
+                    Name = name!
                 };
         }
     }

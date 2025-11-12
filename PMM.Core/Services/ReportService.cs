@@ -46,7 +46,7 @@ public class ReportService : IReportService
             "Proje Kodu",
             "Proje Adı",
             "Planlanan Başlagıç Tarihi",
-            "Gerçekleşen Başlagıç Tarihi",
+            "Gerçekleşen Başlangıç Tarihi",
             "Planlanan Bitiş Tarihi",
             "Gerçekleşen Bitiş Tarihi",
             "Planlanan çalışma Saati",
@@ -82,7 +82,7 @@ public class ReportService : IReportService
 
             var responsible = string.Join(", ", project.AssignedUsers?
                 .Where(a => a.Role == EProjectAssignmentRole.Manager)
-                .Select(a => a.User.Name) ?? new List<string>());
+                .Select(a => a.User?.Name ?? "") ?? new List<string>());
 
             var rtc = new NpoiExcelHelper.RichTextCell();
             int currentIndex = 0;
