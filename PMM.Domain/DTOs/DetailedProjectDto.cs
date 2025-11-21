@@ -35,5 +35,21 @@ namespace PMM.Domain.DTOs
         public DateTime? UpdatedAt { get; set; }
         public int? UpdatedById { get; set; }
         public IdNameDto? UpdatedByUser { get; set; }
+
+        public int TotalTaskCount { get; set; }
+        public int DoneTaskCount { get; set; }
+        public int LateTaskCount { get; set; }
+        public int TodoTaskCount { get; set; }
+        public int InProgressTaskCount { get; set; }
+        public int InactiveTaskCount { get; set; }
+        public int WaitingForApprovalTaskCount { get; set; }
+
+        public int? ChildProjectsActiveCount { get; set; }
+        public int? ChildProjectsPlannedCount { get; set; }
+        public int? ChildProjectsInactiveCount { get; set; }
+        public int? ChildProjectsWaitingForApprovalCount { get; set; }
+        public int? ChildProjectsCompletedCount { get; set; }
+
+        public List<BurnUpDataPointDto>? BurnUpChart { get; set; }
     }
 }

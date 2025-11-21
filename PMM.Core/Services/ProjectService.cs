@@ -25,6 +25,7 @@ namespace PMM.Core.Services
         private readonly IUserRepository _userRepository;
         private readonly IProjectAssignmentRepository _projectAssignmentRepository;
         private readonly ITaskRepository _taskRepository;
+        private readonly IActivityRepository _activityRepository;
 
         public ProjectService(IProjectRepository projectRepository,
             IProjectRelationRepository projectRelationRepository,
@@ -35,6 +36,7 @@ namespace PMM.Core.Services
             IUserRepository userRepository,
             IProjectAssignmentRepository projectAssignmentRepository,
             ITaskRepository taskRepository,
+            IActivityRepository activityRepository,
             IPrincipal principal)
             : base(principal, logger, userRepository)
         {
@@ -47,6 +49,7 @@ namespace PMM.Core.Services
             _userRepository = userRepository;
             _projectAssignmentRepository = projectAssignmentRepository;
             _taskRepository = taskRepository;
+            _activityRepository = activityRepository;
         }
 
         public async Task<ProjectDto> AddProjectAsync(CreateProjectForm form)
@@ -594,6 +597,13 @@ namespace PMM.Core.Services
                 detailedProjectDto.ChildProjects = childRelations
                     .Select(cr => ProjectMapper.Map(cr.ChildProject))
                     .ToList();
+
+                var childStatuses = childRelations.Select(cr => cr.ChildProject.Status).ToList();
+                detailedProjectDto.ChildProjectsActiveCount = childStatuses.Count(s => s == EProjectStatus.Active);
+                detailedProjectDto.ChildProjectsPlannedCount = childStatuses.Count(s => s == EProjectStatus.Planned);
+                detailedProjectDto.ChildProjectsInactiveCount = childStatuses.Count(s => s == EProjectStatus.Inactive);
+                detailedProjectDto.ChildProjectsWaitingForApprovalCount = childStatuses.Count(s => s == EProjectStatus.WaitingForApproval);
+                detailedProjectDto.ChildProjectsCompletedCount = childStatuses.Count(s => s == EProjectStatus.Completed);
             }
 
             // Fetch tasks
@@ -608,6 +618,45 @@ namespace PMM.Core.Services
             }
 
             detailedProjectDto.Tasks = topLevelTasks;
+
+            detailedProjectDto.TotalTaskCount = allTasks.Count;
+            detailedProjectDto.DoneTaskCount = allTasks.Count(t => t.Status == ETaskStatus.Done);
+            detailedProjectDto.LateTaskCount = allTasks.Count(t => t.PlannedEndDate.HasValue && t.PlannedEndDate.Value < DateOnly.FromDateTime(DateTime.UtcNow) && t.Status != ETaskStatus.Done);
+            detailedProjectDto.TodoTaskCount = allTasks.Count(t => t.Status == ETaskStatus.Todo);
+            detailedProjectDto.InProgressTaskCount = allTasks.Count(t => t.Status == ETaskStatus.InProgress);
+            detailedProjectDto.InactiveTaskCount = allTasks.Count(t => t.Status == ETaskStatus.Inactive);
+            detailedProjectDto.WaitingForApprovalTaskCount = allTasks.Count(t => t.Status == ETaskStatus.WaitingForApproval);
+
+            // Calculate Burn-up Chart
+            var taskIds = allTasks.Select(t => t.Id).ToList();
+            var activities = await _activityRepository.Query(a => taskIds.Contains(a.TaskId)).ToListAsync();
+
+            var finalTotalScope = allTasks.Sum(t => t.PlannedHours ?? 0);
+
+            var startDateOnly = DateOnly.FromDateTime(allTasks.Min(t => t.CreatedAt).Date);
+            var endDateOnly = project.PlannedDeadline ?? DateOnly.FromDateTime(DateTime.UtcNow);
+
+            var totalDays = (endDateOnly.ToDateTime(TimeOnly.MinValue) - startDateOnly.ToDateTime(TimeOnly.MinValue)).Days + 1;
+            var dailyRate = totalDays > 0 ? finalTotalScope / totalDays : 0;
+
+            var burnUpData = new List<BurnUpDataPointDto>();
+            for (var date = startDateOnly; date <= endDateOnly; date = date.AddDays(1))
+            {
+                var currentScope = allTasks.Where(t => t.CreatedAt.Date <= date.ToDateTime(TimeOnly.MinValue)).Sum(t => t.PlannedHours ?? 0);
+                var completedWork = activities.Where(a => a.StartTime.Date <= date.ToDateTime(TimeOnly.MinValue)).Sum(a => a.TotalHours);
+                var dayIndex = (date.ToDateTime(TimeOnly.MinValue) - startDateOnly.ToDateTime(TimeOnly.MinValue)).Days + 1;
+                var idealTrend = dailyRate * dayIndex;
+
+                burnUpData.Add(new BurnUpDataPointDto
+                {
+                    Date = date,
+                    TotalScope = currentScope,
+                    CompletedWork = completedWork,
+                    IdealTrend = idealTrend
+                });
+            }
+
+            detailedProjectDto.BurnUpChart = burnUpData;
 
             detailedProjectDto.Client = project.ClientId.HasValue
                 ? ClientMapper.Map(await _clientRepository.GetByIdAsync(project.ClientId.Value))
