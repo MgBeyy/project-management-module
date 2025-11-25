@@ -21,6 +21,9 @@ namespace PMM.Domain.Forms
         [JsonConverter(typeof(JsonStringEnumConverter))]
         [ValidEnum(ErrorMessage = "Geçerli bir proje önceliği seçiniz.")]
         public EProjectPriority Priority { get; set; } = EProjectPriority.Regular;
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        [ValidNullableEnum(ErrorMessage = "Geçerli bir proje türü seçiniz.")]
+        public EProjectType? Type { get; set; }
 
         public List<int>? ParentProjectIds { get; set; }
 
