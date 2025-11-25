@@ -14,6 +14,7 @@ namespace PMM.Domain.Entities
         public DateOnly? EndAt { get; set; }
         public EProjectStatus Status { get; set; }
         public EProjectPriority Priority { get; set; }
+        public EProjectType? Type { get; set; }
 
         public virtual ICollection<ProjectRelation>? ParentRelations { get; set; }
         public virtual ICollection<ProjectRelation>? ChildRelations { get; set; }

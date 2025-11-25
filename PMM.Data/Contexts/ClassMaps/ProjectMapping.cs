@@ -29,6 +29,7 @@ namespace PMM.Data.Contexts.ClassMaps
 
             builder.Property(p => p.Status).IsRequired().HasConversion<string>();
             builder.Property(p => p.Priority).IsRequired().HasConversion<string>();
+            builder.Property(p => p.Type).IsRequired(false).HasConversion<string>();
 
             builder.Property(p => p.ClientId).IsRequired(false);
             builder.HasOne(p => p.Client).WithMany(c => c.Projects).HasForeignKey(p => p.ClientId);
