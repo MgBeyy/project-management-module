@@ -34,9 +34,8 @@ namespace PMM.Core.Services
             if (!validation.IsValid)
                 throw new BusinessException(validation.ErrorMessage);
 
-            var userByEmail = await _userRepository.QueryAll()
-                .FirstOrDefaultAsync(u => EF.Functions.ILike(u.Email, form.Email));
-            if (userByEmail is not null)
+
+            if (await _userRepository.IsEmailExistsAsync(form.Email))
                 throw new BusinessException("Bu email zaten kayıtlı!");
 
             var user = UserMapper.Map(form);
