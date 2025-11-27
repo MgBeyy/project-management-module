@@ -49,7 +49,7 @@ namespace PMM.Core.Services
         {
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
-                throw new NotFoundException("User Bulunamadı!");
+                throw new NotFoundException("Kullanıcı Bulunamadı!");
             _userRepository.Delete(user);
             await _userRepository.SaveChangesAsync();
         }
