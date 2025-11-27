@@ -72,4 +72,51 @@ public class UserCreateTests
 
     }
 
+    [Test]
+    public async Task Create_WhenFormInvalid_ShouldThrowBusinessException()
+    {
+        // Arrange
+        var mockRepo = new Mock<IUserRepository>();
+        var mockLogger = new Mock<ILogger<UserService>>();
+        var mockPrincipal = new Mock<IPrincipal>();
+        mockRepo.Setup(x => x.IsEmailExistsAsync(It.IsAny<string>())).ReturnsAsync(false);
+
+        var userService = new UserService(mockRepo.Object, mockLogger.Object, mockPrincipal.Object);
+
+        var invalidForm = new CreateUserForm
+        {
+            Name = "", // Geçersiz
+            Email = "invalid-email",
+        };
+
+        // Act
+        Func<Task> act = async () => await userService.AddUserAsync(invalidForm);
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>();
+
+        mockRepo.Verify(x => x.Create(It.IsAny<User>()), Times.Never);
+        mockRepo.Verify(x => x.SaveChangesAsync(), Times.Never);
+    }
+
+    [Test]
+    public async Task Create_WhenFormNull_ShouldThrowArgumentNullException()
+    {
+        // Arrange
+        var mockRepo = new Mock<IUserRepository>();
+        var mockLogger = new Mock<ILogger<UserService>>();
+        var mockPrincipal = new Mock<IPrincipal>();
+
+        var userService = new UserService(mockRepo.Object, mockLogger.Object, mockPrincipal.Object);
+
+        // Act
+        Func<Task> act = async () => await userService.AddUserAsync(null);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentNullException>();
+
+        mockRepo.Verify(x => x.Create(It.IsAny<User>()), Times.Never);
+        mockRepo.Verify(x => x.SaveChangesAsync(), Times.Never);
+    }
+
 }
