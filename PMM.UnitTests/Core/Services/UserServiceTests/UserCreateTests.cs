@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using PMM.Core.Exceptions;
 using PMM.Core.Services;
 using PMM.Domain.Entities;
 using PMM.Domain.Forms;
@@ -31,7 +32,7 @@ public class UserCreateTests
             Email = "john.doe@example.com",
         };
 
-        // Act
+        // Action
         var result = await userService.AddUserAsync(createForm);
 
         // Assert
@@ -43,4 +44,32 @@ public class UserCreateTests
 
         mockRepo.Verify(x => x.SaveChangesAsync(), Times.Once);
     }
+
+    [Test]
+    public async Task Create_WhenEmailAlreadyExists_ShouldThrowBusinessException()
+    {
+        // Arrange
+        var mockRepo = new Mock<IUserRepository>();
+        var mockLogger = new Mock<ILogger<UserService>>();
+        var mockPrincipal = new Mock<IPrincipal>();
+        mockRepo.Setup(x => x.IsEmailExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
+        var userService = new UserService(mockRepo.Object, mockLogger.Object, mockPrincipal.Object);
+        var createForm = new CreateUserForm
+        {
+            Name = "Jane Doe",
+            Email = "john.doe@example.com",
+        };
+
+        // Action
+        Func<Task> act = async () => await userService.AddUserAsync(createForm);
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+        .WithMessage("Bu email zaten kayıtlı!");
+
+        mockRepo.Verify(x => x.Create(It.IsAny<User>()), Times.Never);
+        mockRepo.Verify(x => x.SaveChangesAsync(), Times.Never);
+
+    }
+
 }
