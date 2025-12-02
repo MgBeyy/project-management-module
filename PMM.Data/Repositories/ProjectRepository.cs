@@ -16,5 +16,20 @@ namespace PMM.Data.Repositories
         {
             return await _dbSet.FirstOrDefaultAsync(p => p.Code.ToLower() == code.ToLower());
         }
+
+        public async Task<Project?> GetWithDetailsAsync(int projectId)
+        {
+            return await Query(p => p.Id == projectId)
+                .Include(p => p.ParentRelations)
+                    .ThenInclude(pr => pr.ParentProject)
+                .Include(p => p.ProjectLabels)
+                    .ThenInclude(pl => pl.Label)
+                .Include(p => p.Assignments)
+                    .ThenInclude(a => a.User)
+                .Include(p => p.Client)
+                .Include(p => p.CreatedByUser)
+                .Include(p => p.UpdatedByUser)
+                .FirstOrDefaultAsync();
+        }
     }
 }
