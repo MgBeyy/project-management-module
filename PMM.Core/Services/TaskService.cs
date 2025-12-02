@@ -78,10 +78,11 @@ namespace PMM.Core.Services
 
             if (form.LabelIds != null && form.LabelIds.Count != 0)
             {
-                foreach (var labelId in form.LabelIds.Distinct())
-                {
-                    _ = await _labelRepository.GetByIdAsync(labelId) ?? throw new NotFoundException($"ID {labelId} ile etiket bulunamadı!");
-                }
+                var labels = await _labelRepository.GetByIdsAsync(form.LabelIds.Distinct());
+                var existingIds = new HashSet<int>(labels.Select(l => l.Id));
+                var missingIds = form.LabelIds.Distinct().Where(id => !existingIds.Contains(id)).ToList();
+                if (missingIds.Any())
+                    throw new NotFoundException($"ID {string.Join(", ", missingIds)} ile etiket bulunamadı!");
             }
 
             await ValidateAssignedUsersAsync(form.AssignedUserIds);
@@ -165,10 +166,11 @@ namespace PMM.Core.Services
 
             if (form.LabelIds != null && form.LabelIds.Count != 0)
             {
-                foreach (var labelId in form.LabelIds.Distinct())
-                {
-                    _ = await _labelRepository.GetByIdAsync(labelId) ?? throw new NotFoundException($"ID {labelId} ile etiket bulunamadı!");
-                }
+                var labels = await _labelRepository.GetByIdsAsync(form.LabelIds.Distinct());
+                var existingIds = new HashSet<int>(labels.Select(l => l.Id));
+                var missingIds = form.LabelIds.Distinct().Where(id => !existingIds.Contains(id)).ToList();
+                if (missingIds.Any())
+                    throw new NotFoundException($"ID {string.Join(", ", missingIds)} ile etiket bulunamadı!");
             }
 
             if (form.AssignedUserIds != null)
@@ -179,10 +181,11 @@ namespace PMM.Core.Services
 
                 if (form.AssignedUserIds.Count > 0)
                 {
-                    foreach (var userId in form.AssignedUserIds.Distinct())
-                    {
-                        _ = await _userRepository.GetByIdAsync(userId) ?? throw new NotFoundException($"ID {userId} ile kullanıcı bulunamadı!");
-                    }
+                    var users = await _userRepository.GetByIdsAsync(form.AssignedUserIds.Distinct());
+                    var existingIds = new HashSet<int>(users.Select(u => u.Id));
+                    var missingIds = form.AssignedUserIds.Distinct().Where(id => !existingIds.Contains(id)).ToList();
+                    if (missingIds.Any())
+                        throw new NotFoundException($"ID {string.Join(", ", missingIds)} ile kullanıcı bulunamadı!");
                 }
             }
 
@@ -413,14 +416,12 @@ namespace PMM.Core.Services
             if (!validation.IsValid)
                 throw new BusinessException(validation.ErrorMessage);
 
-            var tasks = new List<TaskEntity>();
-            foreach (var taskId in form.TaskIds)
+            var tasks = await _taskRepository.GetByIdsAsync(form.TaskIds);
+            if (tasks.Count != form.TaskIds.Count)
             {
-                var task = await _taskRepository.GetByIdAsync(taskId);
-                if (task == null)
-                    throw new NotFoundException($"ID {taskId} ile görev bulunamadı!");
-
-                tasks.Add(task);
+                var existingIds = new HashSet<int>(tasks.Select(t => t.Id));
+                var missingIds = form.TaskIds.Where(id => !existingIds.Contains(id)).ToList();
+                throw new NotFoundException($"Görevler bulunamadı: {string.Join(", ", missingIds)}");
             }
 
             // Dependency kontrolü (ignore edilmemişse)
@@ -463,16 +464,8 @@ namespace PMM.Core.Services
             await _taskRepository.SaveChangesAsync();
 
             // Güncellenmiş task'ları döndür
-            foreach (var task in tasks)
-            {
-                var updatedTask = await _taskRepository.GetWithLabelsAsync(task.Id);
-                if (updatedTask != null)
-                {
-                    updatedTasks.Add(TaskMapper.Map(updatedTask));
-                }
-            }
-
-            return updatedTasks;
+            var updatedTasksEntities = await _taskRepository.GetByIdsWithLabelsAsync(tasks.Select(t => t.Id));
+            return TaskMapper.Map(updatedTasksEntities);
         }
 
         public async Task<List<TaskDto>> QueryWithHierarchy(QueryTaskForm form)
@@ -624,10 +617,11 @@ namespace PMM.Core.Services
                 if (duplicateUserIds.Any())
                     throw new BusinessException($"Aynı kullanıcı birden fazla kez atanamaz. Tekrarlanan kullanıcı ID'leri: {string.Join(", ", duplicateUserIds)}");
 
-                foreach (var userId in assignedUserIds)
-                {
-                    _ = await _userRepository.GetByIdAsync(userId) ?? throw new NotFoundException($"ID {userId} ile kullanıcı bulunamadı!");
-                }
+                var users = await _userRepository.GetByIdsAsync(assignedUserIds.Distinct());
+                var existingIds = new HashSet<int>(users.Select(u => u.Id));
+                var missingIds = assignedUserIds.Distinct().Where(id => !existingIds.Contains(id)).ToList();
+                if (missingIds.Any())
+                    throw new NotFoundException($"ID {string.Join(", ", missingIds)} ile kullanıcı bulunamadı!");
             }
         }
 
@@ -642,7 +636,7 @@ namespace PMM.Core.Services
 
                 foreach (var dependency in blockingDependencies)
                 {
-                    var blockingTask = await _taskRepository.GetByIdAsync(dependency.BlockingTaskId);
+                    var blockingTask = dependency.BlockingTask;
                     if (blockingTask != null && blockingTask.Status != ETaskStatus.Done)
                     {
                         incompleteBlockingTasks.Add($"'{blockingTask.Title}' (ID: {blockingTask.Id})");
@@ -667,7 +661,7 @@ namespace PMM.Core.Services
 
                 foreach (var dependency in blockedDependencies)
                 {
-                    var blockedTask = await _taskRepository.GetByIdAsync(dependency.BlockedTaskId);
+                    var blockedTask = dependency.BlockedTask;
                     if (blockedTask != null && blockedTask.Status == ETaskStatus.Done)
                     {
                         completedBlockedTasks.Add($"'{blockedTask.Title}' (ID: {blockedTask.Id})");
