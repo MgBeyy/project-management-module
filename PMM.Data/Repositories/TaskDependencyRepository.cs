@@ -17,6 +17,7 @@ namespace PMM.Data.Repositories
         {
             return await Query(td => td.BlockingTaskId == blockingTaskId)
                 .Include(td => td.BlockedTask)
+                .Include(td => td.BlockingTask)
                 .ToListAsync();
         }
 
@@ -24,6 +25,7 @@ namespace PMM.Data.Repositories
         {
             return await Query(td => td.BlockedTaskId == blockedTaskId)
                 .Include(td => td.BlockingTask)
+                .Include(td => td.BlockedTask)
                 .ToListAsync();
         }
 
