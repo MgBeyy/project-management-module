@@ -17,5 +17,10 @@ namespace PMM.Data.Repositories
             return await _context.Set<User>()
                 .AnyAsync(u => u.Email.ToLower() == email.ToLower());
         }
+
+        public async Task<List<User>> GetByIdsAsync(IEnumerable<int> ids)
+        {
+            return await Task.FromResult(_dbSet.Where(u => ids.Contains(u.Id)).ToList());
+        }
     }
 }
