@@ -10,5 +10,7 @@ namespace PMM.Domain.Interfaces.Repositories
         Task<TaskEntity?> GetWithDependenciesAsync(int taskId);
         Task<List<TaskEntity>> GetByProjectIdAsync(int projectId);
         Task<List<TaskEntity>> GetByUserIdAsync(int userId);
+        Task<List<TaskEntity>> GetByIdsAsync(IEnumerable<int> ids);
+        Task<List<TaskEntity>> GetByIdsWithLabelsAsync(IEnumerable<int> ids);
     }
 }

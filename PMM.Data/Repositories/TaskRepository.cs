@@ -69,5 +69,21 @@ namespace PMM.Data.Repositories
                     .ThenInclude(ta => ta.User)
                 .ToListAsync();
         }
+
+        public async Task<List<TaskEntity>> GetByIdsAsync(IEnumerable<int> ids)
+        {
+            return await Task.FromResult(_dbSet.Where(t => ids.Contains(t.Id)).ToList());
+        }
+
+        public async Task<List<TaskEntity>> GetByIdsWithLabelsAsync(IEnumerable<int> ids)
+        {
+            return await Task.FromResult(Query(t => ids.Contains(t.Id))
+                .Include(t => t.Project)
+                .Include(t => t.TaskLabels)
+                    .ThenInclude(tl => tl.Label)
+                .Include(t => t.TaskAssignments)
+                    .ThenInclude(ta => ta.User)
+                .ToList());
+        }
     }
 }
