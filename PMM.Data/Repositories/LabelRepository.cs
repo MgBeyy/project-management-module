@@ -11,5 +11,10 @@ namespace PMM.Data.Repositories
              : base(context, logger)
         {
         }
+
+        public async Task<List<Label>> GetByIdsAsync(IEnumerable<int> ids)
+        {
+            return await Task.FromResult(_dbSet.Where(l => ids.Contains(l.Id)).ToList());
+        }
     }
 }
