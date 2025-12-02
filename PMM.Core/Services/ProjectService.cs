@@ -569,14 +569,7 @@ namespace PMM.Core.Services
 
         public async Task<DetailedProjectDto> GetDetailedProjectAsync(int projectId)
         {
-            var project = await _projectRepository.Query(p => p.Id == projectId)
-                .Include(p => p.ParentRelations)
-                    .ThenInclude(pr => pr.ParentProject)
-                .Include(p => p.ProjectLabels)
-                    .ThenInclude(pl => pl.Label)
-                .Include(p => p.Assignments)
-                    .ThenInclude(a => a.User)
-                .FirstOrDefaultAsync();
+            var project = await _projectRepository.GetWithDetailsAsync(projectId);
 
             if (project == null)
                 throw new NotFoundException("Proje Bulunamadı!");
@@ -658,22 +651,18 @@ namespace PMM.Core.Services
 
             detailedProjectDto.BurnUpChart = burnUpData;
 
-            detailedProjectDto.Client = project.ClientId.HasValue
-                ? ClientMapper.Map(await _clientRepository.GetByIdAsync(project.ClientId.Value))
-                : null;
+            detailedProjectDto.Client = project.Client != null ? ClientMapper.Map(project.Client) : null;
 
             if (project.Assignments != null && project.Assignments.Any())
             {
                 detailedProjectDto.AssignedUsers = ProjectAssignmentMapper.MapWithUser(project.Assignments.ToList());
             }
 
-            var createdBy = await _userRepository.GetByIdAsync(project.CreatedById);
-            detailedProjectDto.CreatedByUser = createdBy != null ? IdNameMapper.Map(createdBy.Id, createdBy.Name) : null;
+            detailedProjectDto.CreatedByUser = project.CreatedByUser != null ? IdNameMapper.Map(project.CreatedByUser.Id, project.CreatedByUser.Name) : null;
 
-            if (project.UpdatedById.HasValue)
+            if (project.UpdatedByUser != null)
             {
-                var updatedBy = await _userRepository.GetByIdAsync(project.UpdatedById);
-                detailedProjectDto.UpdatedByUser = updatedBy != null ? IdNameMapper.Map(updatedBy.Id, updatedBy.Name) : null;
+                detailedProjectDto.UpdatedByUser = IdNameMapper.Map(project.UpdatedByUser.Id, project.UpdatedByUser.Name);
             }
 
             return detailedProjectDto;
@@ -703,6 +692,9 @@ namespace PMM.Core.Services
                     .ThenInclude(pl => pl.Label)
                 .Include(p => p.Assignments)
                     .ThenInclude(a => a.User)
+                .Include(p => p.Client)
+                .Include(p => p.CreatedByUser)
+                .Include(p => p.UpdatedByUser)
                 .ToListAsync();
 
             // Fetch all tasks for related projects
@@ -735,22 +727,18 @@ namespace PMM.Core.Services
                     referencedProjects.Add(id);
 
                     // Set client, assigned users, etc.
-                    dto.Client = proj.ClientId.HasValue
-                        ? ClientMapper.Map(await _clientRepository.GetByIdAsync(proj.ClientId.Value))
-                        : null;
+                    dto.Client = proj.Client != null ? ClientMapper.Map(await _clientRepository.GetByIdAsync(proj.ClientId.Value)) : null;
 
                     if (proj.Assignments != null && proj.Assignments.Any())
                     {
                         dto.AssignedUsers = ProjectAssignmentMapper.MapWithUser(proj.Assignments.ToList());
                     }
 
-                    var createdBy = await _userRepository.GetByIdAsync(proj.CreatedById);
-                    dto.CreatedByUser = createdBy != null ? IdNameMapper.Map(createdBy.Id, createdBy.Name) : null;
+                    dto.CreatedByUser = proj.CreatedByUser != null ? IdNameMapper.Map(proj.CreatedByUser.Id, proj.CreatedByUser.Name) : null;
 
-                    if (proj.UpdatedById.HasValue)
+                    if (proj.UpdatedByUser != null)
                     {
-                        var updatedBy = await _userRepository.GetByIdAsync(proj.UpdatedById);
-                        dto.UpdatedByUser = updatedBy != null ? IdNameMapper.Map(updatedBy.Id, updatedBy.Name) : null;
+                        dto.UpdatedByUser = IdNameMapper.Map(proj.UpdatedByUser.Id, proj.UpdatedByUser.Name);
                     }
 
                     return dto;
@@ -930,6 +918,9 @@ namespace PMM.Core.Services
                     .ThenInclude(pl => pl.Label)
                 .Include(p => p.Assignments)
                     .ThenInclude(a => a.User)
+                .Include(p => p.Client)
+                .Include(p => p.CreatedByUser)
+                .Include(p => p.UpdatedByUser)
                 .ToListAsync();
 
             // Fetch all tasks for related projects
@@ -966,22 +957,18 @@ namespace PMM.Core.Services
                         referencedProjects.Add(id);
 
                         // Set client, assigned users, etc.
-                        dto.Client = p.ClientId.HasValue
-                            ? ClientMapper.Map(await _clientRepository.GetByIdAsync(p.ClientId.Value))
-                            : null;
+                        dto.Client = p.Client != null ? ClientMapper.Map(await _clientRepository.GetByIdAsync(p.ClientId.Value)) : null;
 
                         if (p.Assignments != null && p.Assignments.Any())
                         {
                             dto.AssignedUsers = ProjectAssignmentMapper.MapWithUser(p.Assignments.ToList());
                         }
 
-                        var createdBy = await _userRepository.GetByIdAsync(p.CreatedById);
-                        dto.CreatedByUser = createdBy != null ? IdNameMapper.Map(createdBy.Id, createdBy.Name) : null;
+                        dto.CreatedByUser = p.CreatedByUser != null ? IdNameMapper.Map(p.CreatedByUser.Id, p.CreatedByUser.Name) : null;
 
-                        if (p.UpdatedById.HasValue)
+                        if (p.UpdatedByUser != null)
                         {
-                            var updatedBy = await _userRepository.GetByIdAsync(p.UpdatedById);
-                            dto.UpdatedByUser = updatedBy != null ? IdNameMapper.Map(updatedBy.Id, updatedBy.Name) : null;
+                            dto.UpdatedByUser = IdNameMapper.Map(p.UpdatedByUser.Id, p.UpdatedByUser.Name);
                         }
 
                         return dto;
