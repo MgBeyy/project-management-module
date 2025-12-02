@@ -6,6 +6,9 @@ COPY PMM.Core/PMM.Core.csproj PMM.Core/
 COPY PMM.Data/PMM.Data.csproj PMM.Data/
 COPY PMM.API/PMM.API.csproj PMM.API/
 COPY PMM.Domain/PMM.Domain.csproj PMM.Domain/
+COPY PMM.UnitTests/PMM.UnitTests.csproj PMM.UnitTests/
+COPY PMM.UnitTests/PMM.UnitTests.csproj PMM.UnitTests/
+COPY PMM.IntegrationTests/PMM.IntegrationTests.csproj PMM.IntegrationTests/
 
 RUN dotnet restore ProjectManagementModule.sln
 
