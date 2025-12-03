@@ -511,7 +511,7 @@ namespace PMM.Core.Services
                 query = query.Where(e => e.Priority == form.Priority);
 
             if (form.ParentProjectId.HasValue)
-                query = query.Where(e => e.ParentRelations.Any(pr => pr.ParentProjectId == form.ParentProjectId));
+                query = query.Where(e => e.ParentRelations != null && e.ParentRelations.Any(pr => pr.ParentProjectId == form.ParentProjectId));
 
             if (form.ClientId.HasValue)
                 query = query.Where(e => e.ClientId == form.ClientId);
@@ -875,7 +875,7 @@ namespace PMM.Core.Services
                 query = query.Where(e => e.Priority == form.Priority);
 
             if (form.ParentProjectId.HasValue)
-                query = query.Where(e => e.ParentRelations.Any(pr => pr.ParentProjectId == form.ParentProjectId));
+                query = query.Where(e => e.ParentRelations != null && e.ParentRelations.Any(pr => pr.ParentProjectId == form.ParentProjectId));
 
             if (form.ClientId.HasValue)
                 query = query.Where(e => e.ClientId == form.ClientId);
@@ -904,7 +904,7 @@ namespace PMM.Core.Services
             var projectIds = projects.Select(p => p.Id).ToHashSet();
 
             // Filter to top-level projects (those not children of any in the set)
-            var topLevelProjects = projects.Where(p => !p.ParentRelations.Any(pr => projectIds.Contains(pr.ParentProjectId))).ToList();
+            var topLevelProjects = projects.Where(p => !(p.ParentRelations?.Any(pr => projectIds.Contains(pr.ParentProjectId)) ?? false)).ToList();
 
             var topLevelProjectIds = topLevelProjects.Select(p => p.Id).ToList();
 
@@ -918,9 +918,9 @@ namespace PMM.Core.Services
 
             // Fetch all related projects with includes
             var allProjects = await _projectRepository.Query(p => allRelatedIds.Contains(p.Id))
-                .Include(p => p.ParentRelations)
+                .Include(p => p.ParentRelations!)
                     .ThenInclude(pr => pr.ParentProject)
-                .Include(p => p.ChildRelations)
+                .Include(p => p.ChildRelations!)
                     .ThenInclude(cr => cr.ChildProject)
                 .Include(p => p.ProjectLabels)
                     .ThenInclude(pl => pl.Label)
@@ -965,7 +965,7 @@ namespace PMM.Core.Services
                         referencedProjects.Add(id);
 
                         // Set client, assigned users, etc.
-                        dto.Client = p.Client != null ? ClientMapper.Map(await _clientRepository.GetByIdAsync(p.ClientId.Value)) : null;
+                        dto.Client = p.Client != null ? ClientMapper.Map(await _clientRepository.GetByIdAsync(p.ClientId!.Value)) : null;
 
                         if (p.Assignments != null && p.Assignments.Any())
                         {
