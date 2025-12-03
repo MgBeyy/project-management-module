@@ -42,6 +42,10 @@ namespace PMM.Data.Contexts
                             e.State == EntityState.Deleted);
 
             var currentUserId = _principal?.Id ?? 0;
+            if (currentUserId == 0)
+            {
+                currentUserId = 1; // Default to system user ID 1
+            }
             var now = DateTime.UtcNow;
 
             foreach (var entry in entries)

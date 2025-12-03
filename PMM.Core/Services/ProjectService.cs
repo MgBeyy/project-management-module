@@ -626,7 +626,15 @@ namespace PMM.Core.Services
 
             var finalTotalScope = allTasks.Sum(t => t.PlannedHours ?? 0);
 
-            var startDateOnly = DateOnly.FromDateTime(allTasks.Min(t => t.CreatedAt).Date);
+            DateOnly startDateOnly;
+            if (allTasks.Any())
+            {
+                startDateOnly = DateOnly.FromDateTime(allTasks.Min(t => t.CreatedAt).Date);
+            }
+            else
+            {
+                startDateOnly = DateOnly.FromDateTime(DateTime.UtcNow);
+            }
             var endDateOnly = project.PlannedDeadline ?? DateOnly.FromDateTime(DateTime.UtcNow);
 
             var totalDays = (endDateOnly.ToDateTime(TimeOnly.MinValue) - startDateOnly.ToDateTime(TimeOnly.MinValue)).Days + 1;
