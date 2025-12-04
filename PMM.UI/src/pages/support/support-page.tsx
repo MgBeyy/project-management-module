@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { Table, Button, Modal, Form, Input, message, Popconfirm, Space, Card } from "antd";
-import { UserAddOutlined, DeleteOutlined, ReloadOutlined } from "@ant-design/icons";
+import { Table, Button, Modal, Form, Input, message, Popconfirm, Space, Card, Tabs, Select } from "antd";
+import { UserAddOutlined, DeleteOutlined, ReloadOutlined, PlusOutlined } from "@ant-design/icons";
 import { GetUsers, createUser, deleteUser } from "@/services/user";
-import { UserDto, CreateUserPayload } from "@/types";
+import { GetReports, createReport } from "@/services/reports";
+import { UserDto, CreateUserPayload, Report, CreateReportPayload } from "@/types";
+import { fromMillis } from "@/utils/retype";
 
 export default function SupportPage() {
   const [users, setUsers] = useState<UserDto[]>([]);
@@ -15,9 +17,15 @@ export default function SupportPage() {
     total: 0,
   });
 
+  const [reports, setReports] = useState<Report[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [isReportModalVisible, setIsReportModalVisible] = useState(false);
+  const [reportForm] = Form.useForm();
+
   useEffect(() => {
     fetchUsers();
-  }, [pagination.current, pagination.pageSize]);
+    fetchReports();
+  }, []);
 
   const fetchUsers = async (searchText?: string) => {
     try {
@@ -40,6 +48,19 @@ export default function SupportPage() {
       console.error("Error fetching users:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchReports = async () => {
+    try {
+      setReportsLoading(true);
+      const response = await GetReports({});
+      setReports(response.data || []);
+    } catch (error) {
+      message.error("Raporlar yüklenirken bir hata oluştu");
+      console.error("Error fetching reports:", error);
+    } finally {
+      setReportsLoading(false);
     }
   };
 
@@ -72,6 +93,23 @@ export default function SupportPage() {
       console.error("Error deleting user:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateReport = async (values: CreateReportPayload) => {
+    try {
+      setReportsLoading(true);
+      await createReport(values);
+      message.success("Rapor başarıyla oluşturuldu");
+      setIsReportModalVisible(false);
+      reportForm.resetFields();
+      fetchReports();
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || "Rapor oluşturulurken bir hata oluştu";
+      message.error(errorMessage);
+      console.error("Error creating report:", error);
+    } finally {
+      setReportsLoading(false);
     }
   };
 
@@ -130,31 +168,32 @@ export default function SupportPage() {
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden p-6">
-      <Card
-        title={
-          <div className="flex items-center justify-between">
-            <span className="text-xl font-semibold">Kullanıcı Yönetimi</span>
-            <Space>
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={() => fetchUsers()}
-                loading={loading}
-              >
-                Yenile
-              </Button>
-              <Button
-                type="primary"
-                icon={<UserAddOutlined />}
-                onClick={() => setIsModalVisible(true)}
-              >
-                Yeni Kullanıcı Ekle
-              </Button>
-            </Space>
-          </div>
-        }
-        bordered={false}
-        className="flex-1 flex flex-col"
-      >
+      <Tabs defaultActiveKey="1">
+        <Tabs.TabPane tab="Kullanıcı Yönetimi" key="1">
+          <Card
+            title={
+              <div className="flex items-center justify-between">
+                <Space>
+                  <Button
+                    icon={<ReloadOutlined />}
+                    onClick={() => fetchUsers()}
+                    loading={loading}
+                  >
+                    Yenile
+                  </Button>
+                  <Button
+                    type="primary"
+                    icon={<UserAddOutlined />}
+                    onClick={() => setIsModalVisible(true)}
+                  >
+                    Yeni Kullanıcı Ekle
+                  </Button>
+                </Space>
+              </div>
+            }
+            bordered={false}
+            className="flex-1 flex flex-col"
+          >
         <Table
           columns={columns}
           dataSource={users}
@@ -168,7 +207,67 @@ export default function SupportPage() {
           onChange={handleTableChange}
           scroll={{ y: "calc(100vh - 300px)" }}
         />
-      </Card>
+          </Card>
+        </Tabs.TabPane>
+        <Tabs.TabPane tab="Rapor Yönetimi" key="2">
+          <Card
+            title={
+              <div className="flex items-center justify-between">
+                <span className="text-xl font-semibold">Rapor Yönetimi</span>
+                <Space>
+                  <Button
+                    icon={<ReloadOutlined />}
+                    onClick={() => fetchReports()}
+                    loading={reportsLoading}
+                  >
+                    Yenile
+                  </Button>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => setIsReportModalVisible(true)}
+                  >
+                    Yeni Rapor Oluştur
+                  </Button>
+                </Space>
+              </div>
+            }
+            bordered={false}
+            className="flex-1 flex flex-col"
+          >
+            <Table
+              columns={[
+                {
+                  title: "ID",
+                  dataIndex: "id",
+                  key: "id",
+                  width: 80,
+                },
+                {
+                  title: "Tür",
+                  dataIndex: "type",
+                  key: "type",
+                },
+                {
+                  title: "İsim",
+                  dataIndex: "name",
+                  key: "name",
+                },
+                {
+                  title: "Oluşturulma Tarihi",
+                  dataIndex: "createdAt",
+                  key: "createdAt",
+                  render: (createdAt: string) => fromMillis(createdAt)?.format("DD.MM.YYYY - HH:mm") || "-",
+                },
+              ]}
+              dataSource={reports}
+              rowKey="id"
+              loading={reportsLoading}
+              pagination={false}
+            />
+          </Card>
+        </Tabs.TabPane>
+      </Tabs>
 
       <Modal
         title="Yeni Kullanıcı Ekle"
@@ -220,6 +319,67 @@ export default function SupportPage() {
               </Button>
               <Button type="primary" htmlType="submit" loading={loading}>
                 Ekle
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Yeni Rapor Oluştur"
+        open={isReportModalVisible}
+        onCancel={() => {
+          setIsReportModalVisible(false);
+          reportForm.resetFields();
+        }}
+        footer={null}
+        width={500}
+      >
+        <Form
+          form={reportForm}
+          layout="vertical"
+          onFinish={handleCreateReport}
+          autoComplete="off"
+        >
+          <Form.Item
+            label="Rapor Türü"
+            name="type"
+            rules={[{ required: true, message: "Lütfen rapor türünü seçiniz" }]}
+          >
+            <Select placeholder="Rapor türünü seçiniz">
+              <Select.Option value="Proje Raporu">Proje Raporu</Select.Option>
+              <Select.Option value="Kullanıcı Raporu">Kullanıcı Raporu</Select.Option>
+              <Select.Option value="Görev Raporu">Görev Raporu</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Rapor Adı"
+            name="name"
+            rules={[{ required: true, message: "Lütfen rapor adını giriniz" }]}
+          >
+            <Input placeholder="Rapor adını giriniz" />
+          </Form.Item>
+
+          <Form.Item
+            label="Açıklama"
+            name="description"
+          >
+            <Input.TextArea placeholder="Rapor açıklaması" />
+          </Form.Item>
+
+          <Form.Item className="mb-0 flex justify-end">
+            <Space>
+              <Button
+                onClick={() => {
+                  setIsReportModalVisible(false);
+                  reportForm.resetFields();
+                }}
+              >
+                İptal
+              </Button>
+              <Button type="primary" htmlType="submit" loading={reportsLoading}>
+                Oluştur
               </Button>
             </Space>
           </Form.Item>

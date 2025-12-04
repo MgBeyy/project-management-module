@@ -61,5 +61,6 @@ export type {
   UploadProjectFilePayload,
 } from "./files";
 
-export type * from "./label";
+export type { Report, ReportPagedResult, CreateReportPayload } from "./reports";
 
+export type * from "./label";
