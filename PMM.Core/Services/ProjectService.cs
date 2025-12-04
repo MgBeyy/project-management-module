@@ -808,6 +808,7 @@ namespace PMM.Core.Services
 
         public async Task<List<FullProjectHierarchyDto>> QueryWithHierarchy(QueryProjectForm form)
         {
+            // 1. SORGULAMA VE FİLTRELEME (Aynı)
             IQueryable<Project> query = _projectRepository.Query(x => true);
 
             if (!string.IsNullOrEmpty(form.Search))
@@ -816,91 +817,54 @@ namespace PMM.Core.Services
                     p.Title.ToLower().Contains(form.Search.Trim().ToLower()) ||
                     p.Code.ToLower().Contains(form.Search.Trim().ToLower()));
             }
-
-            if (form.Id.HasValue)
-                query = query.Where(e => e.Id == form.Id.Value);
-
-            if (!string.IsNullOrWhiteSpace(form.Code))
-                query = query.Where(e => e.Code.ToLower().Contains(form.Code.Trim().ToLower()));
-
-            if (!string.IsNullOrWhiteSpace(form.Title))
-                query = query.Where(e => e.Title.ToLower().Contains(form.Title.Trim().ToLower()));
-
-            if (form.PlannedStartDate.HasValue)
-                query = query.Where(e => e.PlannedStartDate == form.PlannedStartDate);
-            if (form.PlannedStartDateMin.HasValue)
-                query = query.Where(e => e.PlannedStartDate >= form.PlannedStartDateMin);
-            if (form.PlannedStartDateMax.HasValue)
-                query = query.Where(e => e.PlannedStartDate <= form.PlannedStartDateMax);
-
-            if (form.PlannedDeadline.HasValue)
-                query = query.Where(e => e.PlannedDeadline == form.PlannedDeadline);
-            if (form.PlannedDeadlineMin.HasValue)
-                query = query.Where(e => e.PlannedDeadline >= form.PlannedDeadlineMin);
-            if (form.PlannedDeadlineMax.HasValue)
-                query = query.Where(e => e.PlannedDeadline <= form.PlannedDeadlineMax);
-
-            if (form.PlannedHours.HasValue)
-                query = query.Where(e => e.PlannedHours == form.PlannedHours);
-            if (form.PlannedHoursMin.HasValue)
-                query = query.Where(e => e.PlannedHours >= form.PlannedHoursMin);
-            if (form.PlannedHoursMax.HasValue)
-                query = query.Where(e => e.PlannedHours <= form.PlannedHoursMax);
-
-            if (form.ActualHours.HasValue)
-                query = query.Where(e => e.ActualHours == form.ActualHours);
-            if (form.ActualHoursMin.HasValue)
-                query = query.Where(e => e.ActualHours >= form.ActualHoursMin);
-            if (form.ActualHoursMax.HasValue)
-                query = query.Where(e => e.ActualHours <= form.ActualHoursMax);
-
-            if (form.StartedAt.HasValue)
-                query = query.Where(e => e.StartedAt == form.StartedAt);
-
-            if (form.EndAt.HasValue)
-                query = query.Where(e => e.EndAt == form.EndAt);
-
-            if (form.Status.HasValue)
-                query = query.Where(e => e.Status == form.Status);
-
-            if (form.Priority.HasValue)
-                query = query.Where(e => e.Priority == form.Priority);
-
-            if (form.ParentProjectId.HasValue)
-                query = query.Where(e => e.ParentRelations.Any(pr => pr.ParentProjectId == form.ParentProjectId));
-
-            if (form.ClientId.HasValue)
-                query = query.Where(e => e.ClientId == form.ClientId);
-
+            // ... (Diğer tüm if form.Filtreler buraya aynı şekilde gelecek) ...
+            if (form.Id.HasValue) query = query.Where(e => e.Id == form.Id.Value);
+            if (!string.IsNullOrWhiteSpace(form.Code)) query = query.Where(e => e.Code.ToLower().Contains(form.Code.Trim().ToLower()));
+            if (!string.IsNullOrWhiteSpace(form.Title)) query = query.Where(e => e.Title.ToLower().Contains(form.Title.Trim().ToLower()));
+            if (form.PlannedStartDate.HasValue) query = query.Where(e => e.PlannedStartDate == form.PlannedStartDate);
+            if (form.PlannedStartDateMin.HasValue) query = query.Where(e => e.PlannedStartDate >= form.PlannedStartDateMin);
+            if (form.PlannedStartDateMax.HasValue) query = query.Where(e => e.PlannedStartDate <= form.PlannedStartDateMax);
+            if (form.PlannedDeadline.HasValue) query = query.Where(e => e.PlannedDeadline == form.PlannedDeadline);
+            if (form.PlannedDeadlineMin.HasValue) query = query.Where(e => e.PlannedDeadline >= form.PlannedDeadlineMin);
+            if (form.PlannedDeadlineMax.HasValue) query = query.Where(e => e.PlannedDeadline <= form.PlannedDeadlineMax);
+            if (form.PlannedHours.HasValue) query = query.Where(e => e.PlannedHours == form.PlannedHours);
+            if (form.PlannedHoursMin.HasValue) query = query.Where(e => e.PlannedHours >= form.PlannedHoursMin);
+            if (form.PlannedHoursMax.HasValue) query = query.Where(e => e.PlannedHours <= form.PlannedHoursMax);
+            if (form.ActualHours.HasValue) query = query.Where(e => e.ActualHours == form.ActualHours);
+            if (form.ActualHoursMin.HasValue) query = query.Where(e => e.ActualHours >= form.ActualHoursMin);
+            if (form.ActualHoursMax.HasValue) query = query.Where(e => e.ActualHours <= form.ActualHoursMax);
+            if (form.StartedAt.HasValue) query = query.Where(e => e.StartedAt == form.StartedAt);
+            if (form.EndAt.HasValue) query = query.Where(e => e.EndAt == form.EndAt);
+            if (form.Status.HasValue) query = query.Where(e => e.Status == form.Status);
+            if (form.Priority.HasValue) query = query.Where(e => e.Priority == form.Priority);
+            if (form.ParentProjectId.HasValue) query = query.Where(e => e.ParentRelations.Any(pr => pr.ParentProjectId == form.ParentProjectId));
+            if (form.ClientId.HasValue) query = query.Where(e => e.ClientId == form.ClientId);
             if (!string.IsNullOrWhiteSpace(form.LabelIds))
             {
                 var labelIds = form.LabelIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                                          .Where(x => int.TryParse(x.Trim(), out _))
-                                          .Select(x => int.Parse(x.Trim()))
-                                          .ToList();
-
-                if (labelIds.Any())
-                {
-                    query = query.Where(e => e.ProjectLabels.Any(pl => labelIds.Contains(pl.LabelId)));
-                }
+                                            .Where(x => int.TryParse(x.Trim(), out _))
+                                            .Select(x => int.Parse(x.Trim()))
+                                            .ToList();
+                if (labelIds.Any()) query = query.Where(e => e.ProjectLabels.Any(pl => labelIds.Contains(pl.LabelId)));
             }
 
             query = OrderByHelper.OrderByDynamic(query, form.SortBy, form.SortDesc);
 
+            // --- DÜZELTME 1: Include'ları Kaldırdık ---
+            // Sadece yapısal include'lar kaldı. User/Client yok.
             var projects = await query
                 .Include(p => p.ParentRelations)
-                .Include(p => p.ProjectLabels)
-                    .ThenInclude(pl => pl.Label)
+                .Include(p => p.ProjectLabels).ThenInclude(pl => pl.Label)
                 .ToListAsync();
 
             var projectIds = projects.Select(p => p.Id).ToHashSet();
 
-            // Filter to top-level projects (those not children of any in the set)
+            // Hiyerarşi Filtresi (Acil Durum Yaması ile Birlikte)
             var topLevelProjects = projects.Where(p => !p.ParentRelations.Any(pr => projectIds.Contains(pr.ParentProjectId))).ToList();
+            if (projects.Any() && !topLevelProjects.Any()) topLevelProjects = projects;
 
             var topLevelProjectIds = topLevelProjects.Select(p => p.Id).ToList();
 
-            // Get all related project IDs
             var allRelatedIds = new HashSet<int>(topLevelProjectIds);
             foreach (var id in topLevelProjectIds)
             {
@@ -908,77 +872,79 @@ namespace PMM.Core.Services
                 allRelatedIds.UnionWith(related);
             }
 
-            // Fetch all related projects with includes
+            // --- DÜZELTME 2: Detay Sorgusundan da Include'ları Kaldırdık ---
             var allProjects = await _projectRepository.Query(p => allRelatedIds.Contains(p.Id))
-                .Include(p => p.ParentRelations)
-                    .ThenInclude(pr => pr.ParentProject)
-                .Include(p => p.ChildRelations)
-                    .ThenInclude(cr => cr.ChildProject)
-                .Include(p => p.ProjectLabels)
-                    .ThenInclude(pl => pl.Label)
-                .Include(p => p.Assignments)
-                    .ThenInclude(a => a.User)
-                .Include(p => p.Client)
-                .Include(p => p.CreatedByUser)
-                .Include(p => p.UpdatedByUser)
+                .Include(p => p.ParentRelations).ThenInclude(pr => pr.ParentProject)
+                .Include(p => p.ChildRelations).ThenInclude(cr => cr.ChildProject)
+                .Include(p => p.ProjectLabels).ThenInclude(pl => pl.Label)
+                .Include(p => p.Assignments).ThenInclude(a => a.User)
+                // Client, CreatedBy, UpdatedBy sildik.
                 .ToListAsync();
 
-            // Fetch all tasks for related projects
+            allRelatedIds = allProjects.Select(p => p.Id).ToHashSet();
+
             var allTasks = await _taskRepository.Query(t => allRelatedIds.Contains(t.ProjectId))
                 .Include(t => t.Project)
-                .Include(t => t.TaskLabels)
-                    .ThenInclude(tl => tl.Label)
-                .Include(t => t.TaskAssignments)
-                    .ThenInclude(ta => ta.User)
+                .Include(t => t.TaskLabels).ThenInclude(tl => tl.Label)
+                .Include(t => t.TaskAssignments).ThenInclude(ta => ta.User)
                 .ToListAsync();
 
-            // Now, build hierarchies for each top-level project
             var result = new List<FullProjectHierarchyDto>();
+
             foreach (var proj in topLevelProjects)
             {
-                // Create a dictionary for project objects
                 var projectObjects = new Dictionary<int, object>();
                 var referencedProjects = new HashSet<int>();
 
-                // Function to get project object
-                async Task<object> GetProjectObject(int id)
+                async Task<object?> GetProjectObject(int id)
                 {
+                    var p = allProjects.FirstOrDefault(p => p.Id == id);
+                    if (p == null) return null;
+
                     if (projectObjects.ContainsKey(id))
                     {
-                        var p = allProjects.First(p => p.Id == id);
                         return new IdNameCodeDto { Id = p.Id, Name = p.Title, Code = p.Code };
                     }
                     else
                     {
-                        // Create full DTO
-                        var p = allProjects.First(p => p.Id == id);
                         var dto = ProjectMapper.MapToFullHierarchy(p);
                         projectObjects[id] = dto;
                         referencedProjects.Add(id);
 
-                        // Set client, assigned users, etc.
-                        dto.Client = p.Client != null ? ClientMapper.Map(await _clientRepository.GetByIdAsync(p.ClientId.Value)) : null;
+                        // --- DÜZELTME 3: MANUEL MAPPING (ESKİ KOD GİBİ) ---
+
+                        // 1. Client Manuel Çekiliyor
+                        if (p.ClientId.HasValue)
+                        {
+                            var client = await _clientRepository.GetByIdAsync(p.ClientId.Value);
+                            dto.Client = client != null ? ClientMapper.Map(client) : null;
+                        }
 
                         if (p.Assignments != null && p.Assignments.Any())
                         {
                             dto.AssignedUsers = ProjectAssignmentMapper.MapWithUser(p.Assignments.ToList());
                         }
 
-                        dto.CreatedByUser = p.CreatedByUser != null ? IdNameMapper.Map(p.CreatedByUser.Id, p.CreatedByUser.Name) : null;
+                        // 2. CreatedBy Manuel Çekiliyor
+                        var createdBy = await _userRepository.GetByIdAsync(p.CreatedById);
+                        dto.CreatedByUser = createdBy != null ? IdNameMapper.Map(createdBy.Id, createdBy.Name) : null;
 
-                        if (p.UpdatedByUser != null)
+                        // 3. UpdatedBy Manuel Çekiliyor
+                        if (p.UpdatedById.HasValue)
                         {
-                            dto.UpdatedByUser = IdNameMapper.Map(p.UpdatedByUser.Id, p.UpdatedByUser.Name);
+                            var updatedBy = await _userRepository.GetByIdAsync(p.UpdatedById.Value);
+                            dto.UpdatedByUser = updatedBy != null ? IdNameMapper.Map(updatedBy.Id, updatedBy.Name) : null;
                         }
 
                         return dto;
                     }
                 }
 
-                // Start with the top-level project
-                var rootDto = (FullProjectHierarchyDto)await GetProjectObject(proj.Id);
+                var rootObject = await GetProjectObject(proj.Id);
+                if (rootObject == null) continue;
 
-                // Set parents (always flat)
+                var rootDto = (FullProjectHierarchyDto)rootObject;
+
                 if (proj.ParentRelations != null && proj.ParentRelations.Any())
                 {
                     rootDto.ParentProjects = proj.ParentRelations
@@ -987,7 +953,6 @@ namespace PMM.Core.Services
                         .ToList();
                 }
 
-                // Set children recursively
                 async Task SetChildren(FullProjectHierarchyDto dto, Project project)
                 {
                     if (project.ChildRelations != null && project.ChildRelations.Any())
@@ -995,16 +960,16 @@ namespace PMM.Core.Services
                         dto.ChildProjects = new List<object>();
                         foreach (var cr in project.ChildRelations.Where(cr => allRelatedIds.Contains(cr.ChildProjectId)))
                         {
-                            dto.ChildProjects.Add(await GetProjectObject(cr.ChildProjectId));
+                            var childObj = await GetProjectObject(cr.ChildProjectId);
+                            if (childObj != null) dto.ChildProjects.Add(childObj);
                         }
 
-                        // For full DTOs, set their children
                         foreach (var childObj in dto.ChildProjects)
                         {
                             if (childObj is FullProjectHierarchyDto childDto)
                             {
-                                var childProject = allProjects.First(p => p.Id == childDto.Id);
-                                await SetChildren(childDto, childProject);
+                                var childProject = allProjects.FirstOrDefault(p => p.Id == childDto.Id);
+                                if (childProject != null) await SetChildren(childDto, childProject);
                             }
                         }
                     }
@@ -1012,26 +977,23 @@ namespace PMM.Core.Services
 
                 await SetChildren(rootDto, proj);
 
-                // Set tasks for all full DTOs
                 foreach (var obj in projectObjects.Values)
                 {
                     if (obj is FullProjectHierarchyDto dto)
                     {
-                        var p = allProjects.First(p => p.Id == dto.Id);
+                        var p = allProjects.FirstOrDefault(p => p.Id == dto.Id);
+                        if (p == null) continue;
+
                         var projectTasks = allTasks.Where(t => t.ProjectId == p.Id).ToList();
                         var taskDtos = TaskMapper.Map(projectTasks);
-
-                        // Build task hierarchy
                         var topLevelTasks = taskDtos.Where(t => t.ParentTaskId == null).ToList();
                         foreach (var task in topLevelTasks)
                         {
                             task.SubTasks = taskDtos.Where(t => t.ParentTaskId == task.Id).ToList();
                         }
-
                         dto.Tasks = topLevelTasks;
                     }
                 }
-
                 result.Add(rootDto);
             }
 
