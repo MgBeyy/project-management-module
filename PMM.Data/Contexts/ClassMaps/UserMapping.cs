@@ -14,6 +14,7 @@ namespace PMM.Data.Contexts.ClassMaps
             builder.Property(u => u.Name).IsRequired().HasMaxLength(256);
             builder.Property(u => u.Email).IsRequired().HasMaxLength(256);
             builder.HasIndex(u => u.Email).IsUnique();
+            builder.Property(u => u.IsActive).IsRequired().HasDefaultValue(true);
 
             builder.Property(e => e.IsDeleted).IsRequired().HasDefaultValue(false);
             builder.HasOne(e => e.DeletedByUser).WithMany().HasForeignKey(e => e.DeletedById).OnDelete(DeleteBehavior.Restrict);

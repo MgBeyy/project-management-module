@@ -140,5 +140,15 @@ namespace PMM.Core.Services
                 PageSize = pageSize
             };
         }
+
+        public async Task DeactivateUserAsync(int userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                throw new NotFoundException("Kullanıcı Bulunamadı!");
+            user.IsActive = false;
+            _userRepository.Update(user);
+            await _userRepository.SaveChangesAsync();
+        }
     }
 }

@@ -69,5 +69,16 @@ namespace PMM.API.Controllers
             await _userService.DeleteUserAsync(userId);
             return new ApiResponse("User deleted successfully", StatusCodes.Status200OK);
         }
+
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [HttpPut("{userId:int}/deactivate")]
+        public async Task<ApiResponse> DeactivateUserAsync(int userId)
+        {
+            await _userService.DeactivateUserAsync(userId);
+            return new ApiResponse("User deactivated successfully", StatusCodes.Status200OK);
+        }
     }
 }

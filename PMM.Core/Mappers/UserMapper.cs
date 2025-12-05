@@ -12,6 +12,7 @@ namespace PMM.Core.Mappers
             {
                 Name = form.Name,
                 Email = form.Email.ToLower(),
+                IsActive = true,
             };
         }
         public static UserDto Map(User user)
@@ -21,6 +22,7 @@ namespace PMM.Core.Mappers
                 Id = user.Id,
                 Name = user.Name,
                 Email = user.Email,
+                IsActive = user.IsActive,
             };
         }
         public static List<UserDto> Map(List<User> users)
