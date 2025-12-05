@@ -17,12 +17,51 @@ namespace PMM.Core.Services
     public class UserService : _BaseService, IUserService
     {
         private readonly ILogger<UserService> _logger;
+        private readonly IProjectRepository _projectRepository;
+        private readonly ITaskRepository _taskRepository;
+        private readonly IActivityRepository _activityRepository;
+        private readonly IClientRepository _clientRepository;
+        private readonly IFileRepository _fileRepository;
+        private readonly ILabelRepository _labelRepository;
+        private readonly IReportRepository _reportRepository;
+        private readonly IProjectAssignmentRepository _projectAssignmentRepository;
+        private readonly ITaskAssignmentRepository _taskAssignmentRepository;
+        private readonly IProjectLabelRepository _projectLabelRepository;
+        private readonly ITaskLabelRepository _taskLabelRepository;
+        private readonly ITaskDependencyRepository _taskDependencyRepository;
+        private readonly IProjectRelationRepository _projectRelationRepository;
         public UserService(IUserRepository userRepository,
             ILogger<UserService> logger,
-            IPrincipal principal)
+            IPrincipal principal,
+            IProjectRepository projectRepository,
+            ITaskRepository taskRepository,
+            IActivityRepository activityRepository,
+            IClientRepository clientRepository,
+            IFileRepository fileRepository,
+            ILabelRepository labelRepository,
+            IReportRepository reportRepository,
+            IProjectAssignmentRepository projectAssignmentRepository,
+            ITaskAssignmentRepository taskAssignmentRepository,
+            IProjectLabelRepository projectLabelRepository,
+            ITaskLabelRepository taskLabelRepository,
+            ITaskDependencyRepository taskDependencyRepository,
+            IProjectRelationRepository projectRelationRepository)
             : base(principal, logger, userRepository)
         {
             _logger = logger;
+            _projectRepository = projectRepository;
+            _taskRepository = taskRepository;
+            _activityRepository = activityRepository;
+            _clientRepository = clientRepository;
+            _fileRepository = fileRepository;
+            _labelRepository = labelRepository;
+            _reportRepository = reportRepository;
+            _projectAssignmentRepository = projectAssignmentRepository;
+            _taskAssignmentRepository = taskAssignmentRepository;
+            _projectLabelRepository = projectLabelRepository;
+            _taskLabelRepository = taskLabelRepository;
+            _taskDependencyRepository = taskDependencyRepository;
+            _projectRelationRepository = projectRelationRepository;
         }
 
         public async Task<UserDto> AddUserAsync(CreateUserForm form)
@@ -50,6 +89,43 @@ namespace PMM.Core.Services
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
                 throw new NotFoundException("Kullanıcı Bulunamadı!");
+
+            // Check if user has created, updated, or deleted any entities
+            var entitiesWithDependencies = new List<string>();
+
+            if (await _projectRepository.Query(p => p.CreatedById == userId || p.UpdatedById == userId || p.DeletedById == userId).AnyAsync())
+                entitiesWithDependencies.Add("projeler");
+            if (await _taskRepository.Query(t => t.CreatedById == userId || t.UpdatedById == userId || t.DeletedById == userId).AnyAsync())
+                entitiesWithDependencies.Add("görevler");
+            if (await _activityRepository.Query(a => a.CreatedById == userId || a.UpdatedById == userId || a.DeletedById == userId).AnyAsync())
+                entitiesWithDependencies.Add("aktiviteler");
+            if (await _clientRepository.Query(c => c.CreatedById == userId || c.UpdatedById == userId || c.DeletedById == userId).AnyAsync())
+                entitiesWithDependencies.Add("müşteriler");
+            if (await _fileRepository.Query(f => f.CreatedById == userId || f.UpdatedById == userId || f.DeletedById == userId).AnyAsync())
+                entitiesWithDependencies.Add("dosyalar");
+            if (await _labelRepository.Query(l => l.CreatedById == userId || l.UpdatedById == userId || l.DeletedById == userId).AnyAsync())
+                entitiesWithDependencies.Add("etiketler");
+            if (await _reportRepository.Query(r => r.CreatedById == userId || r.UpdatedById == userId || r.DeletedById == userId).AnyAsync())
+                entitiesWithDependencies.Add("raporlar");
+            if (await _projectAssignmentRepository.Query(pa => pa.CreatedById == userId || pa.UpdatedById == userId || pa.DeletedById == userId).AnyAsync())
+                entitiesWithDependencies.Add("proje atamaları");
+            if (await _taskAssignmentRepository.Query(ta => ta.CreatedById == userId || ta.UpdatedById == userId || ta.DeletedById == userId).AnyAsync())
+                entitiesWithDependencies.Add("görev atamaları");
+            if (await _projectLabelRepository.Query(pl => pl.CreatedById == userId || pl.UpdatedById == userId || pl.DeletedById == userId).AnyAsync())
+                entitiesWithDependencies.Add("proje etiketleri");
+            if (await _taskLabelRepository.Query(tl => tl.CreatedById == userId || tl.UpdatedById == userId || tl.DeletedById == userId).AnyAsync())
+                entitiesWithDependencies.Add("görev etiketleri");
+            if (await _taskDependencyRepository.Query(td => td.CreatedById == userId || td.UpdatedById == userId || td.DeletedById == userId).AnyAsync())
+                entitiesWithDependencies.Add("görev bağımlılıkları");
+            if (await _projectRelationRepository.Query(pr => pr.CreatedById == userId || pr.UpdatedById == userId || pr.DeletedById == userId).AnyAsync())
+                entitiesWithDependencies.Add("proje ilişkileri");
+
+            if (entitiesWithDependencies.Any())
+            {
+                var message = $"Bu kullanıcı tarafından oluşturulan/güncellenen/silinen {string.Join(", ", entitiesWithDependencies)} bulunmaktadır. Kullanıcı silinemez!";
+                throw new BusinessException(message);
+            }
+
             _userRepository.Delete(user);
             await _userRepository.SaveChangesAsync();
         }
@@ -151,7 +227,21 @@ namespace PMM.Core.Services
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
                 throw new NotFoundException("Kullanıcı Bulunamadı!");
+            if (!user.IsActive)
+                throw new BusinessException("Kullanıcı zaten deaktif!");
             user.IsActive = false;
+            _userRepository.Update(user);
+            await _userRepository.SaveChangesAsync();
+        }
+
+        public async Task ActivateUserAsync(int userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                throw new NotFoundException("Kullanıcı Bulunamadı!");
+            if (user.IsActive)
+                throw new BusinessException("Kullanıcı zaten aktif!");
+            user.IsActive = true;
             _userRepository.Update(user);
             await _userRepository.SaveChangesAsync();
         }

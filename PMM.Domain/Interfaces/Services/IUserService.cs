@@ -12,5 +12,6 @@ namespace PMM.Domain.Interfaces.Services
         Task DeleteUserAsync(int userId);
         Task<PagedResult<UserDto>> Query(QueryUserForm form);
         Task DeactivateUserAsync(int userId);
+        Task ActivateUserAsync(int userId);
     }
 }
