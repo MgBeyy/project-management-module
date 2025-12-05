@@ -1,11 +1,16 @@
 import { useState, useEffect } from "react";
 import { Table, Button, Modal, Form, Input, message, Popconfirm, Space, Card, Tabs, Select, Tag } from "antd";
-import { UserAddOutlined, DeleteOutlined, ReloadOutlined, PlusOutlined, StopOutlined } from "@ant-design/icons";
+import { UserAddOutlined, DeleteOutlined, ReloadOutlined, PlusOutlined, StopOutlined, DownloadOutlined } from "@ant-design/icons";
 import { GetUsers, createUser, deleteUser, deactivateUser } from "@/services/user";
 import { GetReports, createReport } from "@/services/reports";
 import { UserDto, CreateUserPayload, Report, CreateReportPayload } from "@/types";
 import { fromMillis } from "@/utils/retype";
 import { showNotification } from "@/utils/notification";
+
+const REPORT_TYPE_LABELS: Record<string, string> = {
+  "ProjectTimeLatency": "Proje Süre Gecikmesi Raporu",
+  "TaskReport": "Görev Raporu",
+};
 
 export default function SupportPage() {
   const [users, setUsers] = useState<UserDto[]>([]);
@@ -76,7 +81,12 @@ export default function SupportPage() {
   const fetchReports = async () => {
     try {
       setReportsLoading(true);
-      const response = await GetReports({});
+      const response = await GetReports({
+        query: {
+          SortBy: 'createdAt',
+          SortDesc: true
+        }
+      });
       setReports(response.data || []);
     } catch (error) {
       message.error("Raporlar yüklenirken bir hata oluştu");
@@ -342,6 +352,7 @@ export default function SupportPage() {
                   title: "Tür",
                   dataIndex: "type",
                   key: "type",
+                  render: (type: string) => REPORT_TYPE_LABELS[type] || type,
                 },
                 {
                   title: "İsim",
@@ -353,6 +364,22 @@ export default function SupportPage() {
                   dataIndex: "createdAt",
                   key: "createdAt",
                   render: (createdAt: string) => fromMillis(createdAt)?.format("DD.MM.YYYY - HH:mm") || "-",
+                },
+                {
+                  title: "Dosya",
+                  key: "file",
+                  render: (_: any, record: Report) => {
+                    if (!record.file) return null;
+                    const baseUrl = import.meta.env.VITE_APP_API_URL || "";
+                    const fileUrl = `${baseUrl}${record.file}`;
+                    return (
+                      <a href={fileUrl} target="_blank" rel="noopener noreferrer">
+                        <Button icon={<DownloadOutlined />} type="link">
+                          İndir
+                        </Button>
+                      </a>
+                    );
+                  },
                 },
               ]}
               dataSource={reports}
@@ -442,9 +469,11 @@ export default function SupportPage() {
             rules={[{ required: true, message: "Lütfen rapor türünü seçiniz" }]}
           >
             <Select placeholder="Rapor türünü seçiniz">
-              <Select.Option value="Proje Raporu">Proje Raporu</Select.Option>
-              <Select.Option value="Kullanıcı Raporu">Kullanıcı Raporu</Select.Option>
-              <Select.Option value="Görev Raporu">Görev Raporu</Select.Option>
+              {Object.entries(REPORT_TYPE_LABELS).map(([value, label]) => (
+                <Select.Option key={value} value={value}>
+                  {label}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
 

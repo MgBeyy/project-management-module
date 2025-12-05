@@ -6,6 +6,7 @@ export interface Report {
   name: string;
   description?: string;
   createdAt: string;
+  file?: string;
 }
 
 export type ReportPagedResult = PagedResult<Report>;

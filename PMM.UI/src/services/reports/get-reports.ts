@@ -5,6 +5,8 @@ interface ReportQuery {
   search?: string;
   page?: number;
   pageSize?: number;
+  SortBy?: string;
+  SortDesc?: boolean;
 }
 
 export async function GetReports({
