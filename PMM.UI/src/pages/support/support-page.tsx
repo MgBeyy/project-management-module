@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Table, Button, Modal, Form, Input, message, Popconfirm, Space, Card, Tabs, Select } from "antd";
-import { UserAddOutlined, DeleteOutlined, ReloadOutlined, PlusOutlined } from "@ant-design/icons";
-import { GetUsers, createUser, deleteUser } from "@/services/user";
+import { Table, Button, Modal, Form, Input, message, Popconfirm, Space, Card, Tabs, Select, Tag } from "antd";
+import { UserAddOutlined, DeleteOutlined, ReloadOutlined, PlusOutlined, StopOutlined } from "@ant-design/icons";
+import { GetUsers, createUser, deleteUser, deactivateUser } from "@/services/user";
 import { GetReports, createReport } from "@/services/reports";
 import { UserDto, CreateUserPayload, Report, CreateReportPayload } from "@/types";
 import { fromMillis } from "@/utils/retype";
+import { showNotification } from "@/utils/notification";
 
 export default function SupportPage() {
   const [users, setUsers] = useState<UserDto[]>([]);
@@ -16,6 +17,14 @@ export default function SupportPage() {
     pageSize: 10,
     total: 0,
   });
+  const [isActiveFilter, setIsActiveFilter] = useState<boolean | null>(true);
+  const [searchText, setSearchText] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Delete confirmation state
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserDto | null>(null);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
 
   const [reports, setReports] = useState<Report[]>([]);
   const [reportsLoading, setReportsLoading] = useState(false);
@@ -23,21 +32,34 @@ export default function SupportPage() {
   const [reportForm] = Form.useForm();
 
   useEffect(() => {
-    fetchUsers();
     fetchReports();
   }, []);
 
-  const fetchUsers = async (searchText?: string) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchText(searchTerm);
+      setPagination(prev => ({ ...prev, current: 1 }));
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [pagination.current, pagination.pageSize, isActiveFilter, searchText]);
+
+  const fetchUsers = async () => {
     try {
       setLoading(true);
       const response = await GetUsers({
         query: {
-          search: searchText || "",
+          search: searchText,
           page: pagination.current,
           pageSize: pagination.pageSize,
+          isActive: isActiveFilter === null ? undefined : isActiveFilter,
         },
       });
-      
+
       setUsers(response.data || []);
       setPagination(prev => ({
         ...prev,
@@ -81,16 +103,46 @@ export default function SupportPage() {
     }
   };
 
-  const handleDeleteUser = async (userId: number) => {
+  const handleDeleteClick = (user: UserDto) => {
+    setUserToDelete(user);
+    setDeleteConfirmationText("");
+    setDeleteModalVisible(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+
+    if (deleteConfirmationText !== userToDelete.name) {
+      message.error("Girilen isim eşleşmiyor!");
+      return;
+    }
+
     try {
       setLoading(true);
-      await deleteUser(userId);
+      await deleteUser(userToDelete.id);
       message.success("Kullanıcı başarıyla silindi");
+      setDeleteModalVisible(false);
       fetchUsers();
     } catch (error: any) {
       const errorMessage = error?.response?.data?.message || "Kullanıcı silinirken bir hata oluştu";
       message.error(errorMessage);
       console.error("Error deleting user:", error);
+    } finally {
+      setLoading(false);
+      setUserToDelete(null);
+    }
+  };
+
+  const handleDeactivateUser = async (userId: number) => {
+    try {
+      setLoading(true);
+      await deactivateUser(userId);
+      showNotification.success("İşlem Başarılı", "Kullanıcı başarıyla pasife alındı");
+      fetchUsers();
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || "Kullanıcı pasife alınırken bir hata oluştu";
+      message.error(errorMessage);
+      console.error("Error deactivating user:", error);
     } finally {
       setLoading(false);
     }
@@ -141,24 +193,40 @@ export default function SupportPage() {
       render: (email: string | null) => email || "-",
     },
     {
+      title: "Durum",
+      dataIndex: "isActive",
+      key: "isActive",
+      render: (isActive: boolean) => (
+        <Tag color={isActive ? "green" : "red"}>
+          {isActive ? "Aktif" : "Pasif"}
+        </Tag>
+      ),
+    },
+    {
       title: "İşlemler",
       key: "actions",
       width: 120,
       render: (_: any, record: UserDto) => (
         <Space size="small">
+          <Button
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
+            size="small"
+            onClick={() => handleDeleteClick(record)}
+          />
           <Popconfirm
-            title="Kullanıcıyı Sil"
-            description="Bu kullanıcıyı silmek istediğinizden emin misiniz?"
-            onConfirm={() => handleDeleteUser(record.id)}
+            title="Kullanıcıyı Pasife Al"
+            description="Bu kullanıcıyı pasife almak istediğinizden emin misiniz?"
+            onConfirm={() => handleDeactivateUser(record.id)}
             okText="Evet"
             cancelText="Hayır"
-            okButtonProps={{ danger: true }}
           >
             <Button
               type="text"
-              danger
-              icon={<DeleteOutlined />}
+              icon={<StopOutlined />}
               size="small"
+              className="text-orange-500 hover:text-orange-600"
             />
           </Popconfirm>
         </Space>
@@ -173,6 +241,33 @@ export default function SupportPage() {
           <Card
             title={
               <div className="flex items-center justify-between">
+                <Space>
+                  <Select
+                    value={isActiveFilter}
+                    onChange={(value) => {
+                      setIsActiveFilter(value);
+                      setPagination(prev => ({ ...prev, current: 1 }));
+                    }}
+                    style={{ width: 150 }}
+                    options={[
+                      { label: "Aktif Kullanıcılar", value: true },
+                      { label: "Pasif Kullanıcılar", value: false },
+                      { label: "Tüm Kullanıcılar", value: null },
+                    ]}
+                  />
+                  <Input.Search
+                    placeholder="İsim veya email ara..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onSearch={(value) => {
+                      setSearchTerm(value);
+                      setSearchText(value);
+                      setPagination(prev => ({ ...prev, current: 1 }));
+                    }}
+                    style={{ width: 250 }}
+                    allowClear
+                  />
+                </Space>
                 <Space>
                   <Button
                     icon={<ReloadOutlined />}
@@ -194,19 +289,19 @@ export default function SupportPage() {
             bordered={false}
             className="flex-1 flex flex-col"
           >
-        <Table
-          columns={columns}
-          dataSource={users}
-          rowKey="id"
-          loading={loading}
-          pagination={{
-            ...pagination,
-            showSizeChanger: true,
-            showTotal: (total) => `Toplam ${total} kullanıcı`,
-          }}
-          onChange={handleTableChange}
-          scroll={{ y: "calc(100vh - 300px)" }}
-        />
+            <Table
+              columns={columns}
+              dataSource={users}
+              rowKey="id"
+              loading={loading}
+              pagination={{
+                ...pagination,
+                showSizeChanger: true,
+                showTotal: (total) => `Toplam ${total} kullanıcı`,
+              }}
+              onChange={handleTableChange}
+              scroll={{ y: "calc(100vh - 300px)" }}
+            />
           </Card>
         </Tabs.TabPane>
         <Tabs.TabPane tab="Rapor Yönetimi" key="2">
@@ -384,6 +479,62 @@ export default function SupportPage() {
             </Space>
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title="Kullanıcıyı Sil"
+        open={deleteModalVisible}
+        onCancel={() => {
+          setDeleteModalVisible(false);
+          setUserToDelete(null);
+          setDeleteConfirmationText("");
+        }}
+        footer={[
+          <Button
+            key="cancel"
+            onClick={() => {
+              setDeleteModalVisible(false);
+              setUserToDelete(null);
+              setDeleteConfirmationText("");
+            }}
+          >
+            İptal
+          </Button>,
+          <Button
+            key="delete"
+            type="primary"
+            danger
+            loading={loading}
+            onClick={confirmDelete}
+            disabled={userToDelete?.name !== deleteConfirmationText}
+          >
+            Sil
+          </Button>,
+        ]}
+      >
+        <div className="flex flex-col gap-4">
+          <div className="bg-red-50 p-4 rounded-md border border-red-100 text-red-600">
+            <p className="font-medium">Dikkat: Bu işlem geri alınamaz!</p>
+            <p className="text-sm mt-1 select-none">
+              <b className="select-none">{userToDelete?.name}</b> isimli kullanıcıyı silmek üzeresiniz.
+            </p>
+          </div>
+          <div>
+            <p className="mb-2 text-gray-600 select-none">
+              Onaylamak için lütfen kullanıcının adını <b className="select-none">{userToDelete?.name}</b> yazınız:
+            </p>
+            <Input
+              value={deleteConfirmationText}
+              onChange={(e) => setDeleteConfirmationText(e.target.value)}
+              placeholder={userToDelete?.name || ""}
+              status={
+                deleteConfirmationText && deleteConfirmationText !== userToDelete?.name
+                  ? "error"
+                  : ""
+              }
+            />
+          </div>
+        </div>
       </Modal>
     </div>
   );

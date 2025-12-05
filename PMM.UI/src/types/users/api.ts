@@ -6,6 +6,7 @@ export interface UserDto {
   id: number;
   name: string | null;
   email: string | null;
+  isActive: boolean;
 }
 
 export type UserPagedResult = PagedResult<UserDto>;
@@ -18,5 +19,5 @@ export interface ClientDto {
   id: number;
   name: string | null;
 }
-export type ClientListDto  = PagedResult<ClientDto>;
+export type ClientListDto = PagedResult<ClientDto>;
 export type UpdateUserPayload = CreateUserPayload;

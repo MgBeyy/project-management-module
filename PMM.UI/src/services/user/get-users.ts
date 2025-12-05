@@ -5,6 +5,7 @@ interface UserQuery {
   search?: string;
   page?: number;
   pageSize?: number;
+  isActive?: boolean;
 }
 
 export async function GetUsers({ query }: { query?: UserQuery }): Promise<UserPagedResult> {
