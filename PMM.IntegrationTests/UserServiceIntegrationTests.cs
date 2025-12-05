@@ -60,10 +60,49 @@ public class UserServiceIntegrationTests
         var logger = new Mock<ILogger<UserRepository>>();
         var userRepository = new UserRepository(_context, logger.Object);
 
+        var projectLogger = new Mock<ILogger<ProjectRepository>>();
+        var projectRepository = new ProjectRepository(_context, projectLogger.Object);
+
+        var taskLogger = new Mock<ILogger<TaskRepository>>();
+        var taskRepository = new TaskRepository(_context, taskLogger.Object);
+
+        var activityLogger = new Mock<ILogger<ActivityRepository>>();
+        var activityRepository = new ActivityRepository(_context, activityLogger.Object);
+
+        var clientLogger = new Mock<ILogger<ClientRepository>>();
+        var clientRepository = new ClientRepository(_context, clientLogger.Object);
+
+        var fileLogger = new Mock<ILogger<FileRepository>>();
+        var fileRepository = new FileRepository(_context, fileLogger.Object);
+
+        var labelLogger = new Mock<ILogger<LabelRepository>>();
+        var labelRepository = new LabelRepository(_context, labelLogger.Object);
+
+        var reportLogger = new Mock<ILogger<ReportRepository>>();
+        var reportRepository = new ReportRepository(_context, reportLogger.Object);
+
+        var projectAssignmentLogger = new Mock<ILogger<ProjectAssignmentRepository>>();
+        var projectAssignmentRepository = new ProjectAssignmentRepository(_context, projectAssignmentLogger.Object);
+
+        var taskAssignmentLogger = new Mock<ILogger<TaskAssignmentRepository>>();
+        var taskAssignmentRepository = new TaskAssignmentRepository(_context, taskAssignmentLogger.Object);
+
+        var projectLabelLogger = new Mock<ILogger<ProjectLabelRepository>>();
+        var projectLabelRepository = new ProjectLabelRepository(_context, projectLabelLogger.Object);
+
+        var taskLabelLogger = new Mock<ILogger<TaskLabelRepository>>();
+        var taskLabelRepository = new TaskLabelRepository(_context, taskLabelLogger.Object);
+
+        var taskDependencyLogger = new Mock<ILogger<TaskDependencyRepository>>();
+        var taskDependencyRepository = new TaskDependencyRepository(_context, taskDependencyLogger.Object);
+
+        var projectRelationLogger = new Mock<ILogger<ProjectRelationRepository>>();
+        var projectRelationRepository = new ProjectRelationRepository(_context, projectRelationLogger.Object);
+
         var serviceLogger = new Mock<ILogger<UserService>>();
         var principal = new Mock<IPrincipal>();
 
-        _userService = new UserService(userRepository, serviceLogger.Object, principal.Object);
+        _userService = new UserService(userRepository, serviceLogger.Object, principal.Object, projectRepository, taskRepository, activityRepository, clientRepository, fileRepository, labelRepository, reportRepository, projectAssignmentRepository, taskAssignmentRepository, projectLabelRepository, taskLabelRepository, taskDependencyRepository, projectRelationRepository);
     }
 
     [TearDown]

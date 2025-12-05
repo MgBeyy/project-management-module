@@ -40,7 +40,7 @@ public class UserQueryTests
         mockRepo.Setup(x => x.Query(It.IsAny<Expression<Func<User, bool>>>()))
             .Returns(context.Set<User>().AsQueryable());
 
-        var userService = new UserService(mockRepo.Object, mockLogger.Object, mockPrincipal.Object);
+        var userService = new UserService(mockRepo.Object, mockLogger.Object, mockPrincipal.Object, new Mock<IProjectRepository>().Object, new Mock<ITaskRepository>().Object, new Mock<IActivityRepository>().Object, new Mock<IClientRepository>().Object, new Mock<IFileRepository>().Object, new Mock<ILabelRepository>().Object, new Mock<IReportRepository>().Object, new Mock<IProjectAssignmentRepository>().Object, new Mock<ITaskAssignmentRepository>().Object, new Mock<IProjectLabelRepository>().Object, new Mock<ITaskLabelRepository>().Object, new Mock<ITaskDependencyRepository>().Object, new Mock<IProjectRelationRepository>().Object);
 
         var queryForm = new QueryUserForm();
 
