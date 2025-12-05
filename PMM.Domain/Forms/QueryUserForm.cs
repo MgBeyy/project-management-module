@@ -9,5 +9,6 @@ namespace PMM.Domain.Forms
         public bool SortDesc { get; set; } = false;
         public string? AssignedProjectIds { get; set; }
         public string? AssignedTaskIds { get; set; }
+        public bool? IsActive { get; set; }
     }
 }

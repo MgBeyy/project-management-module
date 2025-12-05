@@ -94,6 +94,11 @@ namespace PMM.Core.Services
                     e.Email.ToLower().Contains(form.Search.Trim().ToLower()));
             }
 
+            if (form.IsActive.HasValue)
+            {
+                query = query.Where(e => e.IsActive == form.IsActive.Value);
+            }
+
             if (!string.IsNullOrWhiteSpace(form.AssignedProjectIds))
             {
                 var projectIds = form.AssignedProjectIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
