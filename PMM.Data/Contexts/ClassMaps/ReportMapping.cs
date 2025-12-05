@@ -13,6 +13,7 @@ namespace PMM.Data.Contexts.ClassMaps
             builder.ToTable("Reports");
             builder.Property(r => r.Name).IsRequired().HasMaxLength(256);
             builder.Property(r => r.File).IsRequired().HasMaxLength(512);
+            builder.Property(r => r.Type).IsRequired();
         }
     }
 }

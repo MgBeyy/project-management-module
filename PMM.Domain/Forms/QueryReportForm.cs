@@ -1,4 +1,5 @@
 using PMM.Domain.Common;
+using PMM.Domain.Enums;
 
 namespace PMM.Domain.Forms
 {
@@ -10,6 +11,7 @@ namespace PMM.Domain.Forms
 
         public int? Id { get; set; }
         public string? Name { get; set; }
+        public EReportType? Type { get; set; }
         public int? CreatedById { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? CreatedAtMin { get; set; }

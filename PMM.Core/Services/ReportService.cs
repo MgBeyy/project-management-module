@@ -174,7 +174,8 @@ public class ReportService : IReportService
         var report = new Report
         {
             Name = $"Projects Report - {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
-            File = $"/reports/{fileName}"
+            File = $"/reports/{fileName}",
+            Type = EReportType.ProjectTimeLatency
         };
 
         _reportRepository.Create(report);
@@ -198,6 +199,9 @@ public class ReportService : IReportService
 
         if (!string.IsNullOrWhiteSpace(form.Name))
             query = query.Where(e => e.Name.ToLower().Contains(form.Name.Trim().ToLower()));
+
+        if (form.Type.HasValue)
+            query = query.Where(e => e.Type == form.Type.Value);
 
         if (form.CreatedById.HasValue)
             query = query.Where(e => e.CreatedById == form.CreatedById.Value);
@@ -506,7 +510,8 @@ public class ReportService : IReportService
         var report = new Report
         {
             Name = $"Tasks Report - {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
-            File = $"/reports/{fileName}"
+            File = $"/reports/{fileName}",
+            Type = EReportType.TaskReport
         };
 
         _reportRepository.Create(report);

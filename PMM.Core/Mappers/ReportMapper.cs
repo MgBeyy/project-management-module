@@ -12,6 +12,7 @@ namespace PMM.Core.Mappers
                 Id = report.Id,
                 Name = report.Name,
                 File = report.File,
+                Type = report.Type,
                 CreatedById = report.CreatedById,
                 CreatedAt = report.CreatedAt,
                 UpdatedById = report.UpdatedById,

@@ -1,3 +1,5 @@
+using PMM.Domain.Enums;
+
 namespace PMM.Domain.DTOs
 {
     public class ReportDto
@@ -5,6 +7,7 @@ namespace PMM.Domain.DTOs
         public int Id { get; set; }
         public string Name { get; set; }
         public string File { get; set; }
+        public EReportType Type { get; set; }
         public int CreatedById { get; set; }
         public DateTime CreatedAt { get; set; }
         public int? UpdatedById { get; set; }
