@@ -1,15 +1,56 @@
-import { useState, useEffect } from "react";
-import { Table, Button, Modal, Form, Input, message, Popconfirm, Space, Card, Tabs, Select, Tag } from "antd";
+import { useState, useEffect, useCallback } from "react";
+import { Table, Button, Modal, Form, Input, message, Popconfirm, Space, Card, Tabs, Select, Tag, DatePicker, InputNumber } from "antd";
 import { UserAddOutlined, DeleteOutlined, ReloadOutlined, PlusOutlined, StopOutlined, DownloadOutlined } from "@ant-design/icons";
 import { GetUsers, createUser, deleteUser, deactivateUser } from "@/services/user";
 import { GetReports, createReport } from "@/services/reports";
-import { UserDto, CreateUserPayload, Report, CreateReportPayload } from "@/types";
-import { fromMillis } from "@/utils/retype";
+import { UserDto, CreateUserPayload, Report, CreateReportPayload, ProjectDto } from "@/types";
+import { fromMillis, toMillis } from "@/utils/retype";
 import { showNotification } from "@/utils/notification";
+import { ProjectPriority, ProjectStatus } from "@/services/projects/get-projects";
+import { TaskStatus } from "@/types/tasks/ui";
+import MultiSelectSearch from "@/components/common/multi-select-search";
+import getMultiSelectSearch from "@/services/projects/get-multi-select-search";
+import type { SelectProps } from "antd";
 
 const REPORT_TYPE_LABELS: Record<string, string> = {
   "ProjectTimeLatency": "Proje Süre Gecikmesi Raporu",
   "TaskReport": "Görev Raporu",
+};
+
+type BaseSelectOption = NonNullable<SelectProps["options"]>[number];
+
+interface SelectOption extends BaseSelectOption {
+  value: number;
+  label: string;
+  key: string;
+  raw?: any;
+}
+
+const extractArrayFromResponse = (payload: any): any[] => {
+  if (!payload) {
+    return [];
+  }
+  const candidates = [
+    payload?.data
+  ];
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) {
+      return candidate;
+    }
+  }
+
+  return [];
+};
+
+export const normalizeProjectOption = (project: ProjectDto): SelectOption | null => {
+  if (!project) return null;
+  return {
+    value: project.id,
+    label: [project.code, project.title].filter(Boolean).join(" - ").trim(),
+    key: String(project.id),
+    raw: project,
+  };
 };
 
 export default function SupportPage() {
@@ -35,6 +76,108 @@ export default function SupportPage() {
   const [reportsLoading, setReportsLoading] = useState(false);
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
   const [reportForm] = Form.useForm();
+  const [selectedReportType, setSelectedReportType] = useState<string | null>(null);
+
+  // Project Search Logic
+  const [projectOptions, setProjectOptions] = useState<SelectOption[]>([]);
+  const [defaultProjectOptions, setDefaultProjectOptions] = useState<SelectOption[]>([]);
+  const [projectLoading, setProjectLoading] = useState(false);
+  const MIN_SEARCH_LENGTH = 2;
+
+  const fetchProjects = useCallback(
+    async (
+      searchTerm: string,
+      options: { updateDefaults?: boolean; errorMessage?: string } = {}
+    ) => {
+      const { updateDefaults = false, errorMessage = "Proje arama hatası:" } = options;
+
+      setProjectLoading(true);
+      try {
+        const projectsRaw = await getMultiSelectSearch(searchTerm, "/Project");
+        const projectList = extractArrayFromResponse(projectsRaw)
+          .map(normalizeProjectOption)
+          .filter((option): option is SelectOption => Boolean(option));
+
+        setProjectOptions(projectList);
+
+        if (updateDefaults) {
+          setDefaultProjectOptions(projectList);
+        }
+      } catch (error) {
+        console.error(errorMessage, error);
+      } finally {
+        setProjectLoading(false);
+      }
+    },
+    []
+  );
+
+  const loadInitialProjectData = useCallback(async () => {
+    await fetchProjects("", {
+      updateDefaults: true,
+      errorMessage: "Proje seçenekleri yüklenirken hata:",
+    });
+  }, [fetchProjects]);
+
+  useEffect(() => {
+    loadInitialProjectData();
+  }, [loadInitialProjectData]);
+
+  const handleProjectSearch = useCallback(
+    async (searchText: string) => {
+      const trimmed = searchText.trim();
+
+      if (trimmed === "") {
+        await fetchProjects("", { updateDefaults: true });
+        return;
+      }
+
+      if (trimmed.length > 0 && trimmed.length < MIN_SEARCH_LENGTH) {
+        setProjectOptions(defaultProjectOptions);
+        return;
+      }
+
+      await fetchProjects(trimmed);
+    },
+    [defaultProjectOptions, fetchProjects]
+  );
+
+  const handleProjectChange = useCallback(
+    async (value: number | undefined) => {
+      if (value === undefined) {
+        await fetchProjects("", { updateDefaults: true });
+      }
+    },
+    [fetchProjects]
+  );
+
+  const ensureProjectOptions = useCallback(
+    (open: boolean) => {
+      if (open && projectOptions.length === 0 && defaultProjectOptions.length > 0) {
+        setProjectOptions(defaultProjectOptions);
+      }
+    },
+    [defaultProjectOptions, projectOptions.length]
+  );
+
+  const projectStatusOptions = [
+    { value: ProjectStatus.ACTIVE, label: "Aktif" },
+    { value: ProjectStatus.INACTIVE, label: "Pasif" },
+    { value: ProjectStatus.COMPLETED, label: "Tamamlandı" },
+    { value: ProjectStatus.PLANNED, label: "Planlandı" },
+  ];
+  const projectPriorityOptions = [
+    { value: ProjectPriority.YUKSEK, label: "Yüksek" },
+    { value: ProjectPriority.ORTA, label: "Orta" },
+    { value: ProjectPriority.DUSUK, label: "Düşük" },
+  ];
+
+  const taskStatusOptions = [
+    { value: TaskStatus.TODO, label: "Yapılacak" },
+    { value: TaskStatus.IN_PROGRESS, label: "Devam Ediyor" },
+    { value: TaskStatus.INACTIVE, label: "Pasif" },
+    { value: TaskStatus.DONE, label: "Tamamlandı" },
+  ];
 
   useEffect(() => {
     fetchReports();
@@ -158,13 +301,61 @@ export default function SupportPage() {
     }
   };
 
-  const handleCreateReport = async (values: CreateReportPayload) => {
+  const handleCreateReport = async (values: any) => {
     try {
       setReportsLoading(true);
-      await createReport(values);
+
+      let filters: Record<string, any> = {};
+
+      if (values.type === "ProjectTimeLatency") {
+        filters = {
+          Code: values.code || undefined,
+          Title: values.title || undefined,
+          PlannedStartDate: toMillis(values.plannedStartDate) ?? undefined,
+          PlannedDeadLine: toMillis(values.plannedDeadline) ?? undefined,
+          StartedAt: values.startedAt ? toMillis(values.startedAt) : undefined,
+          EndAt: values.endAt ? toMillis(values.endAt) : undefined,
+          PlannedHours: values.plannedHours || undefined,
+          Status: values.status || undefined,
+          Priority: values.priority || undefined,
+          LabelIds: values.labelIds && values.labelIds.length > 0
+            ? values.labelIds.map((id: string) => parseInt(id, 10))
+            : undefined,
+        };
+      } else if (values.type === "TaskReport") {
+        filters = {
+          Code: values.code || undefined,
+          Title: values.title || undefined,
+          Description: values.description || undefined,
+          ProjectId: values.projectId || undefined,
+          Status: values.status || undefined,
+          PlannedHoursMin: values.plannedHoursMin || undefined,
+          PlannedHoursMax: values.plannedHoursMax || undefined,
+          CreatedAtMin: values.createdAtMin ? values.createdAtMin.valueOf() : undefined,
+          CreatedAtMax: values.createdAtMax ? values.createdAtMax.valueOf() : undefined,
+          LabelIds: values.labelIds && values.labelIds.length > 0
+            ? values.labelIds.map((id: string) => parseInt(id, 10))
+            : undefined,
+        };
+      }
+
+      const cleanedFilters = Object.fromEntries(
+        Object.entries(filters).filter(
+          ([_, value]) => value !== undefined && value !== null && value !== ""
+        )
+      );
+
+      const payload: CreateReportPayload = {
+        type: values.type,
+        name: values.name,
+        filters: cleanedFilters,
+      };
+
+      await createReport(payload);
       message.success("Rapor başarıyla oluşturuldu");
       setIsReportModalVisible(false);
       reportForm.resetFields();
+      setSelectedReportType(null);
       fetchReports();
     } catch (error: any) {
       const errorMessage = error?.response?.data?.message || "Rapor oluşturulurken bir hata oluştu";
@@ -468,7 +659,10 @@ export default function SupportPage() {
             name="type"
             rules={[{ required: true, message: "Lütfen rapor türünü seçiniz" }]}
           >
-            <Select placeholder="Rapor türünü seçiniz">
+            <Select
+              placeholder="Rapor türünü seçiniz"
+              onChange={(value) => setSelectedReportType(value)}
+            >
               {Object.entries(REPORT_TYPE_LABELS).map(([value, label]) => (
                 <Select.Option key={value} value={value}>
                   {label}
@@ -485,12 +679,116 @@ export default function SupportPage() {
             <Input placeholder="Rapor adını giriniz" />
           </Form.Item>
 
-          <Form.Item
-            label="Açıklama"
-            name="description"
-          >
-            <Input.TextArea placeholder="Rapor açıklaması" />
-          </Form.Item>
+          {/* Project Time Latency Filters */}
+          {selectedReportType === "ProjectTimeLatency" && (
+            <div className="border-t pt-4 mt-4">
+              <h3 className="mb-4 font-semibold text-gray-700">Filtreler</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <Form.Item label="Kod" name="code">
+                  <Input placeholder="Kod" />
+                </Form.Item>
+                <Form.Item label="Başlık" name="title">
+                  <Input placeholder="Başlık" />
+                </Form.Item>
+                <Form.Item label="Etiketler" name="labelIds">
+                  <MultiSelectSearch
+                    placeholder="Etiket ara..."
+                    apiUrl="/Label"
+                  />
+                </Form.Item>
+                <Form.Item label="Durum" name="status">
+                  <Select
+                    placeholder="Durum seçin"
+                    allowClear
+                    options={projectStatusOptions}
+                  />
+                </Form.Item>
+                <Form.Item label="Öncelik" name="priority">
+                  <Select
+                    placeholder="Öncelik seçin"
+                    allowClear
+                    options={projectPriorityOptions}
+                  />
+                </Form.Item>
+                <Form.Item label="Planlanan Başlangıç" name="plannedStartDate">
+                  <DatePicker style={{ width: "100%" }} format="DD-MM-YYYY" />
+                </Form.Item>
+                <Form.Item label="Planlanan Bitiş" name="plannedDeadline">
+                  <DatePicker style={{ width: "100%" }} format="DD-MM-YYYY" />
+                </Form.Item>
+                <Form.Item label="Gerçekleşen Başlangıç" name="startedAt">
+                  <DatePicker style={{ width: "100%" }} format="DD-MM-YYYY" />
+                </Form.Item>
+                <Form.Item label="Gerçekleşen Bitiş" name="endAt">
+                  <DatePicker style={{ width: "100%" }} format="DD-MM-YYYY" />
+                </Form.Item>
+                <Form.Item label="Planlanan Saat" name="plannedHours">
+                  <InputNumber style={{ width: "100%" }} />
+                </Form.Item>
+              </div>
+            </div>
+          )}
+
+          {/* Task Report Filters */}
+          {selectedReportType === "TaskReport" && (
+            <div className="border-t pt-4 mt-4">
+              <h3 className="mb-4 font-semibold text-gray-700">Filtreler</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <Form.Item label="Kod" name="code">
+                  <Input placeholder="Kod" />
+                </Form.Item>
+                <Form.Item label="Başlık" name="title">
+                  <Input placeholder="Başlık" />
+                </Form.Item>
+                <Form.Item label="Açıklama" name="description">
+                  <Input placeholder="Açıklama" />
+                </Form.Item>
+                <Form.Item label="Etiketler" name="labelIds">
+                  <MultiSelectSearch
+                    placeholder="Etiket ara..."
+                    apiUrl="/Label"
+                  />
+                </Form.Item>
+                <Form.Item label="Durum" name="status">
+                  <Select
+                    placeholder="Durum seçin"
+                    allowClear
+                    options={taskStatusOptions}
+                  />
+                </Form.Item>
+
+                <Form.Item label="Proje" name="projectId">
+                  <Select
+                    showSearch
+                    placeholder="Proje seçin..."
+                    options={projectOptions}
+                    onSearch={handleProjectSearch}
+                    onChange={handleProjectChange}
+                    onDropdownVisibleChange={ensureProjectOptions}
+                    filterOption={false}
+                    allowClear
+                    loading={projectLoading}
+                  />
+                </Form.Item>
+
+                <Form.Item label="Plan. Saat (Min)" name="plannedHoursMin">
+                  <InputNumber style={{ width: "100%" }} min={0} />
+                </Form.Item>
+                <Form.Item label="Plan. Saat (Max)" name="plannedHoursMax">
+                  <InputNumber style={{ width: "100%" }} min={0} />
+                </Form.Item>
+
+                <Form.Item label="Oluşturulma (Min)" name="createdAtMin">
+                  <DatePicker showTime style={{ width: "100%" }} format="DD-MM-YYYY HH:mm" />
+                </Form.Item>
+                <Form.Item label="Oluşturulma (Max)" name="createdAtMax">
+                  <DatePicker showTime style={{ width: "100%" }} format="DD-MM-YYYY HH:mm" />
+                </Form.Item>
+              </div>
+            </div>
+          )}
+
+
 
           <Form.Item className="mb-0 flex justify-end">
             <Space>
