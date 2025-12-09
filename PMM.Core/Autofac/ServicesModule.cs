@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using PMM.Core.Helpers;
+using PMM.Core.Services.ReportHandlers;
 
 namespace PMM.Core.Autofac
 {
@@ -13,6 +14,10 @@ namespace PMM.Core.Autofac
             .PropertiesAutowired();
 
             builder.RegisterType<NpoiExcelHelper>().AsSelf().InstancePerDependency();
+
+            // Register report handlers
+            builder.RegisterType<ProjectTimeLatencyReportHandler>().As<IReportHandler>();
+            builder.RegisterType<TaskReportHandler>().As<IReportHandler>();
         }
     }
 }

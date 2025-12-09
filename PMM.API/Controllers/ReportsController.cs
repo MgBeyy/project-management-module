@@ -2,6 +2,7 @@ using AutoWrapper.Wrappers;
 using Microsoft.AspNetCore.Mvc;
 using PMM.Domain.Forms;
 using PMM.Domain.Interfaces.Services;
+using PMM.Domain.Enums;
 
 namespace PMM.API.Controllers;
 
@@ -16,10 +17,10 @@ public class ReportsController : _BaseController
         _env = env;
     }
 
-    [HttpGet("project-time-latency")]
-    public async Task<ApiResponse> ExportProjectTimeLatency([FromQuery] QueryProjectForm filters)
+    [HttpPost("generate")]
+    public async Task<ApiResponse> GenerateReport([FromBody] GenerateReportForm form)
     {
-        var report = await _reportService.ExportSaveProjectTimeLatencyReport(filters, _env.WebRootPath);
+        var report = await _reportService.GenerateReport(form, _env.WebRootPath);
         return new ApiResponse(report, StatusCodes.Status200OK);
     }
 
@@ -31,17 +32,17 @@ public class ReportsController : _BaseController
         return new ApiResponse(reports, StatusCodes.Status200OK);
     }
 
+    [HttpPost("task-report")]
+    public async Task<ApiResponse> ExportTaskReport([FromBody] QueryTaskForm filters)
+    {
+        var report = await _reportService.ExportSaveTaskReport(filters, _env.WebRootPath);
+        return new ApiResponse(report, StatusCodes.Status200OK);
+    }
+
     [HttpGet("project-time-latency-direct")]
     public async Task<IActionResult> ExportProjectTimeLatencyDirect([FromQuery] QueryProjectForm filters)
     {
         var fileContents = await _reportService.ExportProjectTimeLatencyReport(filters);
         return File(fileContents, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "ProjeZamanGecikmeRaporu.xlsx");
-    }
-
-    [HttpGet("task-report")]
-    public async Task<ApiResponse> ExportTaskReport([FromQuery] QueryTaskForm filters)
-    {
-        var report = await _reportService.ExportSaveTaskReport(filters, _env.WebRootPath);
-        return new ApiResponse(report, StatusCodes.Status200OK);
     }
 }
