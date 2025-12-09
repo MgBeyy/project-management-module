@@ -10,6 +10,7 @@ using PMM.Domain.Forms;
 using PMM.Domain.Interfaces.Repositories;
 using PMM.Domain.Interfaces.Services;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace PMM.Core.Services.ReportHandlers
 {
@@ -18,6 +19,12 @@ namespace PMM.Core.Services.ReportHandlers
         private readonly IProjectService _projectService;
         private readonly NpoiExcelHelper _excelHelper;
         private readonly IReportRepository _reportRepository;
+
+        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            Converters = { new JsonStringEnumConverter() }
+        };
 
         public ProjectTimeLatencyReportHandler(IProjectService projectService, NpoiExcelHelper excelHelper, IReportRepository reportRepository)
         {
@@ -30,7 +37,7 @@ namespace PMM.Core.Services.ReportHandlers
 
         public async Task<ReportDto> HandleAsync(JsonElement filters, string? name, string webRootPath)
         {
-            var queryFilters = filters.Deserialize<QueryProjectForm>() ?? new QueryProjectForm();
+            var queryFilters = filters.Deserialize<QueryProjectForm>(_jsonOptions) ?? new QueryProjectForm();
             queryFilters.PageSize = 10000;
             queryFilters.Page = 1;
 
