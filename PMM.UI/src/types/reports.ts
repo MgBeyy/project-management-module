@@ -14,5 +14,5 @@ export type ReportPagedResult = PagedResult<Report>;
 export interface CreateReportPayload {
   type: string;
   name: string;
-  description?: string;
+  filters?: Record<string, any>;
 }
