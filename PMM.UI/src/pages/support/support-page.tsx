@@ -15,6 +15,7 @@ import type { SelectProps } from "antd";
 const REPORT_TYPE_LABELS: Record<string, string> = {
   "ProjectTimeLatency": "Proje Süre Gecikmesi Raporu",
   "TaskReport": "Görev Raporu",
+  "EffortAndCapacityReport": "Efor ve Kapasite Raporu",
 };
 
 type BaseSelectOption = NonNullable<SelectProps["options"]>[number];
@@ -322,7 +323,7 @@ export default function SupportPage() {
             ? values.labelIds.map((id: string) => parseInt(id, 10))
             : undefined,
         };
-      } else if (values.type === "TaskReport") {
+      } else if (values.type === "TaskReport" || values.type === "EffortAndCapacityReport") {
         filters = {
           Code: values.code || undefined,
           Title: values.title || undefined,
@@ -729,8 +730,8 @@ export default function SupportPage() {
             </div>
           )}
 
-          {/* Task Report Filters */}
-          {selectedReportType === "TaskReport" && (
+          {/* Task Report & Effort Capacity Filters */}
+          {(selectedReportType === "TaskReport" || selectedReportType === "EffortAndCapacityReport") && (
             <div className="border-t pt-4 mt-4">
               <h3 className="mb-4 font-semibold text-gray-700">Filtreler</h3>
               <div className="grid grid-cols-2 gap-4">
