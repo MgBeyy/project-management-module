@@ -19,6 +19,12 @@ public class NpoiExcelHelper
         public string ColorHex { get; set; } = "";
     }
 
+    public class HyperlinkCell
+    {
+        public string Text { get; set; } = "";
+        public string Url { get; set; } = "";
+    }
+
     public byte[] GenerateExcel(List<string> headers, List<List<object>> dataRows, string sheetName = "Data")
     {
         var workbook = new XSSFWorkbook();
@@ -114,6 +120,25 @@ public class NpoiExcelHelper
                 {
                     cell.SetCellValue(dateVal);
                     cell.CellStyle = dataStyle;
+                }
+                else if (value is HyperlinkCell hlc)
+                {
+                    cell.SetCellValue(hlc.Text);
+                    cell.CellStyle = dataStyle;
+
+                    // Create hyperlink
+                    var hyperlink = workbook.GetCreationHelper().CreateHyperlink(HyperlinkType.Url);
+                    hyperlink.Address = hlc.Url;
+                    cell.Hyperlink = hyperlink;
+
+                    // Optional: Style the cell to look like a link (blue, underlined)
+                    var linkStyle = workbook.CreateCellStyle();
+                    var linkFont = workbook.CreateFont();
+                    linkFont.Color = IndexedColors.Blue.Index;
+                    linkFont.IsBold = false;
+                    linkFont.Underline = FontUnderlineType.Single;
+                    linkStyle.SetFont(linkFont);
+                    cell.CellStyle = linkStyle;
                 }
                 else
                 {

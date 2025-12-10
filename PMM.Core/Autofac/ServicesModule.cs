@@ -18,6 +18,7 @@ namespace PMM.Core.Autofac
             // Register report handlers
             builder.RegisterType<ProjectTimeLatencyReportHandler>().As<IReportHandler>();
             builder.RegisterType<TaskReportHandler>().As<IReportHandler>();
+            builder.RegisterType<EffortAndCapacityReportHandler>().As<IReportHandler>();
         }
     }
 }
