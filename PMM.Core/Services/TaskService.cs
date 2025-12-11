@@ -56,6 +56,11 @@ namespace PMM.Core.Services
             if (!validation.IsValid)
                 throw new BusinessException(validation.ErrorMessage);
 
+            form.Code = form.Code?.Trim();
+            form.Title = form.Title?.Trim();
+            NameValidator.ValidateCode(form.Code);
+            NameValidator.ValidateTitle(form.Title);
+
             var existingTask = await _taskRepository.GetByCodeAsync(form.Code);
             if (existingTask is not null)
                 throw new BusinessException("Bu kod ile kayıtlı bir görev bulunmaktadır.");
@@ -144,6 +149,9 @@ namespace PMM.Core.Services
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
                 throw new BusinessException(validation.ErrorMessage);
+
+            form.Title = form.Title?.Trim();
+            NameValidator.ValidateTitle(form.Title);
 
             var task = await _taskRepository.GetByIdAsync(taskId);
             if (task == null)

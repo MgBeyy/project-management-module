@@ -61,6 +61,11 @@ namespace PMM.Core.Services
             if (!validation.IsValid)
                 throw new BusinessException(validation.ErrorMessage);
 
+            form.Code = form.Code?.Trim();
+            form.Title = form.Title?.Trim();
+            NameValidator.ValidateCode(form.Code);
+            NameValidator.ValidateTitle(form.Title);
+
             var existing = await _projectRepository.GetByCodeAsync(form.Code);
             if (existing is not null)
                 throw new BusinessException("Bu kod ile kayıtlı bir proje bulunmaktadır.");
@@ -212,6 +217,9 @@ namespace PMM.Core.Services
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
                 throw new BusinessException(validation.ErrorMessage);
+
+            form.Title = form.Title?.Trim();
+            NameValidator.ValidateTitle(form.Title);
 
             var project = await _projectRepository.GetByIdAsync(projectId) ?? throw new NotFoundException("Proje Bulunamadı!");
 
@@ -806,7 +814,6 @@ namespace PMM.Core.Services
                     {
                         task.SubTasks = taskDtos.Where(t => t.ParentTaskId == task.Id).ToList();
                     }
-
                     dto.Tasks = topLevelTasks;
                 }
             }
