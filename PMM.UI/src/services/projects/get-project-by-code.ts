@@ -28,6 +28,7 @@ function normalize(item: any): DetailedProjectDto {
     tasks: item?.tasks ?? [],
     createdByUser: item?.createdByUser ?? null,
     updatedByUser: item?.updatedByUser ?? null,
+    burnUpChart: item?.burnUpChart ?? [],
   };
 }
 
@@ -43,6 +44,6 @@ export async function getProjectById(id: string): Promise<DetailedProjectDto> {
       throw new Error("Proje bulunamadı");
     }
   } catch (e) {
-      throw e;
+    throw e;
   }
 }

@@ -10,6 +10,7 @@ import ProjectOrganizationDiagram from '@/components/projects/project-details/pr
 import { getProjectHierarchy } from '@/services/projects/get-project-hierarchy';
 import ProjectTeamCard from '@/components/projects/project-details/project-team';
 import { ProjectTaskGantt } from '@/components/projects/project-details/gant-chart/gant-chart';
+import { BurnUpChart } from '@/components/projects/project-details/charts/burn-up-chart';
 
 export default function ProjectDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -110,6 +111,10 @@ export default function ProjectDetailsPage() {
                     defaultCollapsed={true}
                   />
                 )}
+
+                {/* BurnUp Grafiği */}
+                {/* BurnUp Grafiği */}
+                <BurnUpChart data={projectData.burnUpChart || []} />
 
                 {(!projectData.tasks || projectData.tasks.length === 0) &&
                   (!projectData.childProjects || projectData.childProjects.length === 0) && (

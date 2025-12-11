@@ -130,6 +130,14 @@ export interface DetailedProjectDto {
   updatedAt: Nullable<number>;
   updatedById: Nullable<number>;
   updatedByUser: IdNameDto | null;
+  burnUpChart: Nullable<BurnUpChartItem[]>;
+}
+
+export interface BurnUpChartItem {
+  date: number;
+  totalScope: number;
+  completedWork: number;
+  idealTrend: number;
 }
 
 export type ProjectHierarchyDto = {
