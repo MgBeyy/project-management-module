@@ -203,7 +203,7 @@ export const TasksStatusCard: React.FC<TasksStatusCardProps> = ({
   }, [filtered]);
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-300 ${className}`}>
+    <div className={`bg-white rounded-xl shadow-sm border border-slate-200 ${className}`}>
       <div className="p-6 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
           <ProjectOutlined className="text-purple-600" />

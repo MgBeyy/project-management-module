@@ -80,9 +80,6 @@ export default function ProjectDetailsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Sol kolon: Proje Ağacı ve Görevler */}
               <div className="lg:col-span-2 space-y-6">
-                {/* BurnUp Grafiği */}
-                <BurnUpChart data={projectData.burnUpChart || []} />
-
                 {/* Proje Hiyerarşi Ağacı */}
                 <ProjectHierarchyTree
                   projectHierarchy={projectHierarchy as ProjectHierarchyDto}
@@ -95,6 +92,9 @@ export default function ProjectDetailsPage() {
                   className="mb-6"
                   defaultCollapsed={true}
                 />
+
+                {/* BurnUp Grafiği */}
+                <BurnUpChart data={projectData.burnUpChart || []} />
               </div>
 
               {/* Sağ kolon: Proje Detayları */}

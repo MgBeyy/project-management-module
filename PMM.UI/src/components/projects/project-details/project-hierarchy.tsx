@@ -240,14 +240,14 @@ export const ProjectHierarchyTree = ({
 
   if (!treeData.length) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-300 p-6 text-center text-gray-500">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 text-center text-gray-500">
         <p>Gösterilecek proje hiyerarşisi bulunmamaktadır.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-300 p-6">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Proje Ağacı</h2>
       <div className="max-h-96 overflow-y-auto">
         <Tree treeData={treeData} defaultExpandAll showIcon={false} blockNode />
