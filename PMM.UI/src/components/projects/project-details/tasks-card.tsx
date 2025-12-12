@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Tag, Progress, Input, Tooltip } from "antd";
-import { ProjectOutlined, UserOutlined, TagsOutlined, SearchOutlined } from "@ant-design/icons";
+import { TagsOutlined, SearchOutlined, RightOutlined, DownOutlined } from "@ant-design/icons";
 import { TaskDto } from "@/types";
 
 const statusColor = (status?: string) => {
@@ -84,64 +84,80 @@ const TaskRow: React.FC<{
   const hasChildren = (task.subTasks?.length ?? 0) > 0;
 
   return (
-    <div className="bg-white border border-gray-300 rounded-lg p-3 mb-2">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
+    <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 transition-all hover:bg-white hover:shadow-sm hover:border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        {/* Left Side: Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start gap-3">
+            {/* Toggle Button */}
             {hasChildren && (
               <button
                 onClick={onToggle}
-                className="text-sm px-2 py-1 rounded border hover:bg-gray-50 cursor-pointer"
+                className="mt-0.5 flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-colors"
                 aria-label={collapsed ? "Genişlet" : "Daralt"}
               >
-                {collapsed ? "➕" : "➖"}
+                {collapsed ? <RightOutlined style={{ fontSize: '10px' }} /> : <DownOutlined style={{ fontSize: '10px' }} />}
               </button>
             )}
-            <h4 className="font-medium text-gray-900">
-              <span className="text-gray-500 mr-1">{highlight(task.code, query)}</span>
-              {highlight(task?.title, query)}
-            </h4>
-          </div>
 
-          {task.description && <p className="text-sm text-gray-600 mt-1 line-clamp-2">{highlight(task.description, query)}</p>}
-
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-            {task.status && <Tag color={statusColor(task.status)}>{statusLabelTR(task.status)}</Tag>}
-
-            {(task.labels ?? []).map((l) => (
-              <Tooltip key={l.id} title={l.description || l.name} placement="top">
-                <Tag icon={<TagsOutlined />} color={l.color || "default"}>
-                  {l.name}
-                </Tag>
-              </Tooltip>
-            ))}
-
-            {(task.assignedUsers ?? []).length > 0 && (
-              <div className="flex items-center gap-1 text-xs text-gray-600">
-                <UserOutlined />
-                {(task.assignedUsers ?? [])
-                  .map((u) => u.name)
-                  .filter(Boolean)
-                  .join(", ")}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">{highlight(task.code, query)}</span>
+                <h4 className="font-semibold text-slate-800 truncate" title={task.title || ''}>
+                  {highlight(task?.title, query)}
+                </h4>
+                {task.status && (
+                  <Tag className="ml-2 mr-0 border-0" color={statusColor(task.status)}>
+                    {statusLabelTR(task.status)}
+                  </Tag>
+                )}
               </div>
-            )}
+
+              {task.description && (
+                <p className="text-sm text-slate-500 line-clamp-1 mb-2">
+                  {highlight(task.description, query)}
+                </p>
+              )}
+
+              <div className="flex flex-wrap items-center gap-2">
+                {(task.assignedUsers ?? []).length > 0 && (
+                  <div className="flex -space-x-2">
+                    {(task.assignedUsers ?? []).map((u, i) => (
+                      <Tooltip key={u.id || i} title={u.name}>
+                        <div className="w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] text-slate-600 font-medium shadow-sm z-10">
+                          {u.name?.charAt(0).toUpperCase()}
+                        </div>
+                      </Tooltip>
+                    ))}
+                  </div>
+                )}
+
+                {(task.labels ?? []).map((l) => (
+                  <Tag key={l.id} className="mr-0 text-[10px] px-1.5 border-0 bg-white" icon={<TagsOutlined className="text-[10px]" />} color={l.color || "default"}>
+                    {l.name}
+                  </Tag>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="w-48">
-          <div className="flex items-center justify-between text-xs mb-1">
-            <span className="text-gray-600">İlerleme</span>
-            <span className="font-medium text-gray-900">{pct}%</span>
+        {/* Right Side: Progress */}
+        <div className="w-full sm:w-48 flex-shrink-0 pt-3 sm:pt-0 sm:border-l sm:border-slate-100 sm:pl-4">
+          <div className="flex items-center justify-between text-xs mb-1.5">
+            <span className="text-slate-500 font-medium">İlerleme</span>
+            <span className="font-bold text-slate-700">{pct}%</span>
           </div>
-          <Progress percent={pct} size="small" />
-          <div className="text-[11px] text-gray-500 mt-1">
-            Planlanan: {task.plannedHours ?? 0}h · Gerçekleşen: {task.actualHours ?? 0}h
+          <Progress percent={pct} size="small" showInfo={false} strokeColor={pct === 100 ? "#10b981" : "#3b82f6"} trailColor="#e2e8f0" />
+          <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2">
+            <span>P: <strong className="text-slate-600">{task.plannedHours ?? 0}h</strong></span>
+            <span>G: <strong className={task.actualHours && task.plannedHours && task.actualHours > task.plannedHours ? "text-red-500" : "text-slate-600"}>{task.actualHours ?? 0}h</strong></span>
           </div>
         </div>
       </div>
 
       {hasChildren && !collapsed && (
-        <div className="mt-3 pl-4 md:pl-6 border-l">
+        <div className="mt-4 pt-4 border-t border-slate-200/60 pl-4 md:pl-8 space-y-2">
           {(task.subTasks ?? []).map((st) => (
             <CollapsibleTask key={st.id} task={st} depth={depth + 1} query={query} />
           ))}
@@ -205,8 +221,7 @@ export const TasksStatusCard: React.FC<TasksStatusCardProps> = ({
   return (
     <div className={`bg-white rounded-xl shadow-sm border border-slate-200 ${className}`}>
       <div className="p-6 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-          <ProjectOutlined className="text-purple-600" />
+        <h2 className="text-lg font-semibold text-gray-900">
           {title}
         </h2>
 
