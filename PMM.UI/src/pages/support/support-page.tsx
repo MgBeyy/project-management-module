@@ -3,7 +3,8 @@ import { Table, Button, Modal, Form, Input, message, Popconfirm, Space, Card, Ta
 import { UserAddOutlined, DeleteOutlined, ReloadOutlined, PlusOutlined, StopOutlined, DownloadOutlined } from "@ant-design/icons";
 import { GetUsers, createUser, deleteUser, deactivateUser } from "@/services/user";
 import { GetReports, createReport } from "@/services/reports";
-import { UserDto, CreateUserPayload, Report, CreateReportPayload, ProjectDto } from "@/types";
+import { GetClients, createClient, deleteClient, updateClient } from "@/services/clients";
+import { UserDto, CreateUserPayload, Report, CreateReportPayload, ProjectDto, ClientDto, CreateClientPayload } from "@/types";
 import { fromMillis, toMillis } from "@/utils/retype";
 import { showNotification } from "@/utils/notification";
 import { ProjectPriority, ProjectStatus } from "@/services/projects/get-projects";
@@ -11,6 +12,9 @@ import { TaskStatus } from "@/types/tasks/ui";
 import MultiSelectSearch from "@/components/common/multi-select-search";
 import getMultiSelectSearch from "@/services/projects/get-multi-select-search";
 import type { SelectProps } from "antd";
+import { EditOutlined } from "@ant-design/icons";
+
+
 
 const REPORT_TYPE_LABELS: Record<string, string> = {
   "ProjectTimeLatency": "Proje Süre Gecikmesi Raporu",
@@ -78,6 +82,21 @@ export default function SupportPage() {
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
   const [reportForm] = Form.useForm();
   const [selectedReportType, setSelectedReportType] = useState<string | null>(null);
+
+  // Client Management State
+  const [clients, setClients] = useState<ClientDto[]>([]);
+  const [clientLoading, setClientLoading] = useState(false);
+  const [isClientModalVisible, setIsClientModalVisible] = useState(false);
+  const [clientForm] = Form.useForm();
+  const [clientPagination, setClientPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+  const [clientSearchText, setClientSearchText] = useState("");
+  const [clientSearchTerm, setClientSearchTerm] = useState("");
+  const [editingClient, setEditingClient] = useState<ClientDto | null>(null);
+
 
   // Project Search Logic
   const [projectOptions, setProjectOptions] = useState<SelectOption[]>([]);
@@ -301,6 +320,93 @@ export default function SupportPage() {
       setLoading(false);
     }
   };
+
+  // Client Handlers
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setClientSearchText(clientSearchTerm);
+      setClientPagination(prev => ({ ...prev, current: 1 }));
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [clientSearchTerm]);
+
+  useEffect(() => {
+    fetchClients();
+  }, [clientPagination.current, clientPagination.pageSize, clientSearchText]);
+
+  const fetchClients = async () => {
+    try {
+      setClientLoading(true);
+      const response = await GetClients({
+        query: {
+          search: clientSearchText,
+          page: clientPagination.current,
+          pageSize: clientPagination.pageSize,
+          sortBy: "id",
+          sortDesc: true,
+        },
+      });
+
+      setClients(response.data || []);
+      setClientPagination(prev => ({
+        ...prev,
+        total: response.totalRecords || 0,
+      }));
+    } catch (error) {
+      message.error("Müşteriler yüklenirken bir hata oluştu");
+      console.error("Error fetching clients:", error);
+    } finally {
+      setClientLoading(false);
+    }
+  };
+
+  const handleCreateOrUpdateClient = async (values: CreateClientPayload) => {
+    try {
+      setClientLoading(true);
+
+      if (editingClient) {
+        await updateClient(editingClient.id, values);
+        message.success("Müşteri başarıyla güncellendi");
+      } else {
+        await createClient(values);
+        message.success("Müşteri başarıyla eklendi");
+      }
+
+      setIsClientModalVisible(false);
+      clientForm.resetFields();
+      setEditingClient(null);
+      fetchClients();
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || "İşlem sırasında bir hata oluştu";
+      message.error(errorMessage);
+    } finally {
+      setClientLoading(false);
+    }
+  };
+
+  const handleEditClientClick = (client: ClientDto) => {
+    setEditingClient(client);
+    clientForm.setFieldsValue({
+      name: client.name,
+    });
+    setIsClientModalVisible(true);
+  };
+
+  const handleDeleteClient = async (id: number) => {
+    try {
+      setClientLoading(true);
+      await deleteClient(id);
+      message.success("Müşteri başarıyla silindi");
+      fetchClients();
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || "Müşteri silinirken bir hata oluştu";
+      message.error(errorMessage);
+    } finally {
+      setClientLoading(false);
+    }
+  };
+
 
   const handleCreateReport = async (values: any) => {
     try {
@@ -581,6 +687,107 @@ export default function SupportPage() {
             />
           </Card>
         </Tabs.TabPane>
+        <Tabs.TabPane tab="Müşteri Yönetimi" key="3">
+          <Card
+            title={
+              <div className="flex items-center justify-between">
+                <Space>
+                  <Input.Search
+                    placeholder="Müşteri ismi ara..."
+                    value={clientSearchTerm}
+                    onChange={(e) => setClientSearchTerm(e.target.value)}
+                    onSearch={(value) => {
+                      setClientSearchTerm(value);
+                      setClientSearchText(value);
+                      setClientPagination(prev => ({ ...prev, current: 1 }));
+                    }}
+                    style={{ width: 250 }}
+                    allowClear
+                  />
+                </Space>
+                <Space>
+                  <Button
+                    icon={<ReloadOutlined />}
+                    onClick={() => fetchClients()}
+                    loading={clientLoading}
+                  >
+                    Yenile
+                  </Button>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => {
+                      setEditingClient(null);
+                      clientForm.resetFields();
+                      setIsClientModalVisible(true);
+                    }}
+                  >
+                    Yeni Müşteri Ekle
+                  </Button>
+                </Space>
+              </div>
+            }
+            bordered={false}
+            className="flex-1 flex flex-col"
+          >
+            <Table
+              columns={[
+                {
+                  title: "ID",
+                  dataIndex: "id",
+                  key: "id",
+                  width: 80,
+                },
+                {
+                  title: "İsim",
+                  dataIndex: "name",
+                  key: "name",
+                },
+                {
+                  title: "İşlemler",
+                  key: "actions",
+                  width: 120,
+                  render: (_: any, record: ClientDto) => (
+                    <Space size="small">
+                      <Button
+                        type="text"
+                        icon={<EditOutlined />}
+                        size="small"
+                        onClick={() => handleEditClientClick(record)}
+                        className="text-blue-500 hover:text-blue-600"
+                      />
+                      <Popconfirm
+                        title="Müşteriyi Sil"
+                        description="Bu müşteriyi silmek istediğinizden emin misiniz?"
+                        onConfirm={() => handleDeleteClient(record.id)}
+                        okText="Evet"
+                        cancelText="Hayır"
+                      >
+                        <Button
+                          type="text"
+                          danger
+                          icon={<DeleteOutlined />}
+                          size="small"
+                        />
+                      </Popconfirm>
+                    </Space>
+                  ),
+                },
+              ]}
+              dataSource={clients}
+              rowKey="id"
+              loading={clientLoading}
+              pagination={{
+                ...clientPagination,
+                showSizeChanger: true,
+                showTotal: (total) => `Toplam ${total} müşteri`,
+                onChange: (page, pageSize) => setClientPagination(prev => ({ ...prev, current: page, pageSize })),
+              }}
+              scroll={{ y: "calc(100vh - 300px)" }}
+            />
+          </Card>
+        </Tabs.TabPane>
+
       </Tabs>
 
       <Modal
@@ -864,6 +1071,54 @@ export default function SupportPage() {
           </div>
         </div>
       </Modal>
+
+      <Modal
+        title={editingClient ? "Müşteri Düzenle" : "Yeni Müşteri Ekle"}
+        open={isClientModalVisible}
+        onCancel={() => {
+          setIsClientModalVisible(false);
+          clientForm.resetFields();
+          setEditingClient(null);
+        }}
+        footer={null}
+        width={500}
+      >
+        <Form
+          form={clientForm}
+          layout="vertical"
+          onFinish={handleCreateOrUpdateClient}
+          autoComplete="off"
+        >
+          <Form.Item
+            label="İsim"
+            name="name"
+            rules={[
+              { required: true, message: "Lütfen isim giriniz" },
+              { min: 2, message: "İsim en az 2 karakter olmalıdır" },
+            ]}
+          >
+            <Input placeholder="Müşteri adını giriniz" />
+          </Form.Item>
+
+          <Form.Item className="mb-0 flex justify-end">
+            <Space>
+              <Button
+                onClick={() => {
+                  setIsClientModalVisible(false);
+                  clientForm.resetFields();
+                  setEditingClient(null);
+                }}
+              >
+                İptal
+              </Button>
+              <Button type="primary" htmlType="submit" loading={clientLoading}>
+                {editingClient ? "Güncelle" : "Ekle"}
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
     </div>
   );
 }

@@ -7,6 +7,8 @@ export * from "./activities";
 export * from "./tasks";
 export * from "./users";
 export * from "./files";
+export * from "./clients";
+
 
 export type {
   ApiResponse,
@@ -60,6 +62,14 @@ export type {
   ProjectFilePagedResult,
   UploadProjectFilePayload,
 } from "./files";
+
+export type {
+  ClientDto,
+  ClientPagedResult,
+  CreateClientPayload,
+  UpdateClientPayload,
+} from "./clients";
+
 
 export type { Report, ReportPagedResult, CreateReportPayload } from "./reports";
 

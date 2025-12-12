@@ -15,9 +15,5 @@ export interface CreateUserPayload {
   name: string;
   email: string;
 }
-export interface ClientDto {
-  id: number;
-  name: string | null;
-}
-export type ClientListDto = PagedResult<ClientDto>;
+
 export type UpdateUserPayload = CreateUserPayload;
