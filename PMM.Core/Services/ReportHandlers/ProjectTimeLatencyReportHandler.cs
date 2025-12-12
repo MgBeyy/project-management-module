@@ -1,6 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-using PMM.Core.Common;
-using PMM.Core.Exceptions;
 using PMM.Core.Helpers;
 using PMM.Core.Mappers;
 using PMM.Domain.DTOs;
@@ -53,24 +50,24 @@ namespace PMM.Core.Services.ReportHandlers
 
             var headers = new List<string>
             {
-                "Proje Adı",
+                "Proje adı",
+                "Üst Proje",
                 "Proje Kodu",
-                "Proje Sorumluları",
+                "Proje Sorumlusu",
                 "Planlanan Başlangıç",
-                "Gerçekleşen Başlangıç",
-                "Başlangıç Durumu",
                 "Planlanan Bitiş",
+                "Gerçekleşen Başlangıç",
                 "Gerçekleşen Bitiş",
+                "Başlangıç Durumu",
                 "Bitiş Durumu",
-                "Planan Çalışma Günü",
+                "Planan Çalışma Günü (saat)",
                 "Gerçekleşen Çalışma Günü",
                 "Başlangıç Tarihi Sapması",
                 "Bitiş Tarihi Sapması",
                 "Sapma(Gün)",
                 "Sapma Yüzdesi",
                 "Durum",
-                "Etiketler",
-                "Alt Projeler"
+                "Etiketler"
             };
 
             var dataRows = new List<List<object>>();
@@ -125,9 +122,10 @@ namespace PMM.Core.Services.ReportHandlers
                     endStatusRtc.Ranges.Add(new NpoiExcelHelper.FontRange { Start = 0, End = endStatus.Length, ColorHex = color });
                 }
 
-                var responsible = string.Join(", ", project.AssignedUsers?
-                    .Where(a => a.Role == EProjectAssignmentRole.Manager)
-                    .Select(a => a.User?.Name ?? "") ?? new List<string>());
+                var responsible = project.AssignedUsers?
+                    .FirstOrDefault(a => a.Role == EProjectAssignmentRole.Manager)?.User?.Name ?? "";
+
+                var parentProjectsString = string.Join(", ", project.ParentProjects?.Select(p => p.Title) ?? new List<string>());
 
                 var labelsString = string.Join(", ", project.Labels?.Select(l => l.Name) ?? new List<string>());
 
@@ -146,13 +144,14 @@ namespace PMM.Core.Services.ReportHandlers
                 var row = new List<object>
                 {
                     project.Title,
+                    parentProjectsString,
                     project.Code,
                     responsible,
                     project.PlannedStartDate?.ToString("yyyy-MM-dd") ?? "",
-                    project.StartedAt?.ToString("yyyy-MM-dd") ?? "",
-                    startStatusRtc,
                     project.PlannedDeadline?.ToString("yyyy-MM-dd") ?? "",
+                    project.StartedAt?.ToString("yyyy-MM-dd") ?? "",
                     project.EndAt?.ToString("yyyy-MM-dd") ?? "",
+                    startStatusRtc,
                     endStatusRtc,
                     plannedDays?.ToString() ?? "",
                     actualDays?.ToString() ?? "",
@@ -161,8 +160,7 @@ namespace PMM.Core.Services.ReportHandlers
                     deviationDays?.ToString() ?? "",
                     deviationPercentage.HasValue ? $"{deviationPercentage.Value:F2}%" : "",
                     statusText,
-                    labelsString,
-                    subProjectsString
+                    labelsString
                 };
 
                 dataRows.Add(row);
