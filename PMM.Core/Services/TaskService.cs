@@ -24,6 +24,7 @@ namespace PMM.Core.Services
         private readonly IUserRepository _userRepository;
         private readonly IProjectRepository _projectRepository;
         private readonly ITaskAssignmentRepository _taskAssignmentRepository;
+        private readonly IProjectRelationRepository _projectRelationRepository;
 
         public TaskService(
             ITaskRepository taskRepository,
@@ -34,6 +35,7 @@ namespace PMM.Core.Services
             IUserRepository userRepository,
             IProjectRepository projectRepository,
             ITaskAssignmentRepository taskAssignmentRepository,
+            IProjectRelationRepository projectRelationRepository,
             IPrincipal principal)
             : base(principal, logger, userRepository)
         {
@@ -45,6 +47,7 @@ namespace PMM.Core.Services
             _userRepository = userRepository;
             _projectRepository = projectRepository;
             _taskAssignmentRepository = taskAssignmentRepository;
+            _projectRelationRepository = projectRelationRepository;
         }
 
         public async Task<TaskDto> AddTaskAsync(CreateTaskForm form)
@@ -71,6 +74,10 @@ namespace PMM.Core.Services
             var project = await _projectRepository.GetByIdAsync(form.ProjectId.Value) ?? throw new NotFoundException("İlgili Proje Bulunamadı! Önce bir proje oluşturun");
             if (project.Status == EProjectStatus.Inactive || project.Status == EProjectStatus.Completed || project.Status == EProjectStatus.WaitingForApproval)
                 throw new BusinessException("Bu proje durumu nedeniyle görev eklenemez. Proje durumu Pasif, Tamamlandı veya Onay Bekliyor ise görev eklenemez.");
+
+            var childRelations = await _projectRelationRepository.GetByParentProjectIdAsync(form.ProjectId.Value);
+            if (childRelations.Any())
+                throw new BusinessException("Bu projeye alt projeler bulunduğu için görev eklenemez.");
 
             if (form.Status == ETaskStatus.InProgress || form.Status == ETaskStatus.Done || form.Status == ETaskStatus.WaitingForApproval)
             {
@@ -128,6 +135,27 @@ namespace PMM.Core.Services
             }
 
             await _taskRepository.SaveChangesAsync();
+
+            // Update parent task's PlannedHours if the new task has PlannedHours
+            if (form.PlannedHours.HasValue && form.ParentTaskId.HasValue)
+            {
+                var parentTask = await _taskRepository.GetByIdAsync(form.ParentTaskId.Value);
+                if (parentTask != null)
+                {
+                    var subTasks = await _taskRepository.GetSubTasksWithLabelsAsync(form.ParentTaskId.Value);
+                    var otherSubTasksCount = subTasks.Count(st => st.Id != task.Id);
+                    if (otherSubTasksCount > 0)
+                    {
+                        parentTask.PlannedHours = (parentTask.PlannedHours ?? 0) + form.PlannedHours.Value;
+                    }
+                    else
+                    {
+                        parentTask.PlannedHours = form.PlannedHours.Value;
+                    }
+                    _taskRepository.Update(parentTask);
+                    await _taskRepository.SaveChangesAsync();
+                }
+            }
 
             var createdTask = await _taskRepository.GetWithLabelsAsync(task.Id);
             return TaskMapper.Map(createdTask);
