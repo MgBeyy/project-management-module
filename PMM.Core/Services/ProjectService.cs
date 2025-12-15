@@ -200,6 +200,30 @@ namespace PMM.Core.Services
 
             await _projectRepository.SaveChangesAsync();
 
+            // Update parent projects' PlannedHours if the new project has PlannedHours
+            if (form.PlannedHours.HasValue && form.ParentProjectIds != null && form.ParentProjectIds.Any())
+            {
+                foreach (var parentId in form.ParentProjectIds)
+                {
+                    var parent = await _projectRepository.GetByIdAsync(parentId);
+                    if (parent != null)
+                    {
+                        var childRelations = await _projectRelationRepository.GetByParentProjectIdAsync(parentId);
+                        var otherChildrenCount = childRelations.Count(cr => cr.ChildProjectId != project.Id);
+                        if (otherChildrenCount > 0)
+                        {
+                            parent.PlannedHours = (parent.PlannedHours ?? 0) + form.PlannedHours.Value;
+                        }
+                        else
+                        {
+                            parent.PlannedHours = form.PlannedHours.Value;
+                        }
+                        _projectRepository.Update(parent);
+                    }
+                }
+                await _projectRepository.SaveChangesAsync();
+            }
+
             var createdProject = await _projectRepository.Query(p => p.Id == project.Id)
                 .Include(p => p.ParentRelations)
                 .Include(p => p.ProjectLabels)
