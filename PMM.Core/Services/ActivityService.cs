@@ -63,6 +63,10 @@ namespace PMM.Core.Services
             if (task.Status == ETaskStatus.Done || task.Status == ETaskStatus.Inactive || task.Status == ETaskStatus.WaitingForApproval)
                 throw new BusinessException("Bu görev durumu nedeniyle aktivite eklenemez. Görev durumu Tamamlandı, Pasif veya Onay Bekliyor ise aktivite eklenemez.");
 
+            var subTasks = await _taskRepository.GetSubTasksWithLabelsAsync(form.TaskId);
+            if (subTasks.Any())
+                throw new BusinessException("Bu görevin alt görevleri bulunduğu için aktivite eklenemez.");
+
             var project = await _projectRepository.GetByIdAsync(task.ProjectId) ?? throw new NotFoundException("Proje Bulunamadı!");
             if (project.Status == EProjectStatus.Inactive)
                 throw new BusinessException("Proje pasif olduğu için aktivite eklenemez.");
