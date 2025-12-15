@@ -344,9 +344,10 @@ export default function SupportPage() {
           page: clientPagination.current,
           pageSize: clientPagination.pageSize,
           sortBy: "id",
-          sortDesc: true,
+          sortDesc: false,
         },
       });
+
 
       setClients(response.data || []);
       setClientPagination(prev => ({
