@@ -101,6 +101,12 @@ namespace PMM.Core.Services
                 form.StartedAt = DateOnly.FromDateTime(DateTime.UtcNow);
             }
 
+            // Calculate PlannedHours if not provided but dates are set
+            if (!form.PlannedHours.HasValue && form.PlannedStartDate.HasValue && form.PlannedDeadline.HasValue)
+            {
+                form.PlannedHours = WorkingHoursCalculator.CalculateWorkingHours(form.PlannedStartDate.Value, form.PlannedDeadline.Value);
+            }
+
             if (form.Status == EProjectStatus.Completed)
             {
                 if (form.StartedAt == null || form.EndAt == null || form.PlannedStartDate == null || form.PlannedDeadline == null || form.PlannedHours == null)
@@ -337,6 +343,12 @@ namespace PMM.Core.Services
             if (project.Status == EProjectStatus.Planned && form.Status == EProjectStatus.Active && form.StartedAt == null)
             {
                 form.StartedAt = DateOnly.FromDateTime(DateTime.UtcNow);
+            }
+
+            // Calculate PlannedHours if not provided but dates are set
+            if (!form.PlannedHours.HasValue && form.PlannedStartDate.HasValue && form.PlannedDeadline.HasValue)
+            {
+                form.PlannedHours = WorkingHoursCalculator.CalculateWorkingHours(form.PlannedStartDate.Value, form.PlannedDeadline.Value);
             }
 
             project = ProjectMapper.Map(form, project);

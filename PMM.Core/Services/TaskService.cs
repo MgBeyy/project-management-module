@@ -99,6 +99,12 @@ namespace PMM.Core.Services
 
             await ValidateAssignedUsersAsync(form.AssignedUserIds);
 
+            // Calculate PlannedHours if not provided but dates are set
+            if (!form.PlannedHours.HasValue && form.PlannedStartDate.HasValue && form.PlannedEndDate.HasValue)
+            {
+                form.PlannedHours = WorkingHoursCalculator.CalculateWorkingHours(form.PlannedStartDate.Value, form.PlannedEndDate.Value);
+            }
+
             var task = TaskMapper.Map(form);
             _taskRepository.Create(task);
 
@@ -234,6 +240,12 @@ namespace PMM.Core.Services
             {
                 if (form.ActualEndDate < form.ActualStartDate)
                     throw new BusinessException("Gerçekleşen bitirme tarihi başlama tarihinden önce olamaz.");
+            }
+
+            // Calculate PlannedHours if not provided but dates are set
+            if (!form.PlannedHours.HasValue && form.PlannedStartDate.HasValue && form.PlannedEndDate.HasValue)
+            {
+                form.PlannedHours = WorkingHoursCalculator.CalculateWorkingHours(form.PlannedStartDate.Value, form.PlannedEndDate.Value);
             }
 
             task = TaskMapper.Map(form, task);
