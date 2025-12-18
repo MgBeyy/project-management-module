@@ -4,6 +4,7 @@ namespace PMM.Domain.Enums
     {
         ProjectTimeLatency,
         TaskReport,
-        EffortAndCapacityReport
+        EffortAndCapacityReport,
+        TeamPerformanceReport
     }
 }
