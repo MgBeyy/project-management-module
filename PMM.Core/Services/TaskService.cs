@@ -59,6 +59,11 @@ namespace PMM.Core.Services
             if (!validation.IsValid)
                 throw new BusinessException(validation.ErrorMessage);
 
+            if (form.Status == ETaskStatus.Todo && (form.ActualStartDate.HasValue || form.ActualEndDate.HasValue))
+            {
+                throw new BusinessException("Todo durumundaki görevlerde gerçek başlangıç ve bitiş tarihi olamaz.");
+            }
+
             form.Code = form.Code?.Trim();
             form.Title = form.Title?.Trim();
             NameValidator.ValidateCode(form.Code);

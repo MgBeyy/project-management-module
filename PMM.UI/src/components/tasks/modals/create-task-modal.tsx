@@ -776,6 +776,73 @@ export default function CreateTaskModal({
               />
             </Form.Item>
 
+            <Form.Item noStyle dependencies={["status"]}>
+              {({ getFieldValue }) => {
+                const status = getFieldValue("status");
+                const isTodo = status === TaskStatus.TODO;
+
+                return (
+                  <>
+                    <Form.Item
+                      label="Gerçekleşen Başlangıç"
+                      name="actualStartDate"
+                      style={{
+                        ...formItemNoMarginStyle,
+                        pointerEvents: isViewMode ? "none" : "auto",
+                      }}
+                      rules={[{ required: false }]}
+                    >
+                      <DatePicker
+                        format="DD-MM-YYYY"
+                        style={{ width: "100%" }}
+                        disabled={isViewMode || isTodo}
+                        placeholder="Gerçekleşen başlangıç..."
+                      />
+                    </Form.Item>
+
+                    <Form.Item
+                      label="Gerçekleşen Bitiş"
+                      name="actualEndDate"
+                      dependencies={["actualStartDate"]}
+                      style={{
+                        ...formItemNoMarginStyle,
+                        pointerEvents: isViewMode ? "none" : "auto",
+                      }}
+                      rules={[
+                        ({ getFieldValue }) => ({
+                          validator(_, value) {
+                            const start = getFieldValue("actualStartDate");
+                            if (
+                              !value ||
+                              !start ||
+                              value.isSame(start, "day") ||
+                              value.isAfter(start, "day")
+                            ) {
+                              return Promise.resolve();
+                            }
+                            return Promise.reject(
+                              new Error("Bitiş tarihi başlangıç tarihinden önce olamaz")
+                            );
+                          },
+                        }),
+                      ]}
+                    >
+                      <DatePicker
+                        format="DD-MM-YYYY"
+                        style={{ width: "100%" }}
+                        disabled={isViewMode || isTodo}
+                        disabledDate={(current) => {
+                          const start = form.getFieldValue("actualStartDate");
+                          return !!start && current && current.isBefore(start, "day");
+                        }}
+                        placeholder="Gerçekleşen bitiş..."
+                      />
+                    </Form.Item>
+                  </>
+                );
+              }}
+            </Form.Item>
+
             <Form.Item
               label="Planlanan Çalışma Saati"
               name="plannedHours"
