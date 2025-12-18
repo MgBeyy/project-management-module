@@ -416,6 +416,19 @@ namespace PMM.Core.Services
                 query = query.Where(t => t.TaskAssignments.Any(ta => ta.UserId == form.AssignedUserId.Value));
             }
 
+            if (!string.IsNullOrWhiteSpace(form.AssignedUserIds))
+            {
+                var userIds = form.AssignedUserIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                          .Where(x => int.TryParse(x.Trim(), out _))
+                                          .Select(x => int.Parse(x.Trim()))
+                                          .ToList();
+
+                if (userIds.Any())
+                {
+                    query = query.Where(t => t.TaskAssignments.Any(ta => userIds.Contains(ta.UserId)));
+                }
+            }
+
             query = OrderByHelper.OrderByDynamic(query, form.SortBy, form.SortDesc);
 
             int page = form.Page ?? 1;
@@ -618,6 +631,19 @@ namespace PMM.Core.Services
             if (form.AssignedUserId.HasValue)
             {
                 query = query.Where(t => t.TaskAssignments.Any(ta => ta.UserId == form.AssignedUserId.Value));
+            }
+
+            if (!string.IsNullOrWhiteSpace(form.AssignedUserIds))
+            {
+                var userIds = form.AssignedUserIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                          .Where(x => int.TryParse(x.Trim(), out _))
+                                          .Select(x => int.Parse(x.Trim()))
+                                          .ToList();
+
+                if (userIds.Any())
+                {
+                    query = query.Where(t => t.TaskAssignments.Any(ta => userIds.Contains(ta.UserId)));
+                }
             }
 
             query = OrderByHelper.OrderByDynamic(query, form.SortBy, form.SortDesc);

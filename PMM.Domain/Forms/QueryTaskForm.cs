@@ -49,5 +49,6 @@ namespace PMM.Domain.Forms
         public int? UpdatedById { get; set; }
         public string? LabelIds { get; set; }
         public int? AssignedUserId { get; set; }
+        public string? AssignedUserIds { get; set; }
     }
 }

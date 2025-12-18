@@ -14,6 +14,7 @@ namespace PMM.Core.Services.ReportHandlers
     public class TeamPerformanceReportHandler : IReportHandler
     {
         private readonly ITaskService _taskService;
+        private readonly IUserService _userService;
         private readonly NpoiExcelHelper _excelHelper;
         private readonly IReportRepository _reportRepository;
 
@@ -23,9 +24,10 @@ namespace PMM.Core.Services.ReportHandlers
             Converters = { new JsonStringEnumConverter() }
         };
 
-        public TeamPerformanceReportHandler(ITaskService taskService, NpoiExcelHelper excelHelper, IReportRepository reportRepository)
+        public TeamPerformanceReportHandler(ITaskService taskService, IUserService userService, NpoiExcelHelper excelHelper, IReportRepository reportRepository)
         {
             _taskService = taskService;
+            _userService = userService;
             _excelHelper = excelHelper;
             _reportRepository = reportRepository;
         }
@@ -34,37 +36,53 @@ namespace PMM.Core.Services.ReportHandlers
 
         public async Task<ReportDto> HandleAsync(JsonElement filters, string? name, string webRootPath)
         {
-            var queryFilters = filters.Deserialize<QueryTaskForm>(_jsonOptions) ?? new QueryTaskForm();
-            queryFilters.PageSize = 10000;
-            queryFilters.Page = 1;
+            var userQueryFilters = filters.Deserialize<QueryUserForm>(_jsonOptions) ?? new QueryUserForm();
+            userQueryFilters.PageSize = 10000;
+            userQueryFilters.Page = 1;
 
-            var tasksResult = await _taskService.Query(queryFilters);
+            var usersResult = await _userService.Query(userQueryFilters);
+            var userIds = usersResult.Data.Select(u => u.Id).ToList();
+
+            var taskQueryFilters = new QueryTaskForm();
+            if (userIds.Any())
+            {
+                taskQueryFilters.AssignedUserIds = string.Join(",", userIds);
+            }
+            taskQueryFilters.PageSize = 10000;
+            taskQueryFilters.Page = 1;
+
+            var tasksResult = await _taskService.Query(taskQueryFilters);
             var tasks = tasksResult.Data;
 
             // Prepare data for Personel Özeti
             var userSummaries = new Dictionary<int, (string Name, int CompletedTasks, int ActiveTasks)>();
 
+            // Initialize with all users
+            foreach (var user in usersResult.Data)
+            {
+                userSummaries[user.Id] = (user.Name ?? "", 0, 0);
+            }
+
+            // Update counts from tasks
             foreach (var task in tasks)
             {
                 if (task.AssignedUsers != null)
                 {
                     foreach (var user in task.AssignedUsers)
                     {
-                        if (!userSummaries.ContainsKey(user.Id))
+                        if (userSummaries.ContainsKey(user.Id))
                         {
-                            userSummaries[user.Id] = (user.Name ?? "", 0, 0);
+                            var summary = userSummaries[user.Id];
+                            if (task.Status == ETaskStatus.Done)
+                            {
+                                summary.CompletedTasks++;
+                            }
+                            else if (task.Status == ETaskStatus.InProgress)
+                            {
+                                summary.ActiveTasks++;
+                            }
+                            userSummaries[user.Id] = summary;
                         }
-
-                        var summary = userSummaries[user.Id];
-                        if (task.Status == ETaskStatus.Done)
-                        {
-                            summary.CompletedTasks++;
-                        }
-                        else if (task.Status == ETaskStatus.InProgress)
-                        {
-                            summary.ActiveTasks++;
-                        }
-                        userSummaries[user.Id] = summary;
                     }
                 }
             }

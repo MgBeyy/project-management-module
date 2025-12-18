@@ -20,6 +20,7 @@ const REPORT_TYPE_LABELS: Record<string, string> = {
   "ProjectTimeLatency": "Proje Süre Gecikmesi Raporu",
   "TaskReport": "Görev Raporu",
   "EffortAndCapacityReport": "Efor ve Kapasite Raporu",
+  "TeamPerformanceReport": "Takım Performans Raporu",
 };
 
 type BaseSelectOption = NonNullable<SelectProps["options"]>[number];
@@ -444,6 +445,11 @@ export default function SupportPage() {
           LabelIds: values.labelIds && values.labelIds.length > 0
             ? values.labelIds.map((id: string) => parseInt(id, 10))
             : undefined,
+        };
+      } else if (values.type === "TeamPerformanceReport") {
+        filters = {
+          Search: values.userSearch || undefined,
+          IsActive: values.userIsActive,
         };
       }
 
@@ -992,6 +998,27 @@ export default function SupportPage() {
                 </Form.Item>
                 <Form.Item label="Oluşturulma (Max)" name="createdAtMax">
                   <DatePicker showTime style={{ width: "100%" }} format="DD-MM-YYYY HH:mm" />
+                </Form.Item>
+              </div>
+            </div>
+          )}
+
+          {/* Team Performance Report Filters */}
+          {selectedReportType === "TeamPerformanceReport" && (
+            <div className="border-t pt-4 mt-4">
+              <h3 className="mb-4 font-semibold text-gray-700">Filtreler</h3>
+              <div className="grid grid-cols-1 gap-4">
+                <Form.Item label="Kullanıcı Durumu" name="userIsActive" initialValue={true}>
+                  <Select
+                    options={[
+                      { label: "Aktif Kullanıcılar", value: true },
+                      { label: "Pasif Kullanıcılar", value: false },
+                      { label: "Tüm Kullanıcılar", value: null },
+                    ]}
+                  />
+                </Form.Item>
+                <Form.Item label="Arama" name="userSearch">
+                  <Input placeholder="İsim veya email ara..." />
                 </Form.Item>
               </div>
             </div>
