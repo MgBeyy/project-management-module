@@ -17,7 +17,7 @@ import { EditOutlined } from "@ant-design/icons";
 
 
 const REPORT_TYPE_LABELS: Record<string, string> = {
-  "ProjectTimeLatency": "Proje Süre Gecikmesi Raporu",
+  "ProjectTimeLatency": "Proje Zaman Raporu",
   "TaskReport": "Görev Raporu",
   "EffortAndCapacityReport": "Efor ve Kapasite Raporu",
   "TeamPerformanceReport": "Takım Performans Raporu",
