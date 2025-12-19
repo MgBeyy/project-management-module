@@ -25,6 +25,7 @@ namespace PMM.Core.Services
         private readonly IProjectRepository _projectRepository;
         private readonly ITaskAssignmentRepository _taskAssignmentRepository;
         private readonly IProjectRelationRepository _projectRelationRepository;
+        private readonly IActivityRepository _activityRepository;
 
         public TaskService(
             ITaskRepository taskRepository,
@@ -36,6 +37,7 @@ namespace PMM.Core.Services
             IProjectRepository projectRepository,
             ITaskAssignmentRepository taskAssignmentRepository,
             IProjectRelationRepository projectRelationRepository,
+            IActivityRepository activityRepository,
             IPrincipal principal)
             : base(principal, logger, userRepository)
         {
@@ -48,6 +50,7 @@ namespace PMM.Core.Services
             _projectRepository = projectRepository;
             _taskAssignmentRepository = taskAssignmentRepository;
             _projectRelationRepository = projectRelationRepository;
+            _activityRepository = activityRepository;
         }
 
         public async Task<TaskDto> AddTaskAsync(CreateTaskForm form)
@@ -758,6 +761,13 @@ namespace PMM.Core.Services
 
         private async Task ValidateTaskDeletionAsync(int taskId)
         {
+            // Check for activities
+            var hasActivities = await _activityRepository.Query(a => a.TaskId == taskId).AnyAsync();
+            if (hasActivities)
+            {
+                throw new BusinessException("Bu görev silinemez çünkü aktivite kayıtları bulunmaktadır. Önce tüm aktiviteleri silin.");
+            }
+
             // Task'ın bağımlılıklarını kontrol et
             var blockingDependencies = await _taskDependencyRepository.GetByBlockingTaskIdAsync(taskId);
             var blockedDependencies = await _taskDependencyRepository.GetByBlockedTaskIdAsync(taskId);

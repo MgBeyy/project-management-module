@@ -271,7 +271,7 @@ namespace PMM.Core.Services
 
             var activityHours = activity.TotalHours;
 
-            var task = await _taskRepository.GetByIdAsync(activity.TaskId);
+            var task = await _taskRepository.GetByIdAsync(activity.TaskId) ?? throw new NotFoundException("Görev Bulunamadı!");
 
             await UpdateTaskAndParentHours(activity.TaskId, -activityHours);
 
