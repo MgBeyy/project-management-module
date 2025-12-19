@@ -45,4 +45,11 @@ public class ReportsController : _BaseController
         var fileContents = await _reportService.ExportProjectTimeLatencyReport(filters);
         return File(fileContents, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "ProjeZamanGecikmeRaporu.xlsx");
     }
+
+    [HttpDelete("{reportId:int}")]
+    public async Task<ApiResponse> DeleteReport(int reportId)
+    {
+        await _reportService.DeleteReportAsync(reportId, _env.WebRootPath);
+        return new ApiResponse("Report baþarýyla silindi", StatusCodes.Status204NoContent);
+    }
 }

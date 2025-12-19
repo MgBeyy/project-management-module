@@ -383,4 +383,26 @@ public class ReportService : IReportService
 
         return ReportMapper.Map(report);
     }
+
+    public async Task DeleteReportAsync(int reportId, string webRootPath)
+    {
+        var report = await _reportRepository.GetByIdAsync(reportId);
+        if (report == null)
+        {
+            throw new NotFoundException("Report not found");
+        }
+
+        // Delete the file if it exists
+        if (!string.IsNullOrEmpty(report.File))
+        {
+            var filePath = Path.Combine(webRootPath, report.File.TrimStart('/'));
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+        }
+
+        _reportRepository.Delete(report);
+        await _reportRepository.SaveChangesAsync();
+    }
 }
