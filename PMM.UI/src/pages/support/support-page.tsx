@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Table, Button, Modal, Form, Input, message, Popconfirm, Space, Card, Tabs, Select, Tag, DatePicker, InputNumber } from "antd";
 import { UserAddOutlined, DeleteOutlined, ReloadOutlined, PlusOutlined, StopOutlined, DownloadOutlined } from "@ant-design/icons";
 import { GetUsers, createUser, deleteUser, deactivateUser } from "@/services/user";
-import { GetReports, createReport } from "@/services/reports";
+import { GetReports, createReport, deleteReport } from "@/services/reports";
 import { GetClients, createClient, deleteClient, updateClient } from "@/services/clients";
 import { UserDto, CreateUserPayload, Report, CreateReportPayload, ProjectDto, ClientDto, CreateClientPayload } from "@/types";
 import { fromMillis, toMillis } from "@/utils/retype";
@@ -410,6 +410,21 @@ export default function SupportPage() {
   };
 
 
+
+  const handleDeleteReport = async (id: number) => {
+    try {
+      setReportsLoading(true);
+      await deleteReport(id);
+      message.success("Rapor başarıyla silindi");
+      fetchReports();
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || "Rapor silinirken bir hata oluştu";
+      message.error(errorMessage);
+    } finally {
+      setReportsLoading(false);
+    }
+  };
+
   const handleCreateReport = async (values: any) => {
     try {
       setReportsLoading(true);
@@ -685,6 +700,27 @@ export default function SupportPage() {
                       </a>
                     );
                   },
+                },
+                {
+                  title: "İşlemler",
+                  key: "actions",
+                  width: 100,
+                  render: (_: any, record: Report) => (
+                    <Popconfirm
+                      title="Raporu Sil"
+                      description="Bu raporu silmek istediğinizden emin misiniz?"
+                      onConfirm={() => handleDeleteReport(record.id)}
+                      okText="Evet"
+                      cancelText="Hayır"
+                    >
+                      <Button
+                        type="text"
+                        danger
+                        icon={<DeleteOutlined />}
+                        size="small"
+                      />
+                    </Popconfirm>
+                  ),
                 },
               ]}
               dataSource={reports}
