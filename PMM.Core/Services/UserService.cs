@@ -6,6 +6,7 @@ using PMM.Core.Mappers;
 using PMM.Core.Validators;
 using PMM.Domain.DTOs;
 using PMM.Domain.Entities;
+using PMM.Domain.Enums;
 using PMM.Domain.Forms;
 using PMM.Domain.Interfaces.Repositories;
 using PMM.Domain.Interfaces.Services;
@@ -213,9 +214,68 @@ namespace PMM.Core.Services
                 .Take(pageSize)
                 .ToListAsync();
 
+            // Get user ids
+            var userIds = users.Select(u => u.Id).ToList();
+
+            // Get relevant task ids: status Todo or InProgress, and PlannedStartDate <= today + 30
+            var cutoffDate = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
+            var relevantTaskIds = await _taskRepository.Query(t =>
+                (t.Status == ETaskStatus.Todo || t.Status == ETaskStatus.InProgress) &&
+                t.PlannedStartDate.HasValue && t.PlannedStartDate.Value <= cutoffDate)
+                .Select(t => t.Id)
+                .ToListAsync();
+
+            // Get task assignments for these users and relevant tasks
+            var taskAssignments = await _taskAssignmentRepository.Query(ta => userIds.Contains(ta.UserId) && relevantTaskIds.Contains(ta.TaskId))
+                .Include(ta => ta.Task)
+                .ToListAsync();
+
+            // Calculate capacity for each user
+            var userDtos = UserMapper.Map(users);
+            foreach (var userDto in userDtos)
+            {
+                var user = users.First(u => u.Id == userDto.Id);
+                var userTaskAssignments = taskAssignments.Where(ta => ta.UserId == user.Id).ToList();
+                var tasks = userTaskAssignments.Select(ta => ta.Task).ToList();
+
+                // Calculate available hours in next 30 days
+                var today = DateOnly.FromDateTime(DateTime.Today);
+                var endDate = today.AddDays(29);
+                var availableHours = WorkingHoursCalculator.CalculateWorkingHours(today, endDate);
+
+                // Calculate allocated hours in next 30 days
+                decimal allocatedHours = 0;
+                foreach (var task in tasks)
+                {
+                    if (task.PlannedStartDate.HasValue && task.PlannedEndDate.HasValue && task.PlannedHours.HasValue)
+                    {
+                        var taskStart = task.PlannedStartDate.Value;
+                        var taskEnd = task.PlannedEndDate.Value;
+                        var plannedHours = task.PlannedHours.Value;
+
+                        // Total working days for task
+                        var totalWorkingDays = WorkingHoursCalculator.CalculateWorkingDays(taskStart, taskEnd);
+                        if (totalWorkingDays <= 0) continue;
+                        var dailyHours = plannedHours / totalWorkingDays;
+
+                        // Overlapping period with next 30 days
+                        var overlapStart = taskStart > today ? taskStart : today;
+                        var overlapEnd = taskEnd < endDate ? taskEnd : endDate;
+
+                        if (overlapStart <= overlapEnd)
+                        {
+                            var overlapWorkingDays = WorkingHoursCalculator.CalculateWorkingDays(overlapStart, overlapEnd);
+                            allocatedHours += dailyHours * overlapWorkingDays;
+                        }
+                    }
+                }
+
+                userDto.Capacity = availableHours - allocatedHours;
+            }
+
             return new PagedResult<UserDto>
             {
-                Data = UserMapper.Map(users),
+                Data = userDtos,
                 TotalRecords = totalRecords,
                 Page = page,
                 PageSize = pageSize
