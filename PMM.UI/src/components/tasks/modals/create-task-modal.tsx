@@ -528,7 +528,40 @@ export default function CreateTaskModal({
             item.title ||
             `${item.firstName || ""} ${item.lastName || ""}`.trim() ||
             `User ${id}`;
-          return { value: id, label: name, key: id, ...item };
+          `User ${id}`;
+
+          let capacityNode = null;
+          if (item.capacityPercent !== undefined) {
+            let color = "#ff4d4f";
+            if (item.capacityPercent >= 50) color = "#52c41a";
+            else if (item.capacityPercent >= 20) color = "#faad14";
+
+            capacityNode = (
+              <span style={{
+                marginLeft: "8px",
+                backgroundColor: color,
+                color: "#fff",
+                padding: "2px 6px",
+                borderRadius: "4px",
+                fontSize: "0.75em",
+                fontWeight: 500
+              }}>
+                %{item.capacityPercent}
+              </span>
+            );
+          }
+
+          return {
+            value: id,
+            label: (
+              <span>
+                {name}
+                {capacityNode}
+              </span>
+            ),
+            key: id,
+            ...item
+          };
         });
         setUserOptions(opts);
       } catch (e) {
@@ -551,7 +584,40 @@ export default function CreateTaskModal({
           item.title ||
           `${item.firstName || ""} ${item.lastName || ""}`.trim() ||
           `User ${id}`;
-        return { value: id, label: name, key: id, ...item };
+        `User ${id}`;
+
+        let capacityNode = null;
+        if (item.capacityPercent !== undefined) {
+          let color = "#ff4d4f";
+          if (item.capacityPercent >= 50) color = "#52c41a";
+          else if (item.capacityPercent >= 20) color = "#faad14";
+
+          capacityNode = (
+            <span style={{
+              marginLeft: "8px",
+              backgroundColor: color,
+              color: "#fff",
+              padding: "2px 6px",
+              borderRadius: "4px",
+              fontSize: "0.75em",
+              fontWeight: 500
+            }}>
+              %{item.capacityPercent}
+            </span>
+          );
+        }
+
+        return {
+          value: id,
+          label: (
+            <span>
+              {name}
+              {capacityNode}
+            </span>
+          ),
+          key: id,
+          ...item
+        };
       });
       setUserOptions(opts);
     } catch (e) {

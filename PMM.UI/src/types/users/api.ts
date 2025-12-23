@@ -7,6 +7,8 @@ export interface UserDto {
   name: string | null;
   email: string | null;
   isActive: boolean;
+  capacity?: number;
+  capacityPercent?: number;
 }
 
 export type UserPagedResult = PagedResult<UserDto>;
