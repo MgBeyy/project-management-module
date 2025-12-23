@@ -271,6 +271,7 @@ namespace PMM.Core.Services
                 }
 
                 userDto.Capacity = availableHours - allocatedHours;
+                userDto.CapacityPercent = availableHours > 0 ? (int)Math.Round((userDto.Capacity / availableHours) * 100) : 0;
             }
 
             return new PagedResult<UserDto>

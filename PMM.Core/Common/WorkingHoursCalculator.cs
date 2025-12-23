@@ -1,5 +1,3 @@
-using System;
-
 namespace PMM.Core.Common
 {
     public static class WorkingHoursCalculator
