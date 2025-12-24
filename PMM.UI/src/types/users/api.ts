@@ -9,6 +9,10 @@ export interface UserDto {
   isActive: boolean;
   capacity?: number;
   capacityPercent?: number;
+  availableWorkHoursForOneMonth?: number;
+  allocatedWorkHoursForOneMonth?: number;
+  activeTasksCount?: number;
+  todoTasksCount?: number;
 }
 
 export type UserPagedResult = PagedResult<UserDto>;

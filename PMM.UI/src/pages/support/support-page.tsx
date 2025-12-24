@@ -533,6 +533,46 @@ export default function SupportPage() {
       ),
     },
     {
+      title: "Kapasite %",
+      dataIndex: "capacityPercent",
+      key: "capacityPercent",
+      render: (val: number | undefined) => val != null ? `%${val}` : "-",
+    },
+    {
+      title: (
+        <div className="flex flex-col">
+          <span>Müsait Saat</span>
+          <span className="text-xs font-normal text-gray-500">(önümüzdeki bir ay için)</span>
+        </div>
+      ),
+      dataIndex: "availableWorkHoursForOneMonth",
+      key: "availableWorkHoursForOneMonth",
+      render: (val: number | undefined) => val != null ? val : "-",
+    },
+    {
+      title: (
+        <div className="flex flex-col">
+          <span>Dolu Saat</span>
+          <span className="text-xs font-normal text-gray-500">(önümüzdeki bir ay için)</span>
+        </div>
+      ),
+      dataIndex: "allocatedWorkHoursForOneMonth",
+      key: "allocatedWorkHoursForOneMonth",
+      render: (val: number | undefined) => val != null ? val : "-",
+    },
+    {
+      title: "Aktif Görevler",
+      dataIndex: "activeTasksCount",
+      key: "activeTasksCount",
+      render: (val: number | undefined) => val != null ? val : "-",
+    },
+    {
+      title: "Yapılacak Görevler",
+      dataIndex: "todoTasksCount",
+      key: "todoTasksCount",
+      render: (val: number | undefined) => val != null ? val : "-",
+    },
+    {
       title: "İşlemler",
       key: "actions",
       width: 120,
