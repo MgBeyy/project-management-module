@@ -272,6 +272,10 @@ namespace PMM.Core.Services
 
                 userDto.Capacity = availableHours - allocatedHours;
                 userDto.CapacityPercent = availableHours > 0 ? (int)Math.Round((userDto.Capacity / availableHours) * 100) : 0;
+                userDto.AvailableWorkHoursForOneMonth = availableHours - allocatedHours;
+                userDto.AllocatedWorkHoursForOneMonth = allocatedHours;
+                userDto.ActiveTasksCount = tasks.Count(t => t.Status == ETaskStatus.InProgress);
+                userDto.TodoTasksCount = tasks.Count(t => t.Status == ETaskStatus.Todo);
             }
 
             return new PagedResult<UserDto>

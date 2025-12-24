@@ -6,7 +6,11 @@
         public string Name { get; set; }
         public string Email { get; set; }
         public bool IsActive { get; set; }
-        public decimal Capacity { get; set; } // User's available capacity in hours for the next 30 days
-        public int CapacityPercent { get; set; } // User's available capacity as a percentage for the next 30 days
+        public decimal Capacity { get; set; }
+        public int CapacityPercent { get; set; }
+        public decimal AvailableWorkHoursForOneMonth { get; set; }
+        public decimal AllocatedWorkHoursForOneMonth { get; set; }
+        public int ActiveTasksCount { get; set; }
+        public int TodoTasksCount { get; set; }
     }
 }
