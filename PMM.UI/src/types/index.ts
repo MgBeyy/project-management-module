@@ -8,6 +8,7 @@ export * from "./tasks";
 export * from "./users";
 export * from "./files";
 export * from "./clients";
+export * from "./machines";
 
 
 export type {
