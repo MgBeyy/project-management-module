@@ -1,10 +1,45 @@
 import { useState, useEffect, useCallback } from "react";
-import { Table, Button, Modal, Form, Input, message, Popconfirm, Space, Card, Tabs, Select, Tag, DatePicker, InputNumber } from "antd";
-import { UserAddOutlined, DeleteOutlined, ReloadOutlined, PlusOutlined, StopOutlined, DownloadOutlined } from "@ant-design/icons";
+import {
+  Button,
+  Card,
+  DatePicker,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Popconfirm,
+  Select,
+  Space,
+  Switch,
+  Table,
+  Tabs,
+  Tag,
+  Tooltip,
+  message,
+  Divider,
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
+import {
+  PlusOutlined,
+  ReloadOutlined,
+  SaveOutlined,
+  SearchOutlined,
+  UserAddOutlined,
+  WarningOutlined,
+  ExclamationCircleOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  StopOutlined,
+  DownloadOutlined,
+  EyeOutlined,
+  CaretUpOutlined,
+  CaretDownOutlined,
+} from "@ant-design/icons";
 import { GetUsers, createUser, deleteUser, deactivateUser } from "@/services/user";
 import { GetReports, createReport, deleteReport } from "@/services/reports";
 import { GetClients, createClient, deleteClient, updateClient } from "@/services/clients";
-import { UserDto, CreateUserPayload, Report, CreateReportPayload, ProjectDto, ClientDto, CreateClientPayload } from "@/types";
+import { GetMachines, createMachine, deleteMachine, updateMachine } from "@/services/machines";
+import { UserDto, CreateUserPayload, Report, CreateReportPayload, ProjectDto, ClientDto, CreateClientPayload, MachineDto, CreateMachineForm } from "@/types";
 import { fromMillis, toMillis } from "@/utils/retype";
 import { showNotification } from "@/utils/notification";
 import { ProjectPriority, ProjectStatus } from "@/services/projects/get-projects";
@@ -12,8 +47,7 @@ import { TaskStatus } from "@/types/tasks/ui";
 import MultiSelectSearch from "@/components/common/multi-select-search";
 import getMultiSelectSearch from "@/services/projects/get-multi-select-search";
 import type { SelectProps } from "antd";
-import { EditOutlined } from "@ant-design/icons";
-
+import { ResizableTitle } from "@/components/common/resizable";
 
 
 const REPORT_TYPE_LABELS: Record<string, string> = {
@@ -49,7 +83,7 @@ const extractArrayFromResponse = (payload: any): any[] => {
   return [];
 };
 
-export const normalizeProjectOption = (project: ProjectDto): SelectOption | null => {
+const normalizeProjectOption = (project: ProjectDto): SelectOption | null => {
   if (!project) return null;
   return {
     value: project.id,
@@ -72,6 +106,8 @@ export default function SupportPage() {
   const [isActiveFilter, setIsActiveFilter] = useState<boolean | null>(true);
   const [searchText, setSearchText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUserRowKeys, setSelectedUserRowKeys] = useState<React.Key[]>([]);
+
 
   // Delete confirmation state
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -97,6 +133,58 @@ export default function SupportPage() {
   const [clientSearchText, setClientSearchText] = useState("");
   const [clientSearchTerm, setClientSearchTerm] = useState("");
   const [editingClient, setEditingClient] = useState<ClientDto | null>(null);
+
+  // Machine Management State
+  const [machines, setMachines] = useState<MachineDto[]>([]);
+  const [machineLoading, setMachineLoading] = useState(false);
+  const [isMachineModalVisible, setIsMachineModalVisible] = useState(false);
+  const [machineForm] = Form.useForm();
+  const [machinePagination, setMachinePagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+  const [machineSearchText, setMachineSearchText] = useState("");
+  const [machineSearchTerm, setMachineSearchTerm] = useState("");
+  const [editingMachine, setEditingMachine] = useState<MachineDto | null>(null);
+
+  // Machine Delete State
+  const [deleteMachineModalVisible, setDeleteMachineModalVisible] = useState(false);
+  const [machineToDelete, setMachineToDelete] = useState<MachineDto | null>(null);
+
+  // Machine Selection & View
+  const [selectedMachineId, setSelectedMachineId] = useState<number | null>(null);
+  const [machineModalMode, setMachineModalMode] = useState<'create' | 'edit' | 'view'>('create');
+
+  // Machine Sorting
+  const [machineSortBy, setMachineSortBy] = useState<string | null>(null);
+  const [machineSortDesc, setMachineSortDesc] = useState(false);
+
+  // Machine Columns State (for resizing)
+  const [machineColumns, setMachineColumns] = useState<any[]>([
+    { title: "ID", dataIndex: "id", key: "id", width: 80, sorter: true },
+    { title: "İsim", dataIndex: "name", key: "name", width: 200, sorter: true },
+    { title: "Kategori", dataIndex: "category", key: "category", width: 150, sorter: true },
+    { title: "Marka", dataIndex: "brand", key: "brand", width: 150, sorter: true },
+    { title: "Model", dataIndex: "model", key: "model", width: 150, sorter: true },
+    { title: "Saatlik Maliyet", dataIndex: "hourlyCost", key: "hourlyCost", width: 150, sorter: true, render: (val: any, record: MachineDto) => val ? `${val} ${record.currency || 'TL'}` : '-' },
+    {
+      title: "Durum",
+      dataIndex: "status",
+      key: "status",
+      width: 120,
+      sorter: true,
+      render: (status: string) => {
+        const statusMap: Record<string, string> = {
+          'Available': 'Müsait',
+          'InUse': 'Kullanımda',
+          'OutOfService': 'Servis Dışı',
+          'Maintenance': 'Bakımda'
+        };
+        return <Tag>{statusMap[status] || status}</Tag>;
+      }
+    },
+  ]);
 
 
   // Project Search Logic
@@ -406,6 +494,188 @@ export default function SupportPage() {
       message.error(errorMessage);
     } finally {
       setClientLoading(false);
+    }
+  };
+
+  // Machine Handlers
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMachineSearchText(machineSearchTerm);
+      setMachinePagination(prev => ({ ...prev, current: 1 }));
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [machineSearchTerm]);
+
+  useEffect(() => {
+    fetchMachines();
+  }, [machinePagination.current, machinePagination.pageSize, machineSearchText, machineSortBy, machineSortDesc]);
+
+  const fetchMachines = useCallback(async () => {
+    try {
+      setMachineLoading(true);
+      const result = await GetMachines({
+        query: {
+          Search: machineSearchText,
+          Page: machinePagination.current,
+          PageSize: machinePagination.pageSize,
+          SortBy: machineSortBy,
+          SortDesc: machineSortDesc
+        }
+      });
+      setMachines(result.data || []);
+      setMachinePagination((prev) => ({
+        ...prev,
+        total: result.totalRecords,
+      }));
+    } catch (error) {
+      message.error("Makineler yüklenirken hata oluştu");
+    } finally {
+      setMachineLoading(false);
+    }
+  }, [machineSearchText, machinePagination.current, machinePagination.pageSize, machineSortBy, machineSortDesc]);
+
+  const handleCreateOrUpdateMachine = async (values: any) => {
+    try {
+      setMachineLoading(true);
+
+      const payload = {
+        ...values,
+        purchaseDate: values.purchaseDate ? toMillis(values.purchaseDate) : undefined,
+      };
+
+      if (editingMachine) {
+        await updateMachine(editingMachine.id, payload);
+        message.success("Makine başarıyla güncellendi");
+      } else {
+        await createMachine(payload);
+        message.success("Makine başarıyla eklendi");
+      }
+
+      setIsMachineModalVisible(false);
+      machineForm.resetFields();
+      setEditingMachine(null);
+      fetchMachines();
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || "İşlem sırasında bir hata oluştu";
+      message.error(errorMessage);
+    } finally {
+      setMachineLoading(false);
+    }
+  };
+
+  const handleViewMachineClick = () => {
+    if (!selectedMachineId) return;
+    const machine = machines.find(m => m.id === selectedMachineId);
+    if (machine) {
+      setEditingMachine(machine);
+      setMachineModalMode('view');
+      machineForm.setFieldsValue({
+        ...machine,
+        purchaseDate: fromMillis(machine.purchaseDate),
+      });
+      setIsMachineModalVisible(true);
+    }
+  };
+
+  const handleEditMachineClick = () => {
+    if (!selectedMachineId) return;
+    const machine = machines.find(m => m.id === selectedMachineId);
+    if (machine) {
+      setEditingMachine(machine);
+      setMachineModalMode('edit');
+      machineForm.setFieldsValue({
+        ...machine,
+        purchaseDate: fromMillis(machine.purchaseDate),
+      });
+      setIsMachineModalVisible(true);
+    }
+  };
+
+  const handleMachineResize =
+    (index: number) =>
+      (_: any, { size }: { size: { width: number; height: number } }) => {
+        setMachineColumns((prev) => {
+          const next = [...prev];
+          next[index] = {
+            ...next[index],
+            width: size.width,
+          };
+          return next;
+        });
+      };
+
+  const handleMachineSort = (dataIndex: string) => {
+    if (machineSortBy === dataIndex) {
+      if (machineSortDesc) {
+        setMachineSortBy(null);
+        setMachineSortDesc(false);
+      } else {
+        setMachineSortDesc(true);
+      }
+    } else {
+      setMachineSortBy(dataIndex);
+      setMachineSortDesc(false);
+    }
+  };
+
+  const MachineSortableHeader = ({ title, dataIndex }: { title: string; dataIndex: string }) => {
+    const isActive = machineSortBy === dataIndex;
+    const currentOrder = isActive ? (machineSortDesc ? "descend" : "ascend") : null;
+
+    return (
+      <div
+        onClick={() => handleMachineSort(dataIndex)}
+        style={{ display: "flex", alignItems: "center", cursor: "pointer", height: '100%' }}
+      >
+        <span style={{ flex: 1 }}>{title}</span>
+        <div style={{ display: "flex", flexDirection: "column", marginLeft: 8 }}>
+          <CaretUpOutlined
+            style={{ fontSize: 11, color: currentOrder === "ascend" ? "#1890ff" : "#bfbfbf" }}
+          />
+          <CaretDownOutlined
+            style={{ fontSize: 11, color: currentOrder === "descend" ? "#1890ff" : "#bfbfbf" }}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const machineTableColumns = machineColumns.map((col, index) => ({
+    ...col,
+    title: col.sorter ? <MachineSortableHeader title={col.title} dataIndex={col.dataIndex} /> : col.title,
+    sorter: false,
+    onHeaderCell: (column: any) => ({
+      width: column.width,
+      onResize: handleMachineResize(index),
+    }),
+  }));
+
+  const handleDeleteMachineClick = () => {
+    if (!selectedMachineId) return;
+    const machine = machines.find(m => m.id === selectedMachineId);
+    if (machine) {
+      setMachineToDelete(machine);
+      setDeleteMachineModalVisible(true);
+    }
+  };
+
+  const confirmDeleteMachine = async () => {
+    if (!machineToDelete) return;
+
+    try {
+      setMachineLoading(true);
+      await deleteMachine(machineToDelete.id);
+      message.success("Makine başarıyla silindi");
+      setDeleteMachineModalVisible(false);
+      setSelectedMachineId(null);
+      fetchMachines();
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || "Makine silinirken bir hata oluştu";
+      message.error(errorMessage);
+    } finally {
+      setMachineLoading(false);
+      setMachineToDelete(null);
     }
   };
 
@@ -870,6 +1140,94 @@ export default function SupportPage() {
             />
           </Card>
         </Tabs.TabPane>
+        <Tabs.TabPane tab="Makine Yönetimi" key="4">
+          <div className="flex flex-col gap-4">
+            <Card bordered={false} className="flex-1 flex flex-col" bodyStyle={{ padding: 0 }}>
+              <div className="flex items-center justify-between p-4 ">
+                <div className="flex items-center gap-4">
+                  <span className="font-medium text-lg text-gray-700">Makineler</span>
+                  <Divider type="vertical" className="h-6 bg-gray-300 mx-0" />
+                  <Space>
+                    <Button
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={() => {
+                        setEditingMachine(null);
+                        setMachineModalMode('create');
+                        machineForm.resetFields();
+                        setIsMachineModalVisible(true);
+                      }}
+                    />
+                    <Button
+                      type="primary"
+                      icon={<EditOutlined />}
+                      disabled={!selectedMachineId}
+                      onClick={handleEditMachineClick}
+                    />
+                    <Button
+                      type="primary"
+                      icon={<EyeOutlined />}
+                      disabled={!selectedMachineId}
+                      onClick={handleViewMachineClick}
+                    />
+                    <Button
+                      type="primary"
+                      danger
+                      icon={<DeleteOutlined />}
+                      disabled={!selectedMachineId}
+                      onClick={handleDeleteMachineClick}
+                    />
+                  </Space>
+                </div>
+
+                <Space>
+                  <Input.Search
+                    placeholder="Makine ara..."
+                    value={machineSearchTerm}
+                    onChange={(e) => setMachineSearchTerm(e.target.value)}
+                    onSearch={(value) => {
+                      setMachineSearchTerm(value);
+                      setMachineSearchText(value);
+                      setMachinePagination(prev => ({ ...prev, current: 1 }));
+                    }}
+                    style={{ width: 250 }}
+                    allowClear
+                  />
+                  <Button
+                    icon={<ReloadOutlined />}
+                    onClick={() => fetchMachines()}
+                    loading={machineLoading}
+                  >
+                    Yenile
+                  </Button>
+                </Space>
+              </div>
+              <Table
+                components={{
+                  header: {
+                    cell: ResizableTitle,
+                  },
+                }}
+                bordered
+                onRow={(record) => ({
+                  onClick: () => setSelectedMachineId(record.id),
+                  className: `cursor-pointer ${selectedMachineId === record.id ? 'bg-blue-50' : ''}`,
+                })}
+                columns={machineTableColumns}
+                dataSource={machines}
+                rowKey="id"
+                loading={machineLoading}
+                pagination={{
+                  ...machinePagination,
+                  showSizeChanger: true,
+                  showTotal: (total) => `Toplam ${total} makine`,
+                  onChange: (page, pageSize) => setMachinePagination(prev => ({ ...prev, current: page, pageSize })),
+                }}
+                scroll={{ y: "calc(100vh - 350px)" }}
+              />
+            </Card>
+          </div>
+        </Tabs.TabPane>
 
       </Tabs>
 
@@ -1221,6 +1579,116 @@ export default function SupportPage() {
             </Space>
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title={machineModalMode === 'view' ? "Makine Detayları" : (editingMachine ? "Makine Düzenle" : "Yeni Makine Ekle")}
+        open={isMachineModalVisible}
+        onCancel={() => {
+          setIsMachineModalVisible(false);
+          machineForm.resetFields();
+          setEditingMachine(null);
+        }}
+        footer={null}
+        width={600}
+      >
+        <Form
+          form={machineForm}
+          layout="vertical"
+          onFinish={handleCreateOrUpdateMachine}
+          autoComplete="off"
+          disabled={machineModalMode === 'view'}
+        >
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item
+              label="İsim"
+              name="name"
+              rules={[{ required: true, message: "Lütfen isim giriniz" }]}
+            >
+              <Input placeholder="Makine ismi" />
+            </Form.Item>
+            <Form.Item label="Kategori" name="category">
+              <Input placeholder="Kategori" />
+            </Form.Item>
+            <Form.Item label="Marka" name="brand">
+              <Input placeholder="Marka" />
+            </Form.Item>
+            <Form.Item label="Model" name="model">
+              <Input placeholder="Model" />
+            </Form.Item>
+            <Form.Item label="Saatlik Maliyet" name="hourlyCost">
+              <InputNumber style={{ width: '100%' }} min={0} />
+            </Form.Item>
+            <Form.Item label="Para Birimi" name="currency">
+              <Select options={[{ label: 'TL', value: 'TL' }, { label: 'USD', value: 'USD' }, { label: 'EUR', value: 'EUR' }]} />
+            </Form.Item>
+            <Form.Item label="Satın Alma Fiyatı" name="purchasePrice">
+              <InputNumber style={{ width: '100%' }} min={0} />
+            </Form.Item>
+            <Form.Item label="Satın Alma Tarihi" name="purchaseDate">
+              <DatePicker style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item label="Durumu" name="status">
+              <Select options={[
+                { label: 'Müsait', value: 'Available' },
+                { label: 'Kullanımda', value: 'InUse' },
+                { label: 'Servis Dışı', value: 'OutOfService' },
+                { label: 'Bakımda', value: 'Maintenance' }
+              ]} />
+            </Form.Item>
+            <Form.Item label="Aktif mi?" name="isActive" valuePropName="checked" initialValue={true}>
+              {/* Simplified Checkbox since Switch is not imported yet, or I can use Checkbox from Antd */}
+              <input type="checkbox" className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300" disabled={machineModalMode === 'view'} />
+            </Form.Item>
+          </div>
+
+          {machineModalMode !== 'view' && (
+            <Form.Item className="mb-0 flex justify-end">
+              <Space>
+                <Button
+                  onClick={() => {
+                    setIsMachineModalVisible(false);
+                    machineForm.resetFields();
+                    setEditingMachine(null);
+                  }}
+                >
+                  İptal
+                </Button>
+                <Button type="primary" htmlType="submit" loading={machineLoading}>
+                  {editingMachine ? "Güncelle" : "Ekle"}
+                </Button>
+              </Space>
+            </Form.Item>
+          )}
+        </Form>
+      </Modal>
+
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <ExclamationCircleOutlined className="text-[#faad14] text-lg" />
+            <span>Makine Silme Onayı</span>
+          </div>
+        }
+        open={deleteMachineModalVisible}
+        onCancel={() => {
+          setDeleteMachineModalVisible(false);
+          setMachineToDelete(null);
+        }}
+        okText="Evet, Sil"
+        cancelText="İptal"
+        okButtonProps={{ danger: true, loading: machineLoading }}
+        onOk={confirmDeleteMachine}
+        centered
+      >
+        <div className="p-4">
+          <p className="text-lg mb-2">
+            <strong>"{machineToDelete?.name}"</strong> makinesini silmek istediğinizden emin misiniz?
+          </p>
+          <p className="text-gray-500 mb-0">
+            Bu işlem geri alınamaz.
+          </p>
+        </div>
       </Modal>
 
     </div>
