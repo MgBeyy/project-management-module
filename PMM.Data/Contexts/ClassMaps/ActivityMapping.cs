@@ -18,10 +18,16 @@ namespace PMM.Data.Contexts.ClassMaps
                    .HasForeignKey(a => a.TaskId)
                    .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Property(a => a.UserId).IsRequired();
+            builder.Property(a => a.UserId); // Nullable, IsRequired kaldýrýldý
             builder.HasOne(a => a.User)
                    .WithMany(u => u.Activities)
                    .HasForeignKey(a => a.UserId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Property(a => a.MachineId);
+            builder.HasOne(a => a.Machine)
+                   .WithMany(m => m.Activities)
+                   .HasForeignKey(a => a.MachineId)
                    .OnDelete(DeleteBehavior.Restrict);
 
             builder.Property(a => a.Description).IsRequired().HasMaxLength(1000);
