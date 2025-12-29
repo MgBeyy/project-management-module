@@ -3,6 +3,6 @@ namespace PMM.Domain.Interfaces.Repositories
 {
     public interface IActivityRepository : _IBaseRepository<Activity>
     {
-        Task<bool> HasConflictingActivityAsync(int userId, DateTime startTime, DateTime endTime, int? excludeActivityId = null);
+        Task<bool> HasConflictingActivityAsync(int? userId, int? machineId, DateTime startTime, DateTime endTime, int? excludeActivityId = null);
     }
 }

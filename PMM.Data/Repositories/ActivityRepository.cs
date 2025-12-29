@@ -13,9 +13,17 @@ namespace PMM.Data.Repositories
         {
         }
 
-        public async Task<bool> HasConflictingActivityAsync(int userId, DateTime startTime, DateTime endTime, int? excludeActivityId = null)
+        public async Task<bool> HasConflictingActivityAsync(int? userId, int? machineId, DateTime startTime, DateTime endTime, int? excludeActivityId = null)
         {
-            var query = Query(a => a.UserId == userId && a.StartTime < endTime && a.EndTime > startTime);
+            var query = Query(a => a.StartTime < endTime && a.EndTime > startTime);
+            if (userId.HasValue)
+            {
+                query = query.Where(a => a.UserId == userId.Value);
+            }
+            if (machineId.HasValue)
+            {
+                query = query.Where(a => a.MachineId == machineId.Value);
+            }
             if (excludeActivityId.HasValue)
             {
                 query = query.Where(a => a.Id != excludeActivityId.Value);
