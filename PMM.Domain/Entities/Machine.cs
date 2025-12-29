@@ -14,5 +14,7 @@ namespace PMM.Domain.Entities
         public DateTime? PurchaseDate { get; set; }
         public bool IsActive { get; set; }
         public EMachineStatus Status { get; set; }
+
+        public virtual ICollection<Activity> Activities { get; set; }
     }
 }

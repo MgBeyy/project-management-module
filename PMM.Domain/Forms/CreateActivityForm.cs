@@ -7,8 +7,9 @@ namespace PMM.Domain.Forms
         [Required]
         public int TaskId { get; set; }
 
-        [Required]
-        public int UserId { get; set; }
+        public int? UserId { get; set; }
+
+        public int? MachineId { get; set; }
 
         [Required]
         [StringLength(1000)]
