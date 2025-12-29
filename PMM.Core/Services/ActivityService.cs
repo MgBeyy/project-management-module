@@ -23,6 +23,7 @@ namespace PMM.Core.Services
         private readonly IProjectRelationRepository _projectRelationRepository;
         private readonly ITaskAssignmentRepository _taskAssignmentRepository;
         private readonly IProjectAssignmentRepository _projectAssignmentRepository;
+        private readonly IMachineRepository _machineRepository;
 
         public ActivityService(IPrincipal principal, ILogger<ActivityService> logger,
             IActivityRepository activityRepository,
@@ -31,7 +32,8 @@ namespace PMM.Core.Services
             IProjectRepository projectRepository,
             IProjectRelationRepository projectRelationRepository,
             ITaskAssignmentRepository taskAssignmentRepository,
-            IProjectAssignmentRepository projectAssignmentRepository
+            IProjectAssignmentRepository projectAssignmentRepository,
+            IMachineRepository machineRepository
             ) : base(principal, logger, userRepository)
         {
             _logger = logger;
@@ -42,6 +44,7 @@ namespace PMM.Core.Services
             _projectRelationRepository = projectRelationRepository;
             _taskAssignmentRepository = taskAssignmentRepository;
             _projectAssignmentRepository = projectAssignmentRepository;
+            _machineRepository = machineRepository;
         }
 
         public async Task<ActivityDto> AddActivityAsync(CreateActivityForm form)
@@ -52,6 +55,9 @@ namespace PMM.Core.Services
             var validation = FormValidator.Validate(form);
             if (!validation.IsValid)
                 throw new BusinessException(validation.ErrorMessage);
+
+            if ((form.UserId.HasValue && form.MachineId.HasValue) || (!form.UserId.HasValue && !form.MachineId.HasValue))
+                throw new BusinessException("Aktivite ya bir kullanıcıya ya da bir makineye atanmalıdır, ikisine birden veya hiçbirine atanamaz.");
 
             if (form.EndTime <= form.StartTime)
                 throw new BusinessException("Bitiş zamanı başlangıç zamanından sonra olmalıdır!");
@@ -71,14 +77,22 @@ namespace PMM.Core.Services
             if (project.Status == EProjectStatus.Inactive)
                 throw new BusinessException("Proje pasif olduğu için aktivite eklenemez.");
 
-            _ = await _userRepository.GetByIdAsync(form.UserId) ?? throw new NotFoundException("Kullanıcı Bulunamadı!");
-
-            if (await _activityRepository.HasConflictingActivityAsync(form.UserId, form.StartTime, form.EndTime))
-                throw new BusinessException("Bu zaman aralığında çakışan bir aktivite bulunmaktadır. Aynı kullanıcı için çakışan saatlerde aktivite eklenemez.");
-
-            var isUserAssigned = await _taskAssignmentRepository.IsUserAssignedToTaskAsync(form.UserId, form.TaskId);
-            if (!isUserAssigned)
-                throw new BusinessException("Bu kullanıcı belirtilen göreve atanmamıştır. Sadece göreve atanmış kullanıcılar aktivite ekleyebilir.");
+            if (form.UserId.HasValue)
+            {
+                _ = await _userRepository.GetByIdAsync(form.UserId.Value) ?? throw new NotFoundException("Kullanıcı Bulunamadı!");
+                if (await _activityRepository.HasConflictingActivityAsync(form.UserId, form.MachineId, form.StartTime, form.EndTime))
+                    throw new BusinessException("Bu zaman aralığında çakışan bir aktivite bulunmaktadır. Aynı kullanıcı için çakışan saatlerde aktivite eklenemez.");
+                var isUserAssigned = await _taskAssignmentRepository.IsUserAssignedToTaskAsync(form.UserId.Value, form.TaskId);
+                if (!isUserAssigned)
+                    throw new BusinessException("Bu kullanıcı belirtilen göreve atanmamıştır. Sadece göreve atanmış kullanıcılar aktivite ekleyebilir.");
+            }
+            else if (form.MachineId.HasValue)
+            {
+                _ = await _machineRepository.GetByIdAsync(form.MachineId.Value) ?? throw new NotFoundException("Makine Bulunamadı!");
+                if (await _activityRepository.HasConflictingActivityAsync(form.UserId, form.MachineId, form.StartTime, form.EndTime))
+                    throw new BusinessException("Bu zaman aralığında çakışan bir aktivite bulunmaktadır. Aynı makine için çakışan saatlerde aktivite eklenemez.");
+                // Makine ataması kontrolü yok, varsayıyoruz ki makineler herhangi bir göreve atanabilir
+            }
 
             var isFirstActivity = !await _activityRepository.Query(a => a.TaskId == form.TaskId).AnyAsync();
             if (isFirstActivity)
@@ -93,8 +107,12 @@ namespace PMM.Core.Services
 
             await UpdateTaskAndParentHours(task.Id, activity.TotalHours);
 
-            await UpdateProjectAssignmentsHours(task.ProjectId, form.UserId, activity.TotalHours);
-            await _projectAssignmentRepository.SaveChangesAsync();
+            if (form.UserId.HasValue)
+            {
+                await UpdateProjectAssignmentsHours(task.ProjectId, form.UserId.Value, activity.TotalHours);
+                await _projectAssignmentRepository.SaveChangesAsync();
+            }
+            // Makine için proje ataması güncellemesi yok
 
             _activityRepository.Create(activity);
             await _activityRepository.SaveChangesAsync();
@@ -142,6 +160,9 @@ namespace PMM.Core.Services
 
             if (form.UserId.HasValue)
                 query = query.Where(a => a.UserId == form.UserId.Value);
+
+            if (form.MachineId.HasValue)
+                query = query.Where(a => a.MachineId == form.MachineId.Value);
 
             if (!string.IsNullOrWhiteSpace(form.Description))
                 query = query.Where(a => a.Description.ToLower().Contains(form.Description.Trim().ToLower()));
@@ -233,8 +254,8 @@ namespace PMM.Core.Services
 
             var activity = await _activityRepository.GetByIdAsync(activityId) ?? throw new NotFoundException("Aktivite Bulunamadı!");
 
-            if (await _activityRepository.HasConflictingActivityAsync(activity.UserId, form.StartTime, form.EndTime, activity.Id))
-                throw new BusinessException("Bu zaman aralığında çakışan bir aktivite bulunmaktadır. Aynı kullanıcı için çakışan saatlerde aktivite düzenlenemez.");
+            if (await _activityRepository.HasConflictingActivityAsync(activity.UserId, activity.MachineId, form.StartTime, form.EndTime, activity.Id))
+                throw new BusinessException("Bu zaman aralığında çakışan bir aktivite bulunmaktadır. Aynı kullanıcı veya makine için çakışan saatlerde aktivite düzenlenemez.");
 
             var task = await _taskRepository.GetByIdAsync(activity.TaskId);
 
@@ -247,8 +268,12 @@ namespace PMM.Core.Services
 
             await UpdateTaskAndParentHours(activity.TaskId, hoursDifference);
 
-            await UpdateProjectAssignmentsHours(task.ProjectId, activity.UserId, hoursDifference);
-            await _projectAssignmentRepository.SaveChangesAsync();
+            if (activity.UserId.HasValue)
+            {
+                await UpdateProjectAssignmentsHours(task.ProjectId, activity.UserId.Value, hoursDifference);
+                await _projectAssignmentRepository.SaveChangesAsync();
+            }
+            // Makine için proje ataması güncellemesi yok
 
             _activityRepository.Update(activity);
             await _activityRepository.SaveChangesAsync();
@@ -275,8 +300,12 @@ namespace PMM.Core.Services
 
             await UpdateTaskAndParentHours(activity.TaskId, -activityHours);
 
-            await UpdateProjectAssignmentsHours(task.ProjectId, activity.UserId, -activityHours);
-            await _projectAssignmentRepository.SaveChangesAsync();
+            if (activity.UserId.HasValue)
+            {
+                await UpdateProjectAssignmentsHours(task.ProjectId, activity.UserId.Value, -activityHours);
+                await _projectAssignmentRepository.SaveChangesAsync();
+            }
+            // Makine için proje ataması güncellemesi yok
 
             _activityRepository.Delete(activity);
             await _activityRepository.SaveChangesAsync();

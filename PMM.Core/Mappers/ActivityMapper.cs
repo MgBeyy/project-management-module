@@ -39,6 +39,7 @@ namespace PMM.Core.Mappers
             {
                 TaskId = form.TaskId,
                 UserId = form.UserId,
+                MachineId = form.MachineId,
                 Description = form.Description,
                 StartTime = roundedStartTime,
                 EndTime = roundedEndTime,
@@ -54,6 +55,7 @@ namespace PMM.Core.Mappers
                 Id = activity.Id,
                 TaskId = activity.TaskId,
                 UserId = activity.UserId,
+                MachineId = activity.MachineId,
                 Description = activity.Description,
                 StartTime = activity.StartTime,
                 EndTime = activity.EndTime,
