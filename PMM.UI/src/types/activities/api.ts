@@ -5,7 +5,8 @@ import type { DateTimeString, Nullable, PagedResult } from "../common";
 export interface ActivityDto {
   id: number;
   taskId: number;
-  userId: number;
+  userId: number | null;
+  machineId: number | null;
   description: string | null;
   startTime: DateTimeString;
   endTime: DateTimeString;
@@ -21,7 +22,8 @@ export type ActivityPagedResult = PagedResult<ActivityDto>;
 
 export interface CreateActivityData {
   taskId: number;
-  userId: number;
+  userId?: number | null;
+  machineId?: number | null;
   description: string;
   startTime: number; // milliseconds
   endTime: number; // milliseconds

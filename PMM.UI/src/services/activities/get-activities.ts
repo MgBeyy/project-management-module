@@ -8,6 +8,8 @@ type ActivityQuery = {
   id?: number;
   taskId?: number;
   userId?: number;
+  machineId?: number;
+  isForMachine?: boolean;
   description?: string;
   startTime?: number;
   startTimeMin?: number;
@@ -29,7 +31,13 @@ type ActivityQuery = {
 export async function GetActivities({ query }: { query: ActivityQuery }): Promise<ActivityListDto> {
   try {
     const response = await apiClient.get("/Activity", {
-      params: { ...query, pageSize: query.pageSize ?? 10000, sortBy: query.sortBy ?? "startTime", sortDesc: query.sortDesc ?? true },
+      params: {
+        ...query,
+        IsForMachine: query.isForMachine,
+        pageSize: query.pageSize ?? 10000,
+        sortBy: query.sortBy ?? "startTime",
+        sortDesc: query.sortDesc ?? true
+      },
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
