@@ -1,5 +1,5 @@
 import { Button } from "antd";
-import { LeftOutlined, RightOutlined } from "@ant-design/icons";
+import { LeftOutlined, RightOutlined, UserOutlined, RobotOutlined } from "@ant-design/icons";
 import type { Dayjs } from "dayjs";
 import dayjs from "dayjs";
 import "dayjs/locale/tr";
@@ -60,7 +60,7 @@ export default function ActivitiesCalendar() {
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [selectedEndSlot, setSelectedEndSlot] = useState<TimeSlot | null>(null);
 
-  const {filters} = useTasksStore();
+  const { filters } = useTasksStore();
 
   // Drag selection state
   const [isDragging, setIsDragging] = useState(false);
@@ -86,7 +86,7 @@ export default function ActivitiesCalendar() {
 
       const activityData = response.data;
 
-    
+
       setActivities(activityData);
       setIsLoading(false);
     } catch (error) {
@@ -221,8 +221,24 @@ export default function ActivitiesCalendar() {
     return Math.ceil(fullDayMinutes / 15);
   };
 
-  // Kullanıcı rengi
-  const getUserColor = (userId: number) => {
+  // Kullanıcı/Makine rengi
+  const getActivityColor = (activity: ActivityDto) => {
+    if (activity.machineId) {
+      // Machine colors - Metallic/Industrial tones
+      const machineColors = [
+        "#595959", // grey
+        "#8c8c8c", // light grey
+        "#262626", // dark grey
+        "#1f1f1f", // darker
+        "#434343", // 
+        "#001529", // dark blueish
+        "#531dab", // purple-ish
+        "#096dd9", // blue-ish
+      ];
+      return machineColors[(activity.machineId || 0) % machineColors.length];
+    }
+
+    // User colors - Vibrant
     const colors = [
       "#1890ff", // blue
       "#52c41a", // green
@@ -235,7 +251,7 @@ export default function ActivitiesCalendar() {
       "#2f54eb", // geekblue
       "#a0d911", // lime
     ];
-    return colors[userId % colors.length];
+    return colors[(activity.userId || 0) % colors.length];
   };
 
   // Çakışma konum hesaplama (aynı gün içindeki aktiviteler)
@@ -542,8 +558,8 @@ export default function ActivitiesCalendar() {
                       {index === 0
                         ? `${hour.toString().padStart(2, "0")}:00`
                         : `${hour.toString().padStart(2, "0")}:${minute
-                            .toString()
-                            .padStart(2, "0")}`}
+                          .toString()
+                          .padStart(2, "0")}`}
                     </div>
 
                     {/* Day Columns */}
@@ -566,8 +582,8 @@ export default function ActivitiesCalendar() {
 
                       const hoveredDT = hoveredSlot
                         ? hoveredSlot.date
-                            .hour(hoveredSlot.hour)
-                            .minute(hoveredSlot.minute)
+                          .hour(hoveredSlot.hour)
+                          .minute(hoveredSlot.minute)
                         : null;
 
                       return (
@@ -639,7 +655,7 @@ export default function ActivitiesCalendar() {
                             const activityHeight =
                               duration * SLOT_HEIGHT - 4;
 
-                            const userColor = getUserColor(activity.userId);
+                            const cardColor = getActivityColor(activity);
                             const {
                               totalColumns,
                               columnIndex,
@@ -659,13 +675,15 @@ export default function ActivitiesCalendar() {
                                 hoveredDT.isSame(startTime)) &&
                               hoveredDT.isBefore(endTime);
 
+                            const isMachine = !!activity.machineId;
+
                             return (
                               <div
                                 key={activity.id}
                                 style={{
                                   padding: "4px 6px",
                                   marginBottom: "2px",
-                                  backgroundColor: userColor,
+                                  backgroundColor: cardColor,
                                   color: "#fff",
                                   borderRadius: "4px",
                                   fontSize: "11px",
@@ -686,6 +704,7 @@ export default function ActivitiesCalendar() {
                                   opacity:
                                     isDragging && hoverHitsActivity ? 0.35 : 1,
                                   transition: "opacity 0.08s linear",
+                                  border: isMachine ? "2px dashed rgba(255,255,255,0.4)" : "none",
                                 }}
                                 onMouseDown={(e) => {
                                   if (!isDragging) e.stopPropagation();
@@ -712,6 +731,7 @@ export default function ActivitiesCalendar() {
                                     whiteSpace: "nowrap",
                                   }}
                                 >
+                                  {isMachine ? <RobotOutlined style={{ marginRight: 4 }} /> : <UserOutlined style={{ marginRight: 4 }} />}
                                   {activity.description}
                                 </div>
                                 <div
@@ -750,8 +770,8 @@ export default function ActivitiesCalendar() {
                                 borderRadius: startEdge
                                   ? "6px 6px 0 0"
                                   : endEdge
-                                  ? "0 0 6px 6px"
-                                  : 0,
+                                    ? "0 0 6px 6px"
+                                    : 0,
                                 zIndex: SELECTION_Z_INDEX,
                                 pointerEvents: "none",
                               }}
@@ -781,19 +801,19 @@ export default function ActivitiesCalendar() {
         initialDate={
           selectedSlot
             ? selectedSlot.date
-                .hour(selectedSlot.hour)
-                .minute(selectedSlot.minute)
+              .hour(selectedSlot.hour)
+              .minute(selectedSlot.minute)
             : dayjs()
         }
         initialEndDate={
           selectedEndSlot
             ? selectedEndSlot.date
-                .hour(selectedEndSlot.hour)
-                .minute(selectedEndSlot.minute)
+              .hour(selectedEndSlot.hour)
+              .minute(selectedEndSlot.minute)
             : undefined
         }
         selectedUserId={filters.userId}
       />
-    </div>
+    </div >
   );
 }

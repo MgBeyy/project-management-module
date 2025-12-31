@@ -79,7 +79,7 @@ export const ActivityFilter: React.FC = () => {
     setFilters({ ...filters, taskId: null });
     handleTaskSearch("");
   }, [filters.projectId]);
-  
+
   useEffect(() => {
     setFilters({ ...filters, userId: null });
     handleUserSearch("");
@@ -100,7 +100,7 @@ export const ActivityFilter: React.FC = () => {
             setFilters({ ...filters, projectId: projectId || null, taskId: null });
           }}
           size="middle"
-          style={{ width: "100%"}}
+          style={{ width: "100%" }}
           optionFilterProp="label"
           notFoundContent={
             projectLoading ? (
@@ -112,19 +112,19 @@ export const ActivityFilter: React.FC = () => {
               "Proje bulunamadı"
             )
           }
-                  />
-         <Select
+        />
+        <Select
           showSearch
           placeholder="Görev seçin veya arayın..."
           options={taskOptions}
           loading={taskLoading}
           filterOption={false}
           onSearch={handleTaskSearch}
-          allowClear 
+          allowClear
           value={filters.taskId ?? undefined}
           onChange={(taskId) => setFilters({ ...filters, taskId: taskId || null })}
           size="middle"
-          style={{ width: "100%"}}
+          style={{ width: "100%" }}
           optionFilterProp="label"
           notFoundContent={
             projectLoading ? (
@@ -138,13 +138,30 @@ export const ActivityFilter: React.FC = () => {
           }
         />
         <Select
+          placeholder="Etkinlik Türü"
+          options={[
+            { label: 'Tümü', value: 'all' },
+            { label: 'İnsan', value: 'user' },
+            { label: 'Makine', value: 'machine' },
+          ]}
+          value={filters.isForMachine === true ? 'machine' : filters.isForMachine === false ? 'user' : 'all'}
+          onChange={(value) => {
+            let val: boolean | undefined = undefined;
+            if (value === 'machine') val = true;
+            if (value === 'user') val = false;
+            setFilters({ ...filters, isForMachine: val });
+          }}
+          size="middle"
+          style={{ width: "250px", minWidth: "250px" }}
+        />
+        <Select
           showSearch
           placeholder="Kullanıcı seçin veya arayın..."
           options={userOptions}
           loading={userLoading}
           filterOption={false}
           onSearch={handleUserSearch}
-          allowClear 
+          allowClear
           value={filters.userId ?? undefined}
           onChange={(userId) => setFilters({ ...filters, userId: userId || null })}
           size="middle"
@@ -161,11 +178,11 @@ export const ActivityFilter: React.FC = () => {
             )
           }
         />
-      <div>
-        <Button onClick={() => setFilters({ projectId: null, taskId: null, userId: null })}>
-          Filtreleri Temizle
-        </Button>
-      </div>
+        <div>
+          <Button onClick={() => setFilters({ projectId: null, taskId: null, userId: null, isForMachine: null, search: null })}>
+            Filtreleri Temizle
+          </Button>
+        </div>
       </div>
     </div>
   );
