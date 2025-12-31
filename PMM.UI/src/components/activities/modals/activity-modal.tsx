@@ -1,4 +1,4 @@
-import { Modal, Form, Input, DatePicker, Button, Space, Checkbox, Tooltip } from "antd";
+import { Modal, Form, Input, DatePicker, Button, Space, Checkbox, Tooltip, Segmented } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { useNotification } from "@/hooks/useNotification";
 import { createActivity } from "@/services/activities/create-activity";
@@ -6,13 +6,15 @@ import { updateActivity } from "@/services/activities/update-activity";
 import { useActivitiesStore } from "@/store/zustand/activities-store";
 import dayjs, { Dayjs } from "dayjs";
 import UserSelect from "../user-select";
+import MachineSelect from "../machine-select";
 import TaskSelect from "../task-select";
 import DeleteActivityModal from "./delete-activity-modal";
 import type { ActivityDto } from "@/types";
-import { InfoCircleOutlined } from "@ant-design/icons";
+import { InfoCircleOutlined, UserOutlined, RobotOutlined } from "@ant-design/icons";
 const { TextArea } = Input;
 
 type ActivityModalMode = "create" | "edit";
+type ActivityType = "User" | "Machine";
 
 interface ActivityModalProps {
   visible: boolean;
@@ -37,9 +39,13 @@ export default function ActivityModal({
   const [form] = Form.useForm();
   const { triggerRefresh } = useActivitiesStore();
   const [currentMode, setCurrentMode] = useState<ActivityModalMode>(mode);
+  const [activityType, setActivityType] = useState<ActivityType>("User");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+
   const selectedUser = Form.useWatch("userId", form);
+  const selectedMachine = Form.useWatch("machineId", form);
+
   const previousSelectedUserRef = useRef<number | null | undefined>(undefined);
 
   const isEditMode = currentMode === "edit";
@@ -57,10 +63,18 @@ export default function ActivityModal({
     if (!visible) return;
 
     if (activity && isEditMode) {
+      // Determine type based on activity data
+      if (activity.machineId) {
+        setActivityType("Machine");
+      } else {
+        setActivityType("User");
+      }
+
       // Load existing activity data
       form.setFieldsValue({
         taskId: activity.taskId,
         userId: activity.userId,
+        machineId: activity.machineId,
         description: activity.description,
         startTime: activity.startTime ? dayjs(activity.startTime) : null,
         endTime: activity.endTime ? dayjs(activity.endTime) : null,
@@ -68,18 +82,20 @@ export default function ActivityModal({
       });
     } else if (isCreateMode) {
       // Set initial values for create mode
+      setActivityType("User");
       form.setFieldsValue({
         startTime: initialDate || dayjs(),
         endTime: initialEndDate || (initialDate ? initialDate.add(1, "hour") : dayjs().add(1, "hour")),
         userId: selectedUserId || undefined,
+        machineId: undefined,
         isLast: false,
       });
     }
   }, [visible, activity, isEditMode, isCreateMode, initialDate, initialEndDate, selectedUserId, form]);
 
-  // Reset task when user changes
+  // Reset task when user changes (User mode only)
   useEffect(() => {
-    if (!visible) {
+    if (!visible || activityType !== "User") {
       previousSelectedUserRef.current = undefined;
       return;
     }
@@ -96,20 +112,26 @@ export default function ActivityModal({
       form.setFieldsValue({ taskId: undefined });
       previousSelectedUserRef.current = normalizedSelected;
     }
-  }, [selectedUser, visible, form]);
+  }, [selectedUser, visible, form, activityType]);
 
   const handleSubmit = async (values: any) => {
     setIsSubmitting(true);
     try {
-      const activityData = {
+      const activityData: any = {
         taskId: values.taskId,
-        userId: values.userId,
         description: values.description,
         startTime: values.startTime.valueOf(),
         endTime: values.endTime.valueOf(),
         isLast: values.isLast || false,
       };
-      console.log(values.isLast);
+
+      if (activityType === "User") {
+        activityData.userId = values.userId;
+        activityData.machineId = null;
+      } else {
+        activityData.machineId = values.machineId;
+        activityData.userId = null;
+      }
 
       if (isCreateMode) {
         await createActivity(activityData);
@@ -187,31 +209,65 @@ export default function ActivityModal({
         width={600}
         maskClosable={false}
       >
+        <div style={{ marginBottom: 16, textAlign: "center" }}>
+          <Segmented
+            options={[
+              { label: 'Kullanıcı', value: 'User', icon: <UserOutlined /> },
+              { label: 'Makine', value: 'Machine', icon: <RobotOutlined /> },
+            ]}
+            value={activityType}
+            onChange={(val) => {
+              setActivityType(val as ActivityType);
+              // Optional: clear relevant fields when switching?
+              // form.setFieldsValue({ userId: undefined, machineId: undefined, taskId: undefined });
+            }}
+            disabled={isEditMode} // Disable switching type in edit mode? Usually safer.
+          />
+        </div>
+
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
 
+          {activityType === "User" ? (
+            <Form.Item
+              label="Kullanıcı"
+              name="userId"
+              rules={[{ required: true, message: "Kullanıcı seçimi gereklidir" }]}
+            >
+              <UserSelect
+                placeholder="Kullanıcı ara ve seç..."
+                style={{ width: "100%" }}
+              />
+            </Form.Item>
+          ) : (
+            <Form.Item
+              label="Makine"
+              name="machineId"
+              rules={[{ required: true, message: "Makine seçimi gereklidir" }]}
+            >
+              <MachineSelect
+                placeholder="Makine ara ve seç..."
+                style={{ width: "100%" }}
+              />
+            </Form.Item>
+          )}
 
-          <Form.Item
-            label="Kullanıcı"
-            name="userId"
-            rules={[{ required: true, message: "Kullanıcı seçimi gereklidir" }]}
-          >
-            <UserSelect
-              placeholder="Kullanıcı ara ve seç..."
-              style={{ width: "100%" }}
-            />
-          </Form.Item>
           <Form.Item
             label="Görev"
             name="taskId"
             rules={[{ required: true, message: "Görev seçimi gereklidir" }]}
           >
             <TaskSelect
-              placeholder={selectedUser ? "Görev ara ve seç..." : "Önce kullanıcı seçin..."}
+              placeholder={activityType === "User"
+                ? (selectedUser ? "Görev ara ve seç..." : "Önce kullanıcı seçin...")
+                : "Görev ara ve seç..."
+              }
               style={{ width: "100%" }}
-              disabled={!selectedUser}
-              assignedUserId={selectedUser}
+              disabled={activityType === "User" ? !selectedUser : !selectedMachine}
+              assignedUserId={activityType === "User" ? selectedUser : undefined}
+              ignoreUserCheck={activityType === "Machine"}
             />
           </Form.Item>
+
           <Form.Item
             label="Açıklama"
             name="description"

@@ -2,6 +2,8 @@ import { Select, Spin } from "antd";
 import { useCallback, useEffect, useState } from "react";
 import { GetTasks } from "../../services/tasks/get-tasks";
 
+// src/components/activities/task-select.tsx
+
 interface TaskSelectProps {
   value?: number;
   onChange?: (value: number) => void;
@@ -9,15 +11,17 @@ interface TaskSelectProps {
   style?: React.CSSProperties;
   assignedUserId?: number | null;
   disabled?: boolean;
+  ignoreUserCheck?: boolean;
 }
 
 export default function TaskSelect({
   value,
   onChange,
-  placeholder = "örev seçin...",
+  placeholder = "Görev seçin...",
   style,
   assignedUserId,
   disabled = false,
+  ignoreUserCheck = false,
 }: TaskSelectProps) {
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -25,7 +29,8 @@ export default function TaskSelect({
 
   const fetchTasks = useCallback(
     async (search?: string, userId?: number | null) => {
-      if (!userId) {
+      // If we are NOT ignoring user check and have no userId, don't fetch
+      if (!ignoreUserCheck && !userId) {
         setTasks([]);
         return;
       }
@@ -37,7 +42,10 @@ export default function TaskSelect({
             page: 1,
             pageSize: 50,
             search: search || undefined,
-            assignedUserId: userId,
+            // Only pass assignedUserId if we are NOT ignoring the check (or if we are ignoring but still have a userId we want to use optionally? 
+            // Usually if ignoreUserCheck is true we want all tasks, but maybe we can still filter if userId is provided.
+            // But based on logic, if ignoreUserCheck is true, userId might be null.
+            assignedUserId: userId || undefined,
           },
         });
 
@@ -66,11 +74,12 @@ export default function TaskSelect({
         setLoading(false);
       }
     },
-    []
+    [ignoreUserCheck]
   );
 
   useEffect(() => {
-    if (!assignedUserId) {
+    // If we rely on user check and no user, clear.
+    if (!ignoreUserCheck && !assignedUserId) {
       setTasks([]);
       setLoading(false);
       return;
@@ -79,7 +88,7 @@ export default function TaskSelect({
     if (searchTerm.length >= 2 || searchTerm.length === 0) {
       fetchTasks(searchTerm, assignedUserId);
     }
-  }, [assignedUserId, searchTerm, fetchTasks]);
+  }, [assignedUserId, searchTerm, fetchTasks, ignoreUserCheck]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
