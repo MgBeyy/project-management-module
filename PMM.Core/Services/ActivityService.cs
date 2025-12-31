@@ -164,6 +164,14 @@ namespace PMM.Core.Services
             if (form.MachineId.HasValue)
                 query = query.Where(a => a.MachineId == form.MachineId.Value);
 
+            if (form.IsForMachine.HasValue)
+            {
+                if (form.IsForMachine.Value)
+                    query = query.Where(a => a.MachineId.HasValue);
+                else
+                    query = query.Where(a => a.UserId.HasValue);
+            }
+
             if (!string.IsNullOrWhiteSpace(form.Description))
                 query = query.Where(a => a.Description.ToLower().Contains(form.Description.Trim().ToLower()));
 
