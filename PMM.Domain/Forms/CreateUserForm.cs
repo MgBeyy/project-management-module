@@ -9,5 +9,8 @@ namespace PMM.Domain.Forms
         [Required]
         [EmailAddress]
         public string Email { get; set; }
+        [Range(0, double.MaxValue, ErrorMessage = "Saatlik ücret negatif bir değer alamaz.")]
+        public decimal? HourlyRate { get; set; }
+        public string Currency { get; set; } = "TL";
     }
 }

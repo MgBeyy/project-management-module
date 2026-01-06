@@ -146,6 +146,8 @@ namespace PMM.Core.Services
 
             user.Name = form.Name != null ? form.Name : user.Name;
             user.Email = form.Email != null ? form.Email : user.Email;
+            user.HourlyRate = form.HourlyRate;
+            user.Currency = form.Currency != null ? form.Currency : user.Currency;
 
             _userRepository.Update(user);
             await _userRepository.SaveChangesAsync();

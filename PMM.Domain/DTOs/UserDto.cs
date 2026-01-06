@@ -6,6 +6,8 @@
         public string Name { get; set; }
         public string Email { get; set; }
         public bool IsActive { get; set; }
+        public decimal? HourlyRate { get; set; }
+        public string Currency { get; set; }
         public decimal Capacity { get; set; }
         public int CapacityPercent { get; set; }
         public decimal AvailableWorkHoursForOneMonth { get; set; }

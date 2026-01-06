@@ -13,6 +13,8 @@ namespace PMM.Core.Mappers
                 Name = form.Name,
                 Email = form.Email.ToLower(),
                 IsActive = true,
+                HourlyRate = form.HourlyRate,
+                Currency = form.Currency,
             };
         }
         public static UserDto Map(User user)
@@ -23,6 +25,8 @@ namespace PMM.Core.Mappers
                 Name = user.Name,
                 Email = user.Email,
                 IsActive = user.IsActive,
+                HourlyRate = user.HourlyRate,
+                Currency = user.Currency,
             };
         }
         public static List<UserDto> Map(List<User> users)
