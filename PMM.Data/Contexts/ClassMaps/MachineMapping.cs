@@ -20,6 +20,7 @@ namespace PMM.Data.Contexts.ClassMaps
             builder.Property(m => m.Currency).IsRequired().HasMaxLength(10);
             builder.Property(m => m.PurchasePrice).IsRequired(false).HasPrecision(18, 2);
             builder.Property(m => m.PurchaseDate).IsRequired(false);
+            builder.Property(m => m.UsefulLife).IsRequired(false);
             builder.Property(m => m.IsActive).IsRequired();
             builder.Property(m => m.Status).IsRequired().HasConversion<string>();
         }
