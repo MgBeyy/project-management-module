@@ -167,6 +167,7 @@ export default function SupportPage() {
     { title: "Kategori", dataIndex: "category", key: "category", width: 150, sorter: true },
     { title: "Marka", dataIndex: "brand", key: "brand", width: 150, sorter: true },
     { title: "Model", dataIndex: "model", key: "model", width: 150, sorter: true },
+    { title: "Varsayılan Ömür", dataIndex: "usefulLife", key: "usefulLife", width: 150, sorter: true },
     { title: "Saatlik Maliyet", dataIndex: "hourlyCost", key: "hourlyCost", width: 150, sorter: true, render: (val: any, record: MachineDto) => val ? `${val} ${record.currency || 'TL'}` : '-' },
     {
       title: "Durum",
@@ -1617,6 +1618,9 @@ export default function SupportPage() {
               <Input placeholder="Model" />
             </Form.Item>
             <Form.Item label="Saatlik Maliyet" name="hourlyCost">
+              <InputNumber style={{ width: '100%' }} min={0} />
+            </Form.Item>
+            <Form.Item label="Varsayılan Ömür" name="usefulLife">
               <InputNumber style={{ width: '100%' }} min={0} />
             </Form.Item>
             <Form.Item label="Para Birimi" name="currency">

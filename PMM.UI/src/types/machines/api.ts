@@ -12,6 +12,7 @@ export interface MachineDto {
     purchaseDate?: string; // date-time
     isActive: boolean;
     status: string; // Available | InUse | OutOfService | Maintenance
+    usefulLife?: number;
 }
 
 export type MachineDtoPagedResult = PagedResult<MachineDto>;
@@ -27,6 +28,7 @@ export interface CreateMachineForm {
     purchaseDate?: string;
     isActive?: boolean;
     status?: string;
+    usefulLife?: number;
 }
 
 export interface UpdateMachineForm {
@@ -40,4 +42,5 @@ export interface UpdateMachineForm {
     purchaseDate?: string;
     isActive?: boolean;
     status?: string;
+    usefulLife?: number;
 }
