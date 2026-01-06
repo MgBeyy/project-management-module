@@ -24,6 +24,9 @@ namespace PMM.Domain.Forms
         public DateTime? PurchaseDate { get; set; }
         public DateTime? PurchaseDateMin { get; set; }
         public DateTime? PurchaseDateMax { get; set; }
+        public int? UsefulLife { get; set; }
+        public int? UsefulLifeMin { get; set; }
+        public int? UsefulLifeMax { get; set; }
         public bool? IsActive { get; set; }
         public EMachineStatus? Status { get; set; }
     }

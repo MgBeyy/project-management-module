@@ -21,6 +21,8 @@ namespace PMM.Domain.Forms
         [Range(0, double.MaxValue, ErrorMessage = "Satýn alma fiyatý negatif bir deðer alamaz.")]
         public decimal? PurchasePrice { get; set; }
         public DateTime? PurchaseDate { get; set; }
+        [Range(0, int.MaxValue, ErrorMessage = "Varsayýlan ömür negatif bir deðer alamaz.")]
+        public int? UsefulLife { get; set; }
         public bool IsActive { get; set; } = true;
         [JsonConverter(typeof(JsonStringEnumConverter))]
         [ValidEnum(ErrorMessage = "Geçerli bir makine durumu seçiniz.")]

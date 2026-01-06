@@ -13,6 +13,7 @@ namespace PMM.Domain.DTOs
         public string Currency { get; set; }
         public decimal? PurchasePrice { get; set; }
         public DateTime? PurchaseDate { get; set; }
+        public int? UsefulLife { get; set; }
         public bool IsActive { get; set; }
         public EMachineStatus Status { get; set; }
         public int? CreatedById { get; set; }
