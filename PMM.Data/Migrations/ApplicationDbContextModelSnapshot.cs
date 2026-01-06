@@ -333,6 +333,9 @@ namespace PMM.Data.Migrations
                     b.Property<int?>("UpdatedById")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("UsefulLife")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedById");

@@ -137,6 +137,13 @@ namespace PMM.Core.Services
             if (form.PurchaseDateMax.HasValue)
                 query = query.Where(e => e.PurchaseDate <= form.PurchaseDateMax);
 
+            if (form.UsefulLife.HasValue)
+                query = query.Where(e => e.UsefulLife == form.UsefulLife);
+            if (form.UsefulLifeMin.HasValue)
+                query = query.Where(e => e.UsefulLife >= form.UsefulLifeMin);
+            if (form.UsefulLifeMax.HasValue)
+                query = query.Where(e => e.UsefulLife <= form.UsefulLifeMax);
+
             if (form.IsActive.HasValue)
                 query = query.Where(e => e.IsActive == form.IsActive.Value);
 

@@ -18,6 +18,7 @@ namespace PMM.Core.Mappers
                 Currency = form.Currency,
                 PurchasePrice = form.PurchasePrice,
                 PurchaseDate = form.PurchaseDate,
+                UsefulLife = form.UsefulLife,
                 IsActive = form.IsActive,
                 Status = form.Status,
             };
@@ -36,6 +37,7 @@ namespace PMM.Core.Mappers
                 Currency = machine.Currency,
                 PurchasePrice = machine.PurchasePrice,
                 PurchaseDate = machine.PurchaseDate,
+                UsefulLife = machine.UsefulLife,
                 IsActive = machine.IsActive,
                 Status = machine.Status,
                 CreatedAt = machine.CreatedAt,
@@ -60,6 +62,7 @@ namespace PMM.Core.Mappers
             machine.Currency = form.Currency;
             machine.PurchasePrice = form.PurchasePrice;
             machine.PurchaseDate = form.PurchaseDate;
+            machine.UsefulLife = form.UsefulLife;
             machine.IsActive = form.IsActive;
             machine.Status = form.Status;
             return machine;
