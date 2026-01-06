@@ -8,6 +8,8 @@ namespace PMM.Domain.Entities
         public string Name { get; set; }
         public string Email { get; set; }
         public bool IsActive { get; set; } = true;
+        public decimal? HourlyRate { get; set; }
+        public string Currency { get; set; }
 
         public ICollection<ProjectAssignment> ProjectAssignments { get; set; }
         public ICollection<TaskAssignment> TaskAssignments { get; set; }
