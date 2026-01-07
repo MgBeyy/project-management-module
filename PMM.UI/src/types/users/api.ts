@@ -13,6 +13,8 @@ export interface UserDto {
   allocatedWorkHoursForOneMonth?: number;
   activeTasksCount?: number;
   todoTasksCount?: number;
+  hourlyRate?: number;
+  currency?: string;
 }
 
 export type UserPagedResult = PagedResult<UserDto>;

@@ -794,6 +794,12 @@ export default function SupportPage() {
       render: (email: string | null) => email || "-",
     },
     {
+      title: "Saatlik Ücret",
+      dataIndex: "hourlyRate",
+      key: "hourlyRate",
+      render: (val: number | undefined, record: UserDto) => val != null ? `${val} ${record.currency || 'TL'}` : "-",
+    },
+    {
       title: "Durum",
       dataIndex: "isActive",
       key: "isActive",
