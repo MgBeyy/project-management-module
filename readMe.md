@@ -1,6 +1,12 @@
 PMM is a Project Management Module for an ERP project
 
+## Project is live : 
 
+https://pmm.zeyd.dev
+
+https://api-pmm.zeyd.dev/swagger
+
+## Screenshots : 
 
 <img width="1920" height="1032" alt="image" src="https://github.com/user-attachments/assets/c07e93fc-18df-48fe-a470-32600c1cfae1" />
 
