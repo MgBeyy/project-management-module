@@ -67,10 +67,13 @@ builder.Services.AddHangfireServer();
 
 var app = builder.Build();
 
-app.UseForwardedHeaders();
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (true) // Always enable Swagger in development and production for testing purposes
 {
     app.UseSwagger(c =>
     {
@@ -102,6 +105,8 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "An error occurred while migrating or seeding the database.");
     }
 }
+
+app.UseRouting();
 
 //CORS
 app.UseCors("AllowFrontend");

@@ -3,49 +3,48 @@ services:
     build:
       context: .
       dockerfile: PMM.API/Dockerfile
-    ports:
-      - "5000:5000"
+    container_name: pmm_backend
+    restart: always
     environment:
-      - ASPNETCORE_URLS=http://*:5000
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000
+      - ASPNETCORE_ENVIRONMENT=Production
+      # appsettings.json'ı ezen, veritabanı ile aynı olan bağlantı ayarı:
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=pmm_db;Username=zeyd;Password=zeyd_zeyd
     depends_on:
       - db
     volumes:
       - pmm_files:/app/wwwroot/files
-      - ./PMM.API:/src/PMM.API
-      - ./PMM.Core:/src/PMM.Core
-      - ./PMM.Data:/src/PMM.Data
-      - ./PMM.Domain:/src/PMM.Domain
+    networks:
+      - proxy_network
 
   frontend:
     build:
       context: ./PMM.UI
-      dockerfile: dockerfile
-    ports:
-      - "3000:3000"
-    stdin_open: true
-    tty: true
-    command: npm run dev -- --host 0.0.0.0
-    environment:
-      - VITE_APP_API_URL=https://api-pmm.engzaid.tech
+      dockerfile: Dockerfile # Yeni Nginx'li Dockerfile
+    container_name: pmm_frontend
+    restart: always
     depends_on:
       - backend
-    volumes:
-      - ./PMM.UI:/app
-      - /app/node_modules
+    networks:
+      - proxy_network
 
   db:
-    image: postgres:15
+    image: postgres:15-alpine
+    container_name: pmm_db
+    restart: always
     environment:
       - POSTGRES_USER=zeyd
       - POSTGRES_PASSWORD=zeyd_zeyd
       - POSTGRES_DB=pmm_db
-    ports:
-      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    networks:
+      - proxy_network
 
 volumes:
   db_data:
   pmm_files:
+
+networks:
+  proxy_network:
+    external: true
